@@ -90,7 +90,6 @@
     /* layout */
     --ms-sidebar-width: 268px;
     --ms-header-height: 62px;
-    --ms-tabbar-height: 64px;
     --ms-content-max: 1180px;
     --ms-safe-top: env(safe-area-inset-top, 0px);
     --ms-safe-bottom: env(safe-area-inset-bottom, 0px);

@@ -549,19 +549,6 @@
     }
 }
 
-/* Reserve room for the fixed mobile tab bar so the footer and the last
-   content row are never hidden behind it. Matches .ms-tabbar in mobile.css,
-   which is visible at the same breakpoint. */
-@media (max-width: 900px) {
-    .ms-main {
-        padding-bottom: calc(var(--ms-tabbar-height) + var(--ms-safe-bottom));
-    }
-
-    .ms-footer {
-        padding-bottom: var(--ms-space-4);
-    }
-}
-
 @media (min-width: 900px) {
     .ms-shell__overlay {
         display: none;

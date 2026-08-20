@@ -199,14 +199,6 @@
     backdrop-filter: blur(8px);
 }
 
-/* Keep a sticky action bar above the fixed mobile tab bar. */
-@media (max-width: 900px) {
-    .ms-button-row--sticky {
-        bottom: calc(var(--ms-tabbar-height) + var(--ms-safe-bottom));
-        padding-bottom: var(--ms-space-3);
-    }
-}
-
 /* -------------------------------- list ---------------------------------- */
 
 .ms-list {
