@@ -41,6 +41,15 @@ public class DetailsModel(
 
     public int ExpenseCount { get; private set; }
 
+    /// <summary>Anonymous invite link for this group (/Join?token=...).</summary>
+    public string InviteUrl => $"{Request.Scheme}://{Request.Host}{Request.PathBase}/Join?token={Group?.InviteToken}";
+
+    /// <summary>Prefilled message when sharing the invite link.</summary>
+    public string ShareText => $"Tritt unserer MatSplit-Gruppe »{Group?.Name}« bei:";
+
+    /// <summary>Direct WhatsApp share link – works even without JavaScript.</summary>
+    public string WhatsAppUrl => "https://wa.me/?text=" + Uri.EscapeDataString($"{ShareText} {InviteUrl}");
+
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         var userId = currentUser.RequireUserId();

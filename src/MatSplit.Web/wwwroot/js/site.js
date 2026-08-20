@@ -545,6 +545,46 @@
         });
     }
 
+    /* -------------------------------- share ------------------------------ */
+
+    // Native Web Share on capable devices (mobile / installed PWA), otherwise
+    // open WhatsApp with a prefilled message. Used for anonymous invite links.
+    function initShare() {
+        qsa('[data-ms-share]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var url = button.getAttribute('data-ms-share-url') || '';
+
+                if (url.charAt(0) === '#') {
+                    var source = document.getElementById(url.substring(1));
+                    if (source) {
+                        url = typeof source.value === 'string' && source.value !== ''
+                            ? source.value
+                            : (source.textContent || '').trim();
+                    }
+                }
+
+                if (url && url.indexOf('http') !== 0) {
+                    try {
+                        url = new URL(url, window.location.origin).href;
+                    } catch (error) {
+                        /* keep as-is */
+                    }
+                }
+
+                var title = button.getAttribute('data-ms-share-title') || document.title;
+                var text = button.getAttribute('data-ms-share-text') || '';
+
+                if (navigator.share) {
+                    navigator.share({ title: title, text: text, url: url }).catch(function () { });
+                    return;
+                }
+
+                var message = (text ? text + ' ' : '') + url;
+                window.open('https://wa.me/?text=' + encodeURIComponent(message.trim()), '_blank', 'noopener');
+            });
+        });
+    }
+
     /* ------------------------------- camera ------------------------------ */
 
     function openCamera(input) {
@@ -840,6 +880,7 @@
         initTabs();
         initDismiss();
         initClipboard();
+        initShare();
         initCamera();
         initValidation(document);
     }

@@ -129,6 +129,11 @@
               hint="Zeige den Link groß auf dem Bildschirm, dann kann er direkt abfotografiert oder per Messenger weitergegeben werden."></ms-field>
 
     <div class="ms-row">
+        <ms-button id="inv-whatsapp" kind="primary" icon="whatsapp" label="Per WhatsApp teilen"
+                   href="@Model.WhatsAppUrl" target="_blank"></ms-button>
+        <ms-button id="inv-share" kind="secondary" icon="share" label="Teilen" type="button"
+                   data-ms-share="true" data-ms-share-url="@Model.InviteUrl"
+                   data-ms-share-title="MatSplit-Einladung" data-ms-share-text="@Model.ShareText"></ms-button>
         <ms-button id="inv-copy" kind="secondary" icon="copy" label="Kopieren" type="button"
                    data-ms-copy="#inv-url"></ms-button>
         <ms-button id="inv-open" kind="ghost" icon="link" label="Link öffnen"

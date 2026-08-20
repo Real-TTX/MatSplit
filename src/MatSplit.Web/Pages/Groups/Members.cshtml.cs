@@ -48,6 +48,12 @@ public class MembersModel(
 
     public string InviteUrl { get; private set; } = string.Empty;
 
+    /// <summary>Prefilled message when sharing the anonymous invite link.</summary>
+    public string ShareText => $"Tritt unserer MatSplit-Gruppe »{Group?.Name}« bei:";
+
+    /// <summary>Direct WhatsApp share link – works even without JavaScript.</summary>
+    public string WhatsAppUrl => "https://wa.me/?text=" + Uri.EscapeDataString($"{ShareText} {InviteUrl}");
+
     /// <summary>False when link invites are switched off for the whole installation.</summary>
     public bool AllowAnonymousJoin { get; private set; } = true;
 

@@ -56,7 +56,9 @@
         </dl>
     </ms-card>
 
-    <ms-card id="group-members" title="Mitglieder" subtitle="@($"{Model.Members.Count} Personen")" icon="users">
+    <ms-card id="group-members" title="Mitglieder" subtitle="@($"{Model.Members.Count} Personen")" icon="users"
+             header-action-url="@($"/Groups/Members?groupId={Model.GroupId}#member-invite")"
+             header-action-icon="share" header-action-label="Einladung teilen">
         <div class="ms-row">
             @foreach (var member in Model.Members)
             {
@@ -73,10 +75,27 @@
                 </span>
             }
         </div>
-        <div class="ms-row">
-            <ms-button id="group-members-link" kind="secondary" icon="users" label="Mitglieder verwalten"
-                       href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-button>
-        </div>
+        @if (Model.Group.InviteEnabled)
+        {
+            <p class="ms-muted">Neue Leute per Link einladen – ganz ohne Konto, ideal für die WhatsApp-Gruppe.</p>
+            <div class="ms-row">
+                <ms-button id="group-invite-whatsapp" kind="primary" icon="whatsapp" label="Per WhatsApp teilen"
+                           href="@Model.WhatsAppUrl" target="_blank"></ms-button>
+                <ms-button id="group-invite-share" kind="secondary" icon="share" label="Teilen" type="button"
+                           data-ms-share="true" data-ms-share-url="@Model.InviteUrl"
+                           data-ms-share-title="MatSplit-Einladung" data-ms-share-text="@Model.ShareText"></ms-button>
+                <ms-button id="group-members-link" kind="ghost" icon="users" label="Mitglieder verwalten"
+                           href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-button>
+            </div>
+        }
+        else
+        {
+            <p class="ms-muted">Der Einladungslink ist deaktiviert. Aktiviere ihn, um die Gruppe per Link zu teilen.</p>
+            <div class="ms-row">
+                <ms-button id="group-members-link" kind="secondary" icon="users" label="Mitglieder verwalten"
+                           href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-button>
+            </div>
+        }
     </ms-card>
 </div>
 
@@ -131,7 +150,9 @@
     </div>
 </ms-card>
 
-<ms-card id="group-expenses" title="Letzte Ausgaben" icon="expense">
+<ms-card id="group-expenses" title="Letzte Ausgaben" icon="expense"
+         header-action-url="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}")"
+         header-action-icon="plus" header-action-label="Ausgabe hinzufügen">
     @if (Model.RecentExpenses.Count == 0)
     {
         <ms-empty-state id="group-expenses-empty" title="Noch keine Ausgaben"

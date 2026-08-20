@@ -455,6 +455,9 @@ Umschaltung passiert ohne Reload.
 | `href` | string | - | Ganze Karte ist ein Link (Dashboard-Tiles) |
 | `flush` | bool | `false` | Kein Innenabstand (Karte enthaelt eine Tabelle) |
 | `level` | int | `2` | Ueberschriftenebene |
+| `header-action-url` | string | - | Kompakte Schnell-Aktion (Icon-Link) rechts im Kartenkopf, z. B. ein Plus zum direkten Hinzufuegen |
+| `header-action-icon` | string | `plus` | Icon der Kopf-Aktion |
+| `header-action-label` | string | `Hinzufuegen` | Beschriftung/Tooltip der Kopf-Aktion (aria-label + title) |
 
 ### ms-icon
 
