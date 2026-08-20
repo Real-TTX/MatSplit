@@ -1,0 +1,100 @@
+@page
+@model MatSplit.Web.Pages.Admin.IndexModel
+
+<div class="ms-stack">
+    <div class="ms-grid ms-grid--3">
+        <ms-card id="tile-users" title="Benutzer" icon="users" tone="accent" href="/Admin/Users">
+            <dl class="ms-kv">
+                <dt>Aktiv</dt>
+                <dd>@Model.UserCount</dd>
+                <dt>Administratoren</dt>
+                <dd>@Model.AdminCount</dd>
+                <dt>Anonym</dt>
+                <dd>@Model.AnonymousCount</dd>
+                <dt>Gel&#246;scht</dt>
+                <dd>@Model.DeletedUserCount</dd>
+            </dl>
+        </ms-card>
+
+        <ms-card id="tile-groups" title="Gruppen" icon="group" href="/Admin/Groups">
+            <dl class="ms-kv">
+                <dt>Aktiv</dt>
+                <dd>@Model.GroupCount</dd>
+                <dt>Mitgliedschaften</dt>
+                <dd>@Model.MembershipCount</dd>
+                <dt>Gel&#246;scht</dt>
+                <dd>@Model.DeletedGroupCount</dd>
+            </dl>
+        </ms-card>
+
+        <ms-card id="tile-expenses" title="Ausgaben" icon="expense">
+            <dl class="ms-kv">
+                <dt>Anzahl</dt>
+                <dd>@Model.ExpenseCount</dd>
+                <dt>Summe</dt>
+                <dd><ms-money cents="@Model.ExpenseTotalCents" currency="@Model.Config.DefaultCurrency" strong="true"></ms-money></dd>
+                <dt>Belege</dt>
+                <dd>@Model.ReceiptCount (@Model.ReceiptSizeText)</dd>
+            </dl>
+        </ms-card>
+
+        <ms-card id="tile-payments" title="Zahlungen" icon="paypal">
+            <dl class="ms-kv">
+                <dt>Anzahl</dt>
+                <dd>@Model.PaymentCount</dd>
+                <dt>Summe</dt>
+                <dd><ms-money cents="@Model.PaymentTotalCents" currency="@Model.Config.DefaultCurrency" strong="true"></ms-money></dd>
+                <dt>Historie</dt>
+                <dd>@Model.HistoryCount @(Model.HistoryCount == 1 ? "Eintrag" : "Einträge")</dd>
+            </dl>
+        </ms-card>
+
+        <ms-card id="tile-sessions" title="Sitzungen" icon="user">
+            <dl class="ms-kv">
+                <dt>Aktiv</dt>
+                <dd>@Model.ActiveSessionCount</dd>
+                <dt>Gesamt</dt>
+                <dd>@Model.SessionCount</dd>
+                <dt>Laufzeit</dt>
+                <dd>@Model.Config.SessionLifetimeDays Tage</dd>
+            </dl>
+        </ms-card>
+
+        <ms-card id="tile-config" title="Konfiguration" icon="settings" href="/Admin/Settings">
+            <dl class="ms-kv">
+                <dt>App-Name</dt>
+                <dd>@Model.Config.AppName</dd>
+                <dt>W&#228;hrung</dt>
+                <dd>@Model.Config.DefaultCurrency</dd>
+                <dt>Einladungslinks</dt>
+                <dd>@(Model.Config.AllowAnonymousJoin ? "erlaubt" : "gesperrt")</dd>
+                <dt>Beleg-Limit</dt>
+                <dd>@Model.Config.MaxReceiptSizeMb MB</dd>
+            </dl>
+        </ms-card>
+    </div>
+
+    <ms-card id="admin-system" title="System" subtitle="Laufzeitumgebung und Datenvolume" icon="info">
+        <dl class="ms-kv">
+            <dt>Version</dt>
+            <dd>@Model.Version</dd>
+            <dt>Umgebung</dt>
+            <dd>@Model.EnvironmentName</dd>
+            <dt>Datenverzeichnis</dt>
+            <dd>@Model.DataRoot</dd>
+            <dt>Datenbank</dt>
+            <dd>@Model.DatabaseFile</dd>
+            <dt>Datenbankgr&#246;&#223;e</dt>
+            <dd>@Model.DatabaseSizeText</dd>
+            <dt>Belegspeicher</dt>
+            <dd>@Model.ReceiptSizeText</dd>
+        </dl>
+    </ms-card>
+
+    <div class="ms-row">
+        <ms-button id="admin-go-users" kind="primary" icon="users" label="Benutzer verwalten" href="/Admin/Users"></ms-button>
+        <ms-button id="admin-go-merge" kind="secondary" icon="merge" label="Benutzer zusammenführen" href="/Admin/Users/Merge"></ms-button>
+        <ms-button id="admin-go-groups" kind="secondary" icon="group" label="Gruppen" href="/Admin/Groups"></ms-button>
+        <ms-button id="admin-go-settings" kind="secondary" icon="settings" label="Einstellungen" href="/Admin/Settings"></ms-button>
+    </div>
+</div>

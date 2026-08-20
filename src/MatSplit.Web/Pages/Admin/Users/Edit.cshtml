@@ -1,0 +1,74 @@
+@page
+@model MatSplit.Web.Pages.Admin.Users.EditModel
+
+<div class="ms-stack">
+    @if (Model.IsDeletedAccount)
+    {
+        <ms-alert id="admin-user-deleted" tone="warning" title="Gelöschtes Konto"
+                  text="Dieses Konto ist gelöscht und kann sich nicht mehr anmelden."></ms-alert>
+    }
+
+    <ms-card id="admin-user-card" title="@(Model.IsNew ? "Neuer Benutzer" : "Benutzer bearbeiten")" icon="user">
+        <ms-form id="admin-user-form" columns="2">
+            <ms-field id="auf-id" for="Input.Id" type="hidden"></ms-field>
+
+            <ms-field id="auf-name" for="Input.DisplayName" placeholder="z. B. Horst Meyer"></ms-field>
+            <ms-field id="auf-email" for="Input.Email" type="email"
+                      hint="Optional. Wird für die Anmeldung verwendet."></ms-field>
+            <ms-field id="auf-role" for="Input.Role" type="select" items="Model.RoleOptions"></ms-field>
+            <ms-field id="auf-paypal" for="Input.PayPalAddress"
+                      hint="paypal.me-Handle oder Link für Ausgleichszahlungen."></ms-field>
+
+            <ms-field id="auf-anonymous" for="Input.IsAnonymous" type="checkbox"
+                      hint="Setzt die Rolle automatisch auf „Anonym“."></ms-field>
+            <ms-field id="auf-setpassword" for="Input.SetPassword" type="checkbox"></ms-field>
+            <ms-field id="auf-password" for="Input.NewPassword" type="password"
+                      depends-on="Input.SetPassword" depends-value="true"
+                      autocomplete="new-password"
+                      hint="Mindestens 4 Zeichen."></ms-field>
+
+            <ms-button-row id="auf-buttons">
+                <ms-button id="auf-save" kind="primary" icon="save" label="Speichern"></ms-button>
+                <ms-button id="auf-back" kind="secondary" icon="back" label="Zurück"
+                           type="button" href="/Admin/Users"></ms-button>
+                @if (!Model.IsNew)
+                {
+                    <ms-button id="auf-merge" kind="secondary" icon="merge" label="Zusammenführen"
+                               type="button" href="@($"/Admin/Users/Merge?sourceId={Model.Input.Id}")"></ms-button>
+                }
+                @if (!Model.IsNew && !Model.IsSelf && !Model.IsDeletedAccount)
+                {
+                    <ms-button id="auf-delete" kind="danger" icon="trash" label="Löschen"
+                               handler="Delete" confirm="Benutzer wirklich löschen?"></ms-button>
+                }
+            </ms-button-row>
+        </ms-form>
+    </ms-card>
+
+    @if (!Model.IsNew)
+    {
+        <ms-card id="admin-user-info" title="Verknüpfungen" subtitle="Was an diesem Konto hängt" icon="info">
+            <dl class="ms-kv">
+                <dt>Gruppen</dt>
+                <dd>@Model.GroupCount</dd>
+                <dt>Bezahlte Ausgaben</dt>
+                <dd>@Model.ExpenseCount</dd>
+                <dt>Zahlungen</dt>
+                <dd>@Model.PaymentCount</dd>
+                <dt>Aktive Sitzungen</dt>
+                <dd>@Model.ActiveSessionCount</dd>
+                <dt>Angelegt</dt>
+                <dd>@(Model.CreateDate?.ToString("dd.MM.yyyy HH:mm") ?? "–")</dd>
+                <dt>Geändert</dt>
+                <dd>@(Model.UpdateDate?.ToString("dd.MM.yyyy HH:mm") ?? "–")</dd>
+                <dt>Token</dt>
+                <dd>@Model.Token</dd>
+                @if (!string.IsNullOrWhiteSpace(Model.MergedIntoName))
+                {
+                    <dt>Zusammengeführt in</dt>
+                    <dd>@Model.MergedIntoName</dd>
+                }
+            </dl>
+        </ms-card>
+    }
+</div>

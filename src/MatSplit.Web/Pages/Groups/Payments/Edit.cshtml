@@ -1,0 +1,34 @@
+@page
+@model MatSplit.Web.Pages.Groups.Payments.EditModel
+
+<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Payments, Model.CanManage)" />
+
+<ms-card id="payment-card" title="@(Model.IsExisting ? "Zahlung bearbeiten" : "Neue Zahlung")"
+         subtitle="Wer hat wem Geld gegeben?" icon="paypal">
+    <ms-form id="payment-form" columns="2">
+        <ms-field id="pf-id" name="Input.Id" type="hidden" value="@Model.Input.Id.ToString()"></ms-field>
+
+        <ms-field id="pf-from" for="Input.FromUserId" type="select"
+                  items="Model.MemberOptions" option-label="Bitte wählen"></ms-field>
+        <ms-field id="pf-to" for="Input.ToUserId" type="select"
+                  items="Model.MemberOptions" option-label="Bitte wählen"></ms-field>
+
+        <ms-field id="pf-amount" for="Input.Amount" type="money" currency="@Model.Currency"
+                  hint="Betrag in @Model.Currency, z. B. 12,50"></ms-field>
+        <ms-field id="pf-date" for="Input.PaymentDate" type="date"></ms-field>
+
+        <ms-field id="pf-note" for="Input.Note" type="textarea" rows="3" full-width="true"
+                  hint="Optional, z. B. „Bar am Flughafen“"></ms-field>
+
+        <ms-button-row id="pf-buttons">
+            <ms-button id="pf-save" kind="primary" icon="save" label="Speichern"></ms-button>
+            <ms-button id="pf-back" kind="secondary" icon="back" label="Zurück"
+                       type="button" href="@Model.ListUrl"></ms-button>
+            @if (Model.IsExisting && Model.CanDelete)
+            {
+                <ms-button id="pf-delete" kind="danger" icon="trash" label="Löschen"
+                           handler="Delete" confirm="Zahlung wirklich löschen?"></ms-button>
+            }
+        </ms-button-row>
+    </ms-form>
+</ms-card>

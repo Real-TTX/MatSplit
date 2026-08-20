@@ -1,0 +1,118 @@
+@page
+@model MatSplit.Web.Pages.Admin.Users.MergeModel
+
+<div class="ms-stack">
+    <ms-alert id="merge-info" tone="info" title="Doppeltes Konto aufräumen"
+              text="Mitgliedschaften, bezahlte Ausgaben, Anteile und Zahlungen der Quelle werden auf das Ziel übertragen. Die Quelle wird danach gelöscht und dauerhaft auf das Ziel verwiesen."></ms-alert>
+
+    <ms-card id="merge-select" title="Konten auswählen" icon="merge">
+        <ms-form id="merge-select-form" method="get" columns="2">
+            <ms-field id="merge-source" name="sourceId" type="select" label="Quelle (wird gelöscht)"
+                      items="Model.SourceOptions" option-label="Bitte wählen"
+                      hint="Das doppelt angelegte Konto, z. B. „Horsti“."></ms-field>
+            <ms-field id="merge-target" name="targetId" type="select" label="Ziel (bleibt bestehen)"
+                      items="Model.TargetOptions" option-label="Bitte wählen"
+                      hint="Das Konto, das alle Daten übernimmt, z. B. „Horst“."></ms-field>
+
+            <ms-button-row id="merge-select-buttons">
+                <ms-button id="merge-preview" kind="primary" icon="search" label="Vorschau anzeigen"></ms-button>
+                <ms-button id="merge-back" kind="secondary" icon="back" label="Zurück"
+                           type="button" href="/Admin/Users"></ms-button>
+            </ms-button-row>
+        </ms-form>
+    </ms-card>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Problem))
+    {
+        <ms-alert id="merge-problem" tone="error" text="@Model.Problem"></ms-alert>
+    }
+
+    @if (Model.Source is not null || Model.Target is not null)
+    {
+        <div class="ms-grid ms-grid--2">
+            @if (Model.Source is not null)
+            {
+                <ms-card id="merge-source-card" title="@Model.Source.DisplayName"
+                         subtitle="Quelle – wird nach dem Zusammenführen gelöscht"
+                         icon="user" tone="danger">
+                    <dl class="ms-kv">
+                        <dt>Rolle</dt>
+                        <dd>@Model.Source.RoleLabel@(Model.Source.IsAnonymous ? " (anonym)" : string.Empty)</dd>
+                        <dt>E-Mail</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(Model.Source.Email) ? "–" : Model.Source.Email)</dd>
+                        <dt>PayPal</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(Model.Source.PayPalAddress) ? "–" : Model.Source.PayPalAddress)</dd>
+                        <dt>Mitgliedschaften</dt>
+                        <dd>@Model.Source.GroupCount</dd>
+                        <dt>Gruppen</dt>
+                        <dd>@Model.Source.GroupsText</dd>
+                        <dt>Bezahlte Ausgaben</dt>
+                        <dd>
+                            @Model.Source.ExpenseCount
+                            (<ms-money cents="@Model.Source.ExpenseTotalCents" currency="@Model.Currency"></ms-money>)
+                        </dd>
+                        <dt>Anteile</dt>
+                        <dd>@Model.Source.ShareCount</dd>
+                        <dt>Zahlungen</dt>
+                        <dd>@Model.Source.PaymentCount</dd>
+                    </dl>
+                </ms-card>
+            }
+
+            @if (Model.Target is not null)
+            {
+                <ms-card id="merge-target-card" title="@Model.Target.DisplayName"
+                         subtitle="Ziel – übernimmt alle Daten"
+                         icon="user" tone="success">
+                    <dl class="ms-kv">
+                        <dt>Rolle</dt>
+                        <dd>@Model.Target.RoleLabel@(Model.Target.IsAnonymous ? " (anonym)" : string.Empty)</dd>
+                        <dt>E-Mail</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(Model.Target.Email) ? "–" : Model.Target.Email)</dd>
+                        <dt>PayPal</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(Model.Target.PayPalAddress) ? "–" : Model.Target.PayPalAddress)</dd>
+                        <dt>Mitgliedschaften</dt>
+                        <dd>@Model.Target.GroupCount</dd>
+                        <dt>Gruppen</dt>
+                        <dd>@Model.Target.GroupsText</dd>
+                        <dt>Bezahlte Ausgaben</dt>
+                        <dd>
+                            @Model.Target.ExpenseCount
+                            (<ms-money cents="@Model.Target.ExpenseTotalCents" currency="@Model.Currency"></ms-money>)
+                        </dd>
+                        <dt>Anteile</dt>
+                        <dd>@Model.Target.ShareCount</dd>
+                        <dt>Zahlungen</dt>
+                        <dd>@Model.Target.PaymentCount</dd>
+                    </dl>
+                </ms-card>
+            }
+        </div>
+    }
+
+    @if (Model.CanMerge)
+    {
+        var confirmText = $"„{Model.Source!.DisplayName}“ endgültig in „{Model.Target!.DisplayName}“ zusammenführen?";
+
+        <ms-card id="merge-confirm" title="Zusammenführen bestätigen" icon="warning" tone="warning"
+                 subtitle="Dieser Schritt kann nicht automatisch zurückgenommen werden.">
+            <ms-form id="merge-confirm-form">
+                <ms-field id="merge-confirm-source" name="sourceId" type="hidden" value="@Model.Source!.UserId"></ms-field>
+                <ms-field id="merge-confirm-target" name="targetId" type="hidden" value="@Model.Target!.UserId"></ms-field>
+
+                <ms-field id="merge-summary" type="static" label="Wird verschoben">
+                    @Model.Source.GroupCount Mitgliedschaften, @Model.Source.ExpenseCount Ausgaben,
+                    @Model.Source.ShareCount Anteile und @Model.Source.PaymentCount Zahlungen
+                    von „@Model.Source.DisplayName“ nach „@Model.Target.DisplayName“.
+                </ms-field>
+
+                <ms-button-row id="merge-confirm-buttons">
+                    <ms-button id="merge-run" kind="primary" icon="merge" label="Jetzt zusammenführen"
+                               confirm="@confirmText"></ms-button>
+                    <ms-button id="merge-abort" kind="secondary" icon="back" label="Abbrechen"
+                               type="button" href="/Admin/Users"></ms-button>
+                </ms-button-row>
+            </ms-form>
+        </ms-card>
+    }
+</div>

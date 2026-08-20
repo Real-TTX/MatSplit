@@ -1,0 +1,43 @@
+@{
+    var items = ViewData.ReadBreadcrumb();
+}
+@if (items.Count > 0)
+{
+    <nav class="ms-breadcrumb" aria-label="Breadcrumb">
+        <ol class="ms-breadcrumb__list">
+            <li class="ms-breadcrumb__item">
+                <a class="ms-breadcrumb__link" href="/" aria-label="Start">
+                    <ms-icon name="home" size="15"></ms-icon>
+                </a>
+            </li>
+            @for (var index = 0; index < items.Count; index++)
+            {
+                var item = items[index];
+                var isLast = index == items.Count - 1;
+                <li class="ms-breadcrumb__item">
+                    <ms-icon name="chevron-right" size="14" class="ms-breadcrumb__sep"></ms-icon>
+                    @if (isLast || string.IsNullOrWhiteSpace(item.Url))
+                    {
+                        <span class="ms-breadcrumb__current" aria-current="page">
+                            @if (!string.IsNullOrWhiteSpace(item.Icon))
+                            {
+                                <ms-icon name="@item.Icon" size="15"></ms-icon>
+                            }
+                            <span>@item.Text</span>
+                        </span>
+                    }
+                    else
+                    {
+                        <a class="ms-breadcrumb__link" href="@item.Url">
+                            @if (!string.IsNullOrWhiteSpace(item.Icon))
+                            {
+                                <ms-icon name="@item.Icon" size="15"></ms-icon>
+                            }
+                            <span>@item.Text</span>
+                        </a>
+                    }
+                </li>
+            }
+        </ol>
+    </nav>
+}

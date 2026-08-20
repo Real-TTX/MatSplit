@@ -1,0 +1,46 @@
+@page
+@model MatSplit.Web.Pages.Groups.MemberEditModel
+
+<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Members, Model.CanManage)" />
+
+<ms-card id="member-card"
+         title="@(Model.IsExisting ? "Mitglied bearbeiten" : "Mitglied hinzufügen")"
+         subtitle="@(Model.IsExisting ? Model.MemberName : "Bestehenden Benutzer in diese Gruppe aufnehmen")"
+         icon="users">
+    <ms-form id="member-form" columns="2">
+        @if (Model.IsExisting)
+        {
+            <ms-field id="mf-name" type="static" label="Benutzer" value="@Model.MemberName"></ms-field>
+        }
+        else if (Model.CandidateOptions.Count == 0)
+        {
+            <ms-alert id="mf-none" tone="info"
+                      text="Alle bekannten Benutzer sind bereits Mitglied dieser Gruppe. Neue Personen kommen über den Einladungslink dazu."></ms-alert>
+        }
+        else
+        {
+            <ms-field id="mf-user" for="Input.UserId" type="select" items="Model.CandidateOptions"
+                      option-label="Bitte wählen" full-width="true"></ms-field>
+        }
+
+        <ms-field id="mf-factor" for="Input.ShareFactor" type="number" min="1" max="100" step="1"
+                  input-mode="numeric" hint="Familie mit drei Personen = Faktor 3"></ms-field>
+        <ms-field id="mf-admin" for="Input.IsGroupAdmin" type="checkbox"
+                  hint="Gruppen-Administratoren dürfen Mitglieder, Ausgaben und Einstellungen ändern."></ms-field>
+
+        <ms-button-row id="mf-buttons">
+            @if (Model.IsExisting || Model.CandidateOptions.Count > 0)
+            {
+                <ms-button id="mf-save" kind="primary" icon="save" label="Speichern"></ms-button>
+            }
+            <ms-button id="mf-back" kind="secondary" icon="back" label="Zurück"
+                       type="button" href="@Model.ListUrl"></ms-button>
+            @if (Model.IsExisting && Model.CanRemove)
+            {
+                <ms-button id="mf-delete" kind="danger" icon="trash" label="Aus Gruppe entfernen"
+                           handler="Delete"
+                           confirm="Mitglied wirklich aus der Gruppe entfernen?"></ms-button>
+            }
+        </ms-button-row>
+    </ms-form>
+</ms-card>

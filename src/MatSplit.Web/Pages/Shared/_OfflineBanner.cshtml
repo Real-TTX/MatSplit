@@ -1,0 +1,323 @@
+@*
+    Offline-/Sync-Balken + PWA-Installationshinweis.
+
+    Eingebunden in _Layout.cshtml als ERSTES Element in <body> (vor
+    <a class="ms-skip">). Das Partial bringt seine eigenen Styles mit und laedt
+    js/offline-sync.js sowie js/pwa-install.js (beide defer), damit im _Layout
+    nur eine Zeile noetig ist. Reihenfolge: site.js laeuft im Body-Ende ohne
+    defer und ist damit vor diesen beiden Skripten ausgefuehrt.
+    Sichtbarkeit, Text und Ton steuert offline-sync.js ueber die
+    data-ms-offline-* Attribute - hier ist absichtlich kein Text hart verdrahtet.
+*@
+<style>
+    /* ------------------------- Offline-/Sync-Balken ---------------------- */
+    .ms-offline-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        gap: var(--ms-space-2, 8px);
+        box-sizing: border-box;
+        min-height: 34px;
+        padding: calc(env(safe-area-inset-top, 0px) + 6px)
+                 calc(env(safe-area-inset-right, 0px) + 14px)
+                 6px
+                 calc(env(safe-area-inset-left, 0px) + 14px);
+        border-bottom: 1px solid var(--ms-banner-border, var(--ms-border, #f3ddc9));
+        background: var(--ms-banner-bg, var(--ms-warning-soft, #fff0cf));
+        color: var(--ms-banner-fg, var(--ms-text, #2c1c12));
+        font-size: var(--ms-text-sm, 0.8125rem);
+        line-height: 1.35;
+        box-shadow: var(--ms-shadow-1, 0 1px 2px rgba(76, 38, 15, 0.07));
+        transform: translateY(-100%);
+        transition: transform var(--ms-transition, 160ms cubic-bezier(0.2, 0, 0.2, 1));
+    }
+
+    .ms-offline-banner[hidden] {
+        display: none;
+    }
+
+    html[data-ms-banner="visible"] .ms-offline-banner {
+        transform: none;
+    }
+
+    /* Der Balken ueberlagert nichts: Body wird um seine Hoehe nach unten
+       geschoben, der sticky Header rastet darunter ein. */
+    html[data-ms-banner="visible"] body {
+        padding-top: var(--ms-offline-banner-height, 40px);
+    }
+
+    html[data-ms-banner="visible"] .ms-header {
+        top: var(--ms-offline-banner-height, 40px);
+    }
+
+    .ms-offline-banner[data-tone="warning"] {
+        --ms-banner-bg: var(--ms-warning-soft, #fff0cf);
+        --ms-banner-border: var(--ms-warning, #cf8309);
+    }
+
+    .ms-offline-banner[data-tone="info"] {
+        --ms-banner-bg: var(--ms-info-soft, #ddeefa);
+        --ms-banner-border: var(--ms-info, #1f74a8);
+    }
+
+    .ms-offline-banner[data-tone="success"] {
+        --ms-banner-bg: var(--ms-success-soft, #ddf4e5);
+        --ms-banner-border: var(--ms-success, #1f9254);
+    }
+
+    .ms-offline-banner[data-tone="error"] {
+        --ms-banner-bg: var(--ms-danger-soft, #ffe2dc);
+        --ms-banner-border: var(--ms-danger, #d4452c);
+    }
+
+    .ms-offline-banner__dot {
+        flex: 0 0 auto;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--ms-banner-border, var(--ms-warning, #cf8309));
+    }
+
+    .ms-offline-banner[data-tone="warning"] .ms-offline-banner__dot,
+    .ms-offline-banner[data-tone="error"] .ms-offline-banner__dot {
+        animation: ms-offline-pulse 1.8s ease-in-out infinite;
+    }
+
+    .ms-offline-banner__spinner {
+        flex: 0 0 auto;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        border: 2px solid var(--ms-banner-border, var(--ms-info, #1f74a8));
+        border-top-color: transparent;
+        animation: ms-offline-spin 750ms linear infinite;
+    }
+
+    .ms-offline-banner__spinner[hidden] {
+        display: none;
+    }
+
+    .ms-offline-banner__text {
+        font-weight: 600;
+    }
+
+    .ms-offline-banner__detail {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        opacity: 0.85;
+    }
+
+    .ms-offline-banner__detail[hidden] {
+        display: none;
+    }
+
+    .ms-offline-banner__action {
+        margin-left: auto;
+        flex: 0 0 auto;
+        appearance: none;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        min-height: 28px;
+        padding: 3px 12px;
+        border-radius: var(--ms-radius-pill, 999px);
+        border: 1px solid var(--ms-banner-border, var(--ms-border-strong, #e4c3a3));
+        background: var(--ms-surface, #ffffff);
+        color: var(--ms-text, #2c1c12);
+    }
+
+    .ms-offline-banner__action[hidden] {
+        display: none;
+    }
+
+    .ms-offline-banner__action:hover {
+        background: var(--ms-surface-3, #fff1e3);
+    }
+
+    @@keyframes ms-offline-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @@keyframes ms-offline-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+    }
+
+    @@media (max-width: 560px) {
+        .ms-offline-banner__detail {
+            display: none;
+        }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .ms-offline-banner {
+            transition: none;
+        }
+
+        .ms-offline-banner__dot,
+        .ms-offline-banner__spinner {
+            animation: none;
+        }
+    }
+
+    /* ---------------------- PWA-Installationshinweis --------------------- */
+    /* Markup wird von js/pwa-install.js erzeugt (Android-Prompt bzw.
+       iOS-"Zum Home-Bildschirm"-Hinweis). */
+    .ms-pwa-install {
+        position: fixed;
+        z-index: 55;
+        left: calc(env(safe-area-inset-left, 0px) + 12px);
+        right: calc(env(safe-area-inset-right, 0px) + 12px);
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+        margin: 0 auto;
+        max-width: 460px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: flex-start;
+        gap: var(--ms-space-3, 12px);
+        padding: var(--ms-space-4, 16px);
+        border: 1px solid var(--ms-border, #f3ddc9);
+        border-radius: var(--ms-radius-lg, 18px);
+        background: var(--ms-surface, #ffffff);
+        color: var(--ms-text, #2c1c12);
+        box-shadow: var(--ms-shadow-3, 0 14px 36px rgba(76, 38, 15, 0.18));
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity var(--ms-transition, 160ms), transform var(--ms-transition, 160ms);
+    }
+
+    .ms-pwa-install[data-visible="true"] {
+        opacity: 1;
+        transform: none;
+    }
+
+    .ms-pwa-install__icon {
+        flex: 0 0 auto;
+        color: var(--ms-primary, #ef6c14);
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .ms-pwa-install__body {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .ms-pwa-install__title {
+        margin: 0 0 2px;
+        font-weight: 700;
+        font-size: var(--ms-text-base, 0.9375rem);
+    }
+
+    .ms-pwa-install__text {
+        margin: 0;
+        font-size: var(--ms-text-sm, 0.8125rem);
+        color: var(--ms-text-soft, #6b5646);
+    }
+
+    .ms-pwa-install__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--ms-space-2, 8px);
+        align-items: center;
+        flex: 0 0 auto;
+    }
+
+    .ms-pwa-install__button {
+        appearance: none;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        min-height: 38px;
+        padding: 6px 14px;
+        border-radius: var(--ms-radius-pill, 999px);
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .ms-pwa-install__button--primary {
+        background: var(--ms-primary, #ef6c14);
+        color: var(--ms-primary-contrast, #ffffff);
+    }
+
+    .ms-pwa-install__button--primary:hover {
+        background: var(--ms-primary-hover, #d75c08);
+    }
+
+    .ms-pwa-install__button--ghost {
+        background: transparent;
+        color: var(--ms-text-soft, #6b5646);
+        border-color: var(--ms-border, #f3ddc9);
+    }
+
+    .ms-pwa-install__close {
+        appearance: none;
+        cursor: pointer;
+        flex: 0 0 auto;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--ms-text-muted, #93796a);
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    .ms-pwa-install__close:hover {
+        background: var(--ms-surface-3, #fff1e3);
+        color: var(--ms-text, #2c1c12);
+    }
+
+    @@media (max-width: 560px) {
+        .ms-pwa-install {
+            flex-wrap: wrap;
+        }
+
+        .ms-pwa-install__actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+
+    @@media print {
+        .ms-offline-banner,
+        .ms-pwa-install {
+            display: none !important;
+        }
+    }
+</style>
+
+<div class="ms-offline-banner"
+     id="ms-offline-banner"
+     data-ms-offline-banner="true"
+     data-tone="warning"
+     role="status"
+     aria-live="polite"
+     aria-hidden="true"
+     hidden>
+    <span class="ms-offline-banner__dot" aria-hidden="true"></span>
+    <span class="ms-offline-banner__spinner" data-ms-offline-spinner="true" aria-hidden="true" hidden></span>
+    <span class="ms-offline-banner__text" data-ms-offline-text="true">Offline &#8211; &#196;nderungen werden zwischengespeichert</span>
+    <span class="ms-offline-banner__detail" data-ms-offline-detail="true" hidden></span>
+    <button class="ms-offline-banner__action" type="button" data-ms-offline-retry="true" hidden>
+        Jetzt synchronisieren
+    </button>
+</div>
+
+<script src="~/js/offline-sync.js" asp-append-version="true" defer></script>
+<script src="~/js/pwa-install.js" asp-append-version="true" defer></script>

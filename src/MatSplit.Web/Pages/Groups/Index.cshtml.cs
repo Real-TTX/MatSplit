@@ -1,0 +1,187 @@
+using MatSplit.Web.Data.Entities;
+using MatSplit.Web.Services;
+using MatSplit.Web.Services.Models;
+using MatSplit.Web.Ui;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
+
+namespace MatSplit.Web.Pages.Groups;
+
+/// <summary>
+/// List of all groups the current user belongs to. Administrators see every
+/// group of the installation. Search, sorting and paging happen in memory
+/// because the service layer only offers a paged query for the admin area and
+/// the per user group count is small.
+/// </summary>
+public class IndexModel(
+    CurrentUserService currentUser,
+    GroupService groups,
+    ExpenseService expenses,
+    HistoryService history) : PageModel
+{
+    /// <summary>Free text filter on name and description.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? Search { get; set; }
+
+    /// <summary>Sort key: name, name_desc, created_desc, created.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? Sort { get; set; }
+
+    /// <summary>
+    /// 1-based page number from <c>?page=</c>. Read from the query string by
+    /// hand on purpose: Razor Pages already owns the route value "page" (it
+    /// holds the page path), so model binding it would always fail.
+    /// </summary>
+    public int PageNumber => ReadPageNumber(Request);
+
+    public PagedResult<GroupRow> Result { get; private set; } = PagedResult<GroupRow>.Empty();
+
+    public bool IsAdmin => currentUser.IsAdmin;
+
+    /// <summary>Options of the sort dropdown, the current key is preselected.</summary>
+    public IReadOnlyList<SelectListItem> SortOptions { get; private set; } = [];
+
+    /// <summary>Url template for ms-pagination, keeps search and sort.</summary>
+    public string PageUrl =>
+        $"/Groups?search={Uri.EscapeDataString(Search ?? string.Empty)}"
+        + $"&sort={Uri.EscapeDataString(Sort ?? string.Empty)}&page={{0}}";
+
+    public async Task OnGetAsync(CancellationToken cancellationToken)
+    {
+        var userId = currentUser.RequireUserId();
+        var all = await groups.ListGroupsForUserAsync(userId, currentUser.IsAdmin, cancellationToken);
+
+        var manageFlags = new Dictionary<long, bool>(all.Count);
+
+        foreach (var group in all)
+        {
+            manageFlags[group.Id] = currentUser.IsAdmin
+                || await groups.IsGroupAdminAsync(group.Id, userId, cancellationToken);
+        }
+
+        this.SetMenuGroups(all.Select(g => new MenuGroupEntry(g.Id, g.Name, manageFlags[g.Id])).ToList());
+        this.SetTitle(
+            "Gruppen",
+            currentUser.IsAdmin ? "Alle Gruppen dieser Installation" : "Deine Gruppen",
+            "group");
+        this.SetBreadcrumb(new BreadcrumbItem("Gruppen"));
+
+        SortOptions = BuildSortOptions(Sort);
+
+        var matching = SortGroups(Filter(all, Search), Sort);
+        var (page, pageSize) = Paging.Normalize(PageNumber, Paging.DefaultPageSize);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(matching.Count / (double)pageSize));
+
+        if (page > totalPages)
+        {
+            page = totalPages;
+        }
+
+        var rows = new List<GroupRow>();
+
+        foreach (var group in matching.Skip(Paging.Skip(page, pageSize)).Take(pageSize))
+        {
+            var members = await groups.ListMembersAsync(group.Id, cancellationToken);
+            var totalCents = await expenses.GetTotalCentsAsync(group.Id, cancellationToken);
+            var lastEntries = await history.ListHistoryAsync(
+                group.Id, page: 1, pageSize: 1, cancellationToken: cancellationToken);
+
+            var lastActivity = lastEntries.Items.Count > 0
+                ? lastEntries.Items[0].CreateDate
+                : group.UpdateDate;
+
+            rows.Add(new GroupRow(
+                group.Id,
+                group.Name,
+                group.Description,
+                group.Currency,
+                members.Count,
+                members.Sum(m => m.ShareFactor),
+                totalCents,
+                lastActivity,
+                manageFlags[group.Id]));
+        }
+
+        Result = new PagedResult<GroupRow>(rows, page, pageSize, matching.Count);
+    }
+
+    /// <summary>
+    /// Reads the 1-based page number from the query string. Razor Pages keeps
+    /// the page path in the route value "page", so a bound property named
+    /// "page" would receive that path and add a model error instead.
+    /// </summary>
+    public static int ReadPageNumber(HttpRequest request) => MsPaging.ReadPageNumber(request);
+
+    /// <summary>Formats an audit timestamp (stored as UTC) in local time.</summary>
+    public static string FormatMoment(DateTime utc)
+    {
+        if (utc == default)
+        {
+            return "–";
+        }
+
+        return DateTime.SpecifyKind(utc, DateTimeKind.Utc)
+            .ToLocalTime()
+            .ToString("dd.MM.yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static List<Group> Filter(IReadOnlyList<Group> source, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            return [.. source];
+        }
+
+        var term = search.Trim();
+
+        return
+        [
+            .. source.Where(g =>
+                g.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || (g.Description is not null && g.Description.Contains(term, StringComparison.OrdinalIgnoreCase)))
+        ];
+    }
+
+    private static List<Group> SortGroups(List<Group> source, string? sort) => sort switch
+    {
+        "name_desc" => [.. source.OrderByDescending(g => g.Name, StringComparer.CurrentCultureIgnoreCase)],
+        "created" => [.. source.OrderBy(g => g.CreateDate)],
+        "created_desc" => [.. source.OrderByDescending(g => g.CreateDate)],
+        _ => [.. source.OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase)]
+    };
+
+    private static List<SelectListItem> BuildSortOptions(string? current)
+    {
+        var selected = string.IsNullOrWhiteSpace(current) ? "name" : current;
+
+        return
+        [
+            new SelectListItem("Name (A-Z)", "name", selected == "name"),
+            new SelectListItem("Name (Z-A)", "name_desc", selected == "name_desc"),
+            new SelectListItem("Neueste zuerst", "created_desc", selected == "created_desc"),
+            new SelectListItem("\u00c4lteste zuerst", "created", selected == "created")
+        ];
+    }
+
+    /// <summary>One row of the group list including its aggregated numbers.</summary>
+    /// <param name="Id">Group id.</param>
+    /// <param name="Name">Group name.</param>
+    /// <param name="Description">Optional description.</param>
+    /// <param name="Currency">Currency code of the group.</param>
+    /// <param name="MemberCount">Number of active members.</param>
+    /// <param name="ShareTotal">Sum of all member share factors.</param>
+    /// <param name="TotalExpensesCents">Sum of all expenses in cents.</param>
+    /// <param name="LastActivityUtc">Timestamp of the newest history entry.</param>
+    /// <param name="CanManage">True when the user may edit the group.</param>
+    public sealed record GroupRow(
+        long Id,
+        string Name,
+        string? Description,
+        string Currency,
+        int MemberCount,
+        int ShareTotal,
+        long TotalExpensesCents,
+        DateTime LastActivityUtc,
+        bool CanManage);
+}

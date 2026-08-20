@@ -1,0 +1,81 @@
+# ---------------------------------------------------------------------------
+# .NET
+# ---------------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.userprefs
+project.lock.json
+project.fragment.lock.json
+*.nupkg
+*.snupkg
+.packages/
+BenchmarkDotNet.Artifacts/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# ---------------------------------------------------------------------------
+# Visual Studio / Rider / VS Code
+# ---------------------------------------------------------------------------
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+*.DotSettings.user
+*.ncrunch*
+_ReSharper*/
+
+# ---------------------------------------------------------------------------
+# Node / frontend tooling
+# ---------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.parcel-cache/
+dist/
+
+# ---------------------------------------------------------------------------
+# MatSplit runtime data (mirrors the container volume layout /data)
+# ---------------------------------------------------------------------------
+/data/
+!/data/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ---------------------------------------------------------------------------
+# Secrets / local overrides
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+docker-compose.override.yml
+
+# ---------------------------------------------------------------------------
+# OS
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini

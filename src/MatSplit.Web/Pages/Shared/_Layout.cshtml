@@ -1,0 +1,102 @@
+@inject AppConfigService AppConfig
+@{
+    var appName = ViewData.ReadString(LayoutKeys.AppName) ?? AppConfig.Current.AppName;
+    var pageTitle = ViewData.ReadString(LayoutKeys.Title);
+    var documentTitle = string.IsNullOrWhiteSpace(pageTitle) ? appName : pageTitle + " \u00b7 " + appName;
+    var themePreference = (User?.FindFirst(MatSplitClaims.ThemeClaim)?.Value ?? "System").ToLowerInvariant();
+    var initialTheme = themePreference == "dark" ? "dark" : "light";
+    var hideMenu = ViewData.ReadFlag(LayoutKeys.HideMenu);
+    var flash = TempData[LayoutKeys.Flash] as string;
+    var flashError = TempData[LayoutKeys.FlashError] as string;
+}
+<!DOCTYPE html>
+<html lang="de" class="ms-no-js" data-theme="@initialTheme" data-theme-preference="@themePreference">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@documentTitle</title>
+    <meta name="description" content="MatSplit - gemeinsame Ausgaben f&#252;r Urlaub und WG selbst gehostet verwalten." />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f2701d" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1310" media="(prefers-color-scheme: dark)" />
+    <meta name="application-name" content="@appName" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="@appName" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="manifest" href="~/manifest.webmanifest" />
+    <link rel="icon" href="~/img/favicon.svg" type="image/svg+xml" />
+    @* iOS ignores svg for apple-touch-icon and would screenshot the page. *@
+    <link rel="apple-touch-icon" sizes="180x180" href="~/img/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="~/img/icon-192.png" />
+    <link rel="mask-icon" href="~/img/logo-mark.svg" color="#f2701d" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script>
+        (function () {
+            var root = document.documentElement;
+            try {
+                var stored = window.localStorage.getItem('matsplit.theme');
+                var mode = stored || root.getAttribute('data-theme-preference') || 'system';
+                var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                root.setAttribute('data-theme', dark ? 'dark' : 'light');
+                root.setAttribute('data-theme-mode', mode);
+            } catch (error) {
+                root.setAttribute('data-theme', 'light');
+                root.setAttribute('data-theme-mode', 'system');
+            }
+            root.classList.remove('ms-no-js');
+            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+                root.setAttribute('data-standalone', 'true');
+            }
+        })();
+    </script>
+    <noscript>
+        <style>
+            .ms-field--conditional[hidden] { display: grid !important; }
+            .ms-shell__nav { transform: none !important; visibility: visible !important; }
+        </style>
+    </noscript>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="ms-app">
+    <partial name="_OfflineBanner" />
+    <a class="ms-skip" href="#ms-main">Zum Inhalt springen</a>
+    <partial name="_IconSprite" />
+    <div class="ms-shell @(hideMenu ? "ms-shell--bare" : string.Empty)">
+        @if (!hideMenu)
+        {
+            <partial name="_Menu" />
+            <div class="ms-shell__overlay" data-ms-drawer-close="true" hidden></div>
+        }
+        <main class="ms-main" id="ms-main">
+            <partial name="_Header" />
+            <div class="ms-content">
+                @if (!string.IsNullOrWhiteSpace(flash))
+                {
+                    <ms-alert id="ms-flash" tone="success" text="@flash" dismissible="true"></ms-alert>
+                }
+                @if (!string.IsNullOrWhiteSpace(flashError))
+                {
+                    <ms-alert id="ms-flash-error" tone="error" text="@flashError" dismissible="true"></ms-alert>
+                }
+                @RenderBody()
+            </div>
+            <footer class="ms-footer">
+                <span>@appName</span>
+                <span class="ms-footer__sep">&#183;</span>
+                <span>Selfhosted mit &#9788; Sommerlaune</span>
+            </footer>
+        </main>
+    </div>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function () { });
+            });
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

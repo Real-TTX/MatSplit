@@ -1,0 +1,28 @@
+@{
+    var title = ViewData.ReadString(LayoutKeys.Title);
+    var subtitle = ViewData.ReadString(LayoutKeys.Subtitle);
+    var titleIcon = ViewData.ReadString(LayoutKeys.TitleIcon);
+}
+<header class="ms-header">
+    <button class="ms-header__burger" type="button" data-ms-drawer-toggle="true"
+            aria-controls="ms-menu" aria-expanded="false" aria-label="Men&#252; anzeigen">
+        <ms-icon name="menu" size="22"></ms-icon>
+    </button>
+    <a class="ms-header__brand" href="/" aria-label="Startseite">
+        <img src="~/img/logo-mark.svg" width="28" height="28" alt="" />
+    </a>
+    <div class="ms-header__titles">
+        <h1 class="ms-header__title">
+            @if (!string.IsNullOrWhiteSpace(titleIcon))
+            {
+                <ms-icon name="@titleIcon" size="22"></ms-icon>
+            }
+            <span>@(string.IsNullOrWhiteSpace(title) ? "MatSplit" : title)</span>
+        </h1>
+        @if (!string.IsNullOrWhiteSpace(subtitle))
+        {
+            <p class="ms-header__subtitle">@subtitle</p>
+        }
+    </div>
+</header>
+<partial name="_Breadcrumb" />

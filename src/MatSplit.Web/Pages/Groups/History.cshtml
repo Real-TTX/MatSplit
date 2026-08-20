@@ -1,0 +1,81 @@
+@page
+@model MatSplit.Web.Pages.Groups.HistoryModel
+
+<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.History, Model.CanManage)" />
+
+<ms-list id="history" title="Historie" subtitle="Alle Änderungen dieser Gruppe"
+         icon="history" count="@Model.Result.TotalCount">
+
+    <ms-toolbar id="history-filter"
+                action="/Groups/History"
+                reset-url="@($"/Groups/History?groupId={Model.GroupId}")"
+                preserve="groupId"
+                auto-submit-text="true">
+        <ms-field id="history-search" name="search" type="search" label="Suche"
+                  value="@Model.Search" placeholder="Text, Typ oder Person"></ms-field>
+        <ms-field id="history-action" name="action" type="select" label="Aktion"
+                  items="Model.ActionOptions" option-label="Alle"></ms-field>
+        <ms-field id="history-from" name="fromDate" type="date" label="Von"
+                  value="@Model.FromDate?.ToString("yyyy-MM-dd")"></ms-field>
+        <ms-field id="history-to" name="toDate" type="date" label="Bis"
+                  value="@Model.ToDate?.ToString("yyyy-MM-dd")"></ms-field>
+        <ms-field id="history-sort" name="sort" type="select" label="Sortierung"
+                  items="Model.SortOptions"></ms-field>
+    </ms-toolbar>
+
+    <div class="ms-stack">
+        @for (var dayIndex = 0; dayIndex < Model.Days.Count; dayIndex++)
+        {
+            var day = Model.Days[dayIndex];
+            <ms-card id="@($"history-day-{dayIndex}")" icon="calendar"
+                     title="@MatSplit.Web.Pages.Groups.HistoryModel.FormatDay(day.Date)"
+                     subtitle="@(day.Entries.Count == 1 ? "1 Eintrag" : $"{day.Entries.Count} Einträge")">
+                <div class="ms-stack">
+                    @foreach (var entry in day.Entries)
+                    {
+                        <div class="ms-row">
+                            <span class="ms-chip">@MatSplit.Web.Pages.Groups.HistoryModel.FormatTime(entry.CreateDate)</span>
+                            <ms-icon name="@MatSplit.Web.Pages.Groups.HistoryModel.ActionIcon(entry.Action)" size="16"
+                                     label="@MatSplit.Web.Pages.Groups.HistoryModel.ActionLabel(entry.Action)"></ms-icon>
+                            <strong>@MatSplit.Web.Pages.Groups.HistoryModel.ActionLabel(entry.Action)</strong>
+                            <span class="ms-chip">@MatSplit.Web.Pages.Groups.HistoryModel.EntityLabel(entry.EntityType)</span>
+                            <span>@entry.Summary</span>
+                            <span class="ms-muted">@MatSplit.Web.Pages.Groups.HistoryModel.ActorName(entry)</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(entry.DetailsJson))
+                        {
+                            <details>
+                                <summary class="ms-muted">Details</summary>
+                                <p class="ms-muted">@entry.DetailsJson</p>
+                            </details>
+                        }
+                    }
+                </div>
+            </ms-card>
+        }
+    </div>
+
+    @if (Model.Result.TotalCount == 0)
+    {
+        <ms-empty-state id="history-empty" title="Noch keine Einträge"
+                        text="Sobald Ausgaben, Zahlungen oder Mitglieder geändert werden, entsteht hier die Historie."
+                        icon="history"
+                        action-url="@($"/Groups/Expenses?groupId={Model.GroupId}")"
+                        action-label="Zu den Ausgaben"></ms-empty-state>
+    }
+
+    <ms-pagination id="history-pager"
+                   page="@Model.Result.Page"
+                   page-size="@Model.Result.PageSize"
+                   total-count="@Model.Result.TotalCount"
+                   page-url="@Model.BuildPageUrl()"></ms-pagination>
+
+    <ms-actions id="history-actions">
+        <ms-button id="history-balance" kind="secondary" icon="balance" label="Kontostand"
+                   href="@($"/Groups/Balance?groupId={Model.GroupId}")"></ms-button>
+        <ms-button id="history-payments" kind="secondary" icon="paypal" label="Zahlungen"
+                   href="@($"/Groups/Payments?groupId={Model.GroupId}")"></ms-button>
+        <ms-button id="history-expenses" kind="secondary" icon="expense" label="Ausgaben"
+                   href="@($"/Groups/Expenses?groupId={Model.GroupId}")"></ms-button>
+    </ms-actions>
+</ms-list>

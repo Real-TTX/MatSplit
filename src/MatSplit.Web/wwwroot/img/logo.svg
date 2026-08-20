@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 64" width="248" height="64" role="img" aria-labelledby="ms-logo-title">
+    <title id="ms-logo-title">MatSplit</title>
+    <defs>
+        <linearGradient id="msLogoWarm" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffc266" />
+            <stop offset="1" stop-color="#ffa233" />
+        </linearGradient>
+        <linearGradient id="msLogoDeep" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f7862a" />
+            <stop offset="1" stop-color="#e4570a" />
+        </linearGradient>
+        <style>
+            .ms-logo-word { fill: #2c1c12; }
+            .ms-logo-accent { fill: #ef6c14; }
+            @media (prefers-color-scheme: dark) {
+                .ms-logo-word { fill: #f8ede2; }
+                .ms-logo-accent { fill: #ff8a3c; }
+            }
+        </style>
+    </defs>
+    <g stroke="#ffb03a" stroke-width="3.2" stroke-linecap="round">
+        <path d="M42 14.7 44.5 10.3" />
+        <path d="M49.3 22 53.7 19.5" />
+        <path d="M52 32h5" />
+        <path d="M49.3 42 53.7 44.5" />
+        <path d="M42 49.3 44.5 53.7" />
+    </g>
+    <path d="M29 15A17 17 0 0 0 29 49Z" fill="url(#msLogoWarm)" />
+    <path d="M35 15A17 17 0 0 1 35 49Z" fill="url(#msLogoDeep)" />
+    <text x="70" y="42" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif"
+          font-size="30" font-weight="700" letter-spacing="-0.6">
+        <tspan class="ms-logo-word">Mat</tspan><tspan class="ms-logo-accent">Split</tspan>
+    </text>
+</svg>

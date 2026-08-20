@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="ms-logo-mark-title">
+    <title id="ms-logo-mark-title">MatSplit</title>
+    <defs>
+        <linearGradient id="msMarkWarm" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffc266" />
+            <stop offset="1" stop-color="#ffa233" />
+        </linearGradient>
+        <linearGradient id="msMarkDeep" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f7862a" />
+            <stop offset="1" stop-color="#e4570a" />
+        </linearGradient>
+    </defs>
+    <g stroke="#ffb03a" stroke-width="3.4" stroke-linecap="round">
+        <path d="M42 14.7 44.5 10.3" />
+        <path d="M49.3 22 53.7 19.5" />
+        <path d="M52 32h5" />
+        <path d="M49.3 42 53.7 44.5" />
+        <path d="M42 49.3 44.5 53.7" />
+    </g>
+    <path d="M29 15A17 17 0 0 0 29 49Z" fill="url(#msMarkWarm)" />
+    <path d="M35 15A17 17 0 0 1 35 49Z" fill="url(#msMarkDeep)" />
+</svg>

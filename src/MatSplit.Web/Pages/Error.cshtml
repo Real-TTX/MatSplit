@@ -1,0 +1,29 @@
+@page
+@model MatSplit.Web.Pages.ErrorModel
+
+<ms-card id="error-card" title="@Model.Headline" subtitle="@($"Fehler {Model.Status}")"
+         icon="warning" tone="danger">
+    <p>@Model.Message</p>
+
+    @if (!string.IsNullOrWhiteSpace(Model.OriginalPath))
+    {
+        <dl class="ms-kv">
+            <dt>Adresse</dt>
+            <dd class="ms-muted">@Model.OriginalPath</dd>
+        </dl>
+    }
+
+    @if (Model.ShowRequestId)
+    {
+        <ms-field id="error-request" type="static" label="Vorgangsnummer"
+                  value="@Model.RequestId"
+                  hint="Diese Nummer hilft beim Suchen im Server-Log."></ms-field>
+    }
+
+    <div class="ms-row">
+        <ms-button id="error-home" kind="primary" icon="home" label="Zur Startseite"
+                   type="button" href="/"></ms-button>
+        <ms-button id="error-login" kind="secondary" icon="user" label="Zur Anmeldung"
+                   type="button" href="/Account/Login"></ms-button>
+    </div>
+</ms-card>

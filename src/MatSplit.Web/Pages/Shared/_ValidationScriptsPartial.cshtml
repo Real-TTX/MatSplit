@@ -1,0 +1,12 @@
+@*
+    MatSplit ships its own dependency free client validation in site.js
+    (MatSplit.validation) which reads the data-val-* attributes rendered by
+    ms-field. There is no jQuery and no CDN. Including this partial in the
+    Scripts section re-initialises the validation for markup that was added
+    after page load.
+*@
+<script>
+    if (window.MatSplit && window.MatSplit.initValidation) {
+        window.MatSplit.initValidation();
+    }
+</script>

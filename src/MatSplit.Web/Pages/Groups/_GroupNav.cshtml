@@ -1,0 +1,21 @@
+@model MatSplit.Web.Pages.Groups.GroupNav
+
+<ms-tabs id="@($"group-nav-{Model.GroupId}")" active="@Model.Active" label="Gruppenbereiche">
+    <ms-tab key="details" label="Übersicht" icon="info"
+            href="@($"/Groups/Details?groupId={Model.GroupId}")"></ms-tab>
+    <ms-tab key="expenses" label="Ausgaben" icon="expense"
+            href="@($"/Groups/Expenses?groupId={Model.GroupId}")"></ms-tab>
+    <ms-tab key="payments" label="Zahlungen" icon="paypal"
+            href="@($"/Groups/Payments?groupId={Model.GroupId}")"></ms-tab>
+    <ms-tab key="balance" label="Kontostand" icon="balance"
+            href="@($"/Groups/Balance?groupId={Model.GroupId}")"></ms-tab>
+    <ms-tab key="history" label="Historie" icon="history"
+            href="@($"/Groups/History?groupId={Model.GroupId}")"></ms-tab>
+    <ms-tab key="members" label="Mitglieder" icon="users"
+            href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-tab>
+    @if (Model.CanManage)
+    {
+        <ms-tab key="settings" label="Einstellungen" icon="settings"
+                href="@($"/Groups/Edit?id={Model.GroupId}")"></ms-tab>
+    }
+</ms-tabs>

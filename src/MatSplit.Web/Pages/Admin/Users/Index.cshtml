@@ -1,0 +1,124 @@
+@page
+@model MatSplit.Web.Pages.Admin.Users.IndexModel
+
+<ms-list id="admin-users" title="Benutzer" subtitle="Alle Konten dieser Installation"
+         icon="users" count="@Model.Result.TotalCount">
+
+    <ms-toolbar id="admin-users-filter" action="/Admin/Users" reset-url="/Admin/Users" auto-submit-text="true">
+        <ms-field id="admin-users-search" name="search" type="search" label="Suche"
+                  value="@Model.Search" placeholder="Name oder E-Mail"></ms-field>
+        <ms-field id="admin-users-role" name="role" type="select" label="Rolle"
+                  items="Model.RoleOptions" option-label="Alle Rollen"></ms-field>
+        <ms-field id="admin-users-kind" name="kind" type="select" label="Typ"
+                  items="Model.KindOptions" option-label="Alle Typen"></ms-field>
+        <ms-field id="admin-users-sort" name="sort" type="select" label="Sortierung"
+                  items="Model.SortOptions"></ms-field>
+        <ms-field id="admin-users-deleted" name="includeDeleted" type="checkbox"
+                  label="Gelöschte anzeigen" checked="@Model.IncludeDeleted"></ms-field>
+    </ms-toolbar>
+
+    @* Target form of the row delete buttons; they reference it via button[form]. *@
+    <ms-form id="admin-users-delete" validation-summary="none"></ms-form>
+
+    <ms-table id="admin-users-table" caption="Benutzerkonten">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">E-Mail</th>
+                <th scope="col">Rolle</th>
+                <th scope="col">Typ</th>
+                <th scope="col" class="ms-num">Gruppen</th>
+                <th scope="col">Erstellt</th>
+                <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Result.Items)
+            {
+                var confirmText = $"Benutzer {row.DisplayName} wirklich löschen?";
+                <tr>
+                    <td data-label="Name">
+                        @row.DisplayName
+                        @if (row.Id == Model.CurrentUserId)
+                        {
+                            <span class="ms-chip">Ich</span>
+                        }
+                        @if (row.IsDeleted)
+                        {
+                            <span class="ms-chip">Gelöscht</span>
+                        }
+                        @if (row.MergedIntoUserId.HasValue)
+                        {
+                            <span class="ms-chip">Zusammengeführt</span>
+                        }
+                    </td>
+                    <td data-label="E-Mail">
+                        @if (string.IsNullOrWhiteSpace(row.Email))
+                        {
+                            <span class="ms-muted">&#8211;</span>
+                        }
+                        else
+                        {
+                            @row.Email
+                        }
+                    </td>
+                    <td data-label="Rolle">@row.RoleLabel</td>
+                    <td data-label="Typ">
+                        @row.KindLabel
+                        @if (!row.IsAnonymous && !row.HasPassword)
+                        {
+                            <span class="ms-chip">ohne Passwort</span>
+                        }
+                        @if (row.HasPayPal)
+                        {
+                            <span class="ms-chip">PayPal</span>
+                        }
+                    </td>
+                    <td data-label="Gruppen" class="ms-num">@row.GroupCount</td>
+                    <td data-label="Erstellt">@row.CreateDate.ToString("dd.MM.yyyy")</td>
+                    <td data-label="Aktionen">
+                        <div class="ms-table__rowactions">
+                            <ms-button id="@($"admin-user-{row.Id}-edit")" kind="ghost" size="sm"
+                                       icon="edit" icon-only="true" label="Bearbeiten"
+                                       href="@($"/Admin/Users/Edit?id={row.Id}")"></ms-button>
+                            <ms-button id="@($"admin-user-{row.Id}-merge")" kind="ghost" size="sm"
+                                       icon="merge" icon-only="true" label="Zusammenführen"
+                                       href="@($"/Admin/Users/Merge?sourceId={row.Id}")"></ms-button>
+                            @if (!row.IsDeleted && row.Id != Model.CurrentUserId)
+                            {
+                                <ms-button id="@($"admin-user-{row.Id}-delete")" kind="danger" size="sm"
+                                           icon="trash" icon-only="true" label="Löschen"
+                                           form="admin-users-delete" handler="Delete"
+                                           name="id" value="@row.Id" confirm="@confirmText"></ms-button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </ms-table>
+
+    @if (Model.Result.TotalCount == 0)
+    {
+        <ms-empty-state id="admin-users-empty" title="Keine Benutzer gefunden"
+                        text="Passe den Filter an oder lege ein neues Konto an."
+                        icon="users"
+                        action-url="/Admin/Users/Edit"
+                        action-label="Benutzer anlegen"></ms-empty-state>
+    }
+
+    <ms-pagination id="admin-users-pager"
+                   page="@Model.Result.Page"
+                   page-size="@Model.Result.PageSize"
+                   total-count="@Model.Result.TotalCount"
+                   page-url="@Model.BuildListUrl()"></ms-pagination>
+
+    <ms-actions id="admin-users-actions">
+        <ms-button id="admin-users-new" kind="primary" icon="plus" label="Neuer Benutzer"
+                   href="/Admin/Users/Edit"></ms-button>
+        <ms-button id="admin-users-merge" kind="secondary" icon="merge" label="Zusammenführen"
+                   href="/Admin/Users/Merge"></ms-button>
+        <ms-button id="admin-users-groups" kind="secondary" icon="group" label="Gruppen"
+                   href="/Admin/Groups"></ms-button>
+    </ms-actions>
+</ms-list>

@@ -1,0 +1,45 @@
+@page
+@model MatSplit.Web.Pages.Admin.SettingsModel
+
+<div class="ms-stack">
+    <ms-card id="admin-settings-card" title="Einstellungen" icon="settings"
+             subtitle="Diese Werte liegen als JSON im Datenvolume und gelten für alle Benutzer.">
+        <ms-form id="admin-settings-form" columns="2">
+            <ms-field id="asf-appname" for="Input.AppName" full-width="true"
+                      hint="Erscheint im Menü, im Browser-Titel und in der PWA."></ms-field>
+
+            <ms-field id="asf-currency" for="Input.DefaultCurrency" max-length="3"
+                      placeholder="EUR" hint="Dreistelliger Code, z. B. EUR, CHF oder USD."></ms-field>
+
+            <ms-field id="asf-sessiondays" for="Input.SessionLifetimeDays" type="number"
+                      min="1" max="365" step="1"
+                      hint="Gilt für neue Anmeldungen. Erlaubt sind 1 bis 365 Tage."></ms-field>
+
+            <ms-field id="asf-receiptsize" for="Input.MaxReceiptSizeMb" type="number"
+                      min="1" max="100" step="1"
+                      hint="Obergrenze für Belegfotos und PDF-Belege."></ms-field>
+
+            <ms-field id="asf-join" for="Input.AllowAnonymousJoin" type="checkbox" full-width="true"
+                      hint="Globaler Schalter: ist er aus, funktioniert kein Einladungslink mehr."></ms-field>
+
+            <ms-button-row id="asf-buttons">
+                <ms-button id="asf-save" kind="primary" icon="save" label="Speichern"></ms-button>
+                <ms-button id="asf-back" kind="secondary" icon="back" label="Zurück"
+                           type="button" href="/Admin"></ms-button>
+            </ms-button-row>
+        </ms-form>
+    </ms-card>
+
+    <ms-card id="admin-settings-info" title="Ablage" icon="info"
+             subtitle="Wo die Konfiguration gespeichert wird">
+        <dl class="ms-kv">
+            <dt>Konfigurationsdatei</dt>
+            <dd>@Model.ConfigFile</dd>
+            <dt>Datenverzeichnis</dt>
+            <dd>@Model.DataRoot</dd>
+        </dl>
+    </ms-card>
+
+    <ms-alert id="admin-settings-hint" tone="info" title="Hinweis zur Sitzungsdauer"
+              text="Die Cookie-Lebensdauer wird beim Start der Anwendung gesetzt. Eine geänderte Sitzungsdauer wirkt vollständig erst nach einem Neustart des Containers."></ms-alert>
+</div>

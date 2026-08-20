@@ -1,0 +1,106 @@
+@page
+@model MatSplit.Web.Pages.Admin.Groups.IndexModel
+
+<ms-list id="admin-groups" title="Gruppen" subtitle="Alle Gruppen mit Eigentümer, Mitgliedern und Ausgaben"
+         icon="group" count="@Model.Result.TotalCount">
+
+    <ms-toolbar id="admin-groups-filter" action="/Admin/Groups" reset-url="/Admin/Groups" auto-submit-text="true">
+        <ms-field id="admin-groups-search" name="search" type="search" label="Suche"
+                  value="@Model.Search" placeholder="Name oder Beschreibung"></ms-field>
+        <ms-field id="admin-groups-sort" name="sort" type="select" label="Sortierung"
+                  items="Model.SortOptions"></ms-field>
+        <ms-field id="admin-groups-deleted" name="includeDeleted" type="checkbox"
+                  label="Gelöschte anzeigen" checked="@Model.IncludeDeleted"></ms-field>
+    </ms-toolbar>
+
+    @* Target form of the row delete buttons; they reference it via button[form]. *@
+    <ms-form id="admin-groups-delete" validation-summary="none"></ms-form>
+
+    <ms-table id="admin-groups-table" caption="Gruppen">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Eigentümer</th>
+                <th scope="col" class="ms-num">Mitglieder</th>
+                <th scope="col" class="ms-num">Ausgaben</th>
+                <th scope="col" class="ms-num">Summe</th>
+                <th scope="col" class="ms-num">Zahlungen</th>
+                <th scope="col">Erstellt</th>
+                <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Result.Items)
+            {
+                var confirmText = $"Gruppe {row.Name} wirklich löschen?";
+                <tr>
+                    <td data-label="Name">
+                        @row.Name
+                        @if (row.IsDeleted)
+                        {
+                            <span class="ms-chip">Gelöscht</span>
+                        }
+                        @if (!row.InviteEnabled)
+                        {
+                            <span class="ms-chip">Einladung aus</span>
+                        }
+                        @if (row.Currency != "EUR")
+                        {
+                            <span class="ms-chip">@row.Currency</span>
+                        }
+                    </td>
+                    <td data-label="Eigentümer">@row.OwnerText</td>
+                    <td data-label="Mitglieder" class="ms-num">@row.MemberCount</td>
+                    <td data-label="Ausgaben" class="ms-num">@row.ExpenseCount</td>
+                    <td data-label="Summe" class="ms-num">
+                        <ms-money cents="@row.ExpenseTotalCents" currency="@row.Currency"></ms-money>
+                    </td>
+                    <td data-label="Zahlungen" class="ms-num">@row.PaymentCount</td>
+                    <td data-label="Erstellt">@row.CreateDate.ToString("dd.MM.yyyy")</td>
+                    <td data-label="Aktionen">
+                        <div class="ms-table__rowactions">
+                            <ms-button id="@($"admin-group-{row.Id}-details")" kind="ghost" size="sm"
+                                       icon="info" icon-only="true" label="Übersicht"
+                                       href="@($"/Groups/Details?groupId={row.Id}")"></ms-button>
+                            <ms-button id="@($"admin-group-{row.Id}-members")" kind="ghost" size="sm"
+                                       icon="users" icon-only="true" label="Mitglieder"
+                                       href="@($"/Groups/Members?groupId={row.Id}")"></ms-button>
+                            <ms-button id="@($"admin-group-{row.Id}-edit")" kind="ghost" size="sm"
+                                       icon="edit" icon-only="true" label="Bearbeiten"
+                                       href="@($"/Groups/Edit?id={row.Id}")"></ms-button>
+                            @if (!row.IsDeleted)
+                            {
+                                <ms-button id="@($"admin-group-{row.Id}-delete")" kind="danger" size="sm"
+                                           icon="trash" icon-only="true" label="Löschen"
+                                           form="admin-groups-delete" handler="Delete"
+                                           name="id" value="@row.Id" confirm="@confirmText"></ms-button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </ms-table>
+
+    @if (Model.Result.TotalCount == 0)
+    {
+        <ms-empty-state id="admin-groups-empty" title="Keine Gruppen gefunden"
+                        text="Passe den Filter an oder lege die erste Gruppe an."
+                        icon="group"
+                        action-url="/Groups/Edit"
+                        action-label="Gruppe anlegen"></ms-empty-state>
+    }
+
+    <ms-pagination id="admin-groups-pager"
+                   page="@Model.Result.Page"
+                   page-size="@Model.Result.PageSize"
+                   total-count="@Model.Result.TotalCount"
+                   page-url="@Model.BuildListUrl()"></ms-pagination>
+
+    <ms-actions id="admin-groups-actions">
+        <ms-button id="admin-groups-new" kind="primary" icon="plus" label="Neue Gruppe"
+                   href="/Groups/Edit"></ms-button>
+        <ms-button id="admin-groups-users" kind="secondary" icon="users" label="Benutzer"
+                   href="/Admin/Users"></ms-button>
+    </ms-actions>
+</ms-list>

@@ -1,0 +1,89 @@
+@page
+@model MatSplit.Web.Pages.Groups.IndexModel
+
+<ms-list id="groups" title="Gruppen"
+         subtitle="@(Model.IsAdmin ? "Als Administrator siehst du alle Gruppen." : "Alle Gruppen, in denen du mitrechnest.")"
+         icon="group" count="@Model.Result.TotalCount">
+
+    <ms-toolbar id="groups-filter" action="/Groups" reset-url="/Groups" auto-submit-text="true">
+        <ms-field id="groups-search" name="search" type="search" label="Suche"
+                  value="@Model.Search" placeholder="Name oder Beschreibung"></ms-field>
+        <ms-field id="groups-sort" name="sort" type="select" label="Sortierung"
+                  items="Model.SortOptions"></ms-field>
+    </ms-toolbar>
+
+    <ms-table id="groups-table" caption="Gruppenübersicht">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col" class="ms-num">Mitglieder</th>
+                <th scope="col" class="ms-num">Ausgaben</th>
+                <th scope="col">Letzte Aktivität</th>
+                <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in Model.Result.Items)
+            {
+                <tr>
+                    <td data-label="Name">
+                        <a href="@($"/Groups/Details?groupId={group.Id}")">@group.Name</a>
+                        @if (!string.IsNullOrWhiteSpace(group.Description))
+                        {
+                            <span class="ms-muted">@group.Description</span>
+                        }
+                    </td>
+                    <td data-label="Mitglieder" class="ms-num">
+                        @group.MemberCount
+                        @if (group.ShareTotal != group.MemberCount)
+                        {
+                            <span class="ms-chip">@group.ShareTotal Anteile</span>
+                        }
+                    </td>
+                    <td data-label="Ausgaben" class="ms-num">
+                        <ms-money cents="@group.TotalExpensesCents" currency="@group.Currency"></ms-money>
+                    </td>
+                    <td data-label="Letzte Aktivität">
+                        @MatSplit.Web.Pages.Groups.IndexModel.FormatMoment(group.LastActivityUtc)
+                    </td>
+                    <td data-label="Aktionen">
+                        <div class="ms-table__rowactions">
+                            <ms-button id="@($"group-{group.Id}-open")" kind="ghost" size="sm"
+                                       icon="forward" icon-only="true" label="Öffnen"
+                                       href="@($"/Groups/Details?groupId={group.Id}")"></ms-button>
+                            <ms-button id="@($"group-{group.Id}-members")" kind="ghost" size="sm"
+                                       icon="users" icon-only="true" label="Mitglieder"
+                                       href="@($"/Groups/Members?groupId={group.Id}")"></ms-button>
+                            @if (group.CanManage)
+                            {
+                                <ms-button id="@($"group-{group.Id}-edit")" kind="ghost" size="sm"
+                                           icon="edit" icon-only="true" label="Bearbeiten"
+                                           href="@($"/Groups/Edit?id={group.Id}")"></ms-button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </ms-table>
+
+    @if (Model.Result.TotalCount == 0)
+    {
+        <ms-empty-state id="groups-empty"
+                        title="@(string.IsNullOrWhiteSpace(Model.Search) ? "Noch keine Gruppe" : "Keine Treffer")"
+                        text="@(string.IsNullOrWhiteSpace(Model.Search) ? "Lege eine Gruppe an, lade deine Leute ein und tracke die erste Ausgabe." : "Zu deiner Suche passt keine Gruppe. Setze den Filter zurück.")"
+                        icon="group"
+                        action-url="/Groups/Edit"
+                        action-label="Neue Gruppe"></ms-empty-state>
+    }
+
+    <ms-pagination id="groups-pager"
+                   page="@Model.Result.Page"
+                   page-size="@Model.Result.PageSize"
+                   total-count="@Model.Result.TotalCount"
+                   page-url="@Model.PageUrl"></ms-pagination>
+
+    <ms-actions id="groups-actions">
+        <ms-button id="groups-new" kind="primary" icon="plus" label="Neue Gruppe" href="/Groups/Edit"></ms-button>
+    </ms-actions>
+</ms-list>

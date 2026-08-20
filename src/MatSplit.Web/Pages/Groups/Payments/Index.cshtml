@@ -1,0 +1,97 @@
+@page
+@model MatSplit.Web.Pages.Groups.Payments.IndexModel
+
+<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Payments, Model.CanManage)" />
+
+<ms-list id="payments" title="Zahlungen" subtitle="Wer hat wem Geld gegeben"
+         icon="paypal" count="@Model.Result.TotalCount">
+
+    <ms-toolbar id="payments-filter"
+                action="/Groups/Payments"
+                reset-url="@($"/Groups/Payments?groupId={Model.GroupId}")"
+                preserve="groupId"
+                auto-submit-text="true">
+        <ms-field id="payments-search" name="search" type="search" label="Suche"
+                  value="@Model.Search" placeholder="Notiz oder Name"></ms-field>
+        <ms-field id="payments-member" name="memberUserId" type="select" label="Mitglied"
+                  items="Model.MemberOptions" option-label="Alle"></ms-field>
+        <ms-field id="payments-from" name="fromDate" type="date" label="Von"
+                  value="@Model.FromDate?.ToString("yyyy-MM-dd")"></ms-field>
+        <ms-field id="payments-to" name="toDate" type="date" label="Bis"
+                  value="@Model.ToDate?.ToString("yyyy-MM-dd")"></ms-field>
+        <ms-field id="payments-sort" name="sort" type="select" label="Sortierung"
+                  items="Model.SortOptions"></ms-field>
+    </ms-toolbar>
+
+    <p class="ms-muted">
+        Summe aller Zahlungen dieser Gruppe:
+        <ms-money cents="@Model.TotalCents" currency="@Model.Currency" strong="true"></ms-money>
+    </p>
+
+    <ms-table id="payments-table" caption="Zahlungen der Gruppe">
+        <thead>
+            <tr>
+                <th scope="col">Datum</th>
+                <th scope="col">Von</th>
+                <th scope="col">An</th>
+                <th scope="col" class="ms-num">Betrag</th>
+                <th scope="col">Notiz</th>
+                <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payment in Model.Result.Items)
+            {
+                <tr>
+                    <td data-label="Datum">@Model.FormatDate(payment.PaymentDate)</td>
+                    <td data-label="Von">@Model.MemberName(payment.FromUser)</td>
+                    <td data-label="An">@Model.MemberName(payment.ToUser)</td>
+                    <td data-label="Betrag" class="ms-num">
+                        <ms-money cents="@payment.AmountCents" currency="@Model.Currency"></ms-money>
+                    </td>
+                    <td data-label="Notiz">
+                        @if (string.IsNullOrWhiteSpace(payment.Note))
+                        {
+                            <span class="ms-muted">–</span>
+                        }
+                        else
+                        {
+                            @payment.Note
+                        }
+                    </td>
+                    <td data-label="Aktionen">
+                        <div class="ms-table__rowactions">
+                            <ms-button id="@($"payment-{payment.Id}-edit")" kind="ghost" size="sm"
+                                       icon="edit" icon-only="true" label="Bearbeiten"
+                                       href="@($"/Groups/Payments/Edit?groupId={Model.GroupId}&id={payment.Id}")"></ms-button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </ms-table>
+
+    @if (Model.Result.TotalCount == 0)
+    {
+        <ms-empty-state id="payments-empty" title="Noch keine Zahlungen"
+                        text="Sobald jemand Geld zurückgezahlt hat, wird es hier erfasst."
+                        icon="paypal"
+                        action-url="@($"/Groups/Payments/Edit?groupId={Model.GroupId}")"
+                        action-label="Zahlung erfassen"></ms-empty-state>
+    }
+
+    <ms-pagination id="payments-pager"
+                   page="@Model.Result.Page"
+                   page-size="@Model.Result.PageSize"
+                   total-count="@Model.Result.TotalCount"
+                   page-url="@Model.BuildPageUrl()"></ms-pagination>
+
+    <ms-actions id="payments-actions">
+        <ms-button id="payments-new" kind="primary" icon="plus" label="Neue Zahlung"
+                   href="@($"/Groups/Payments/Edit?groupId={Model.GroupId}")"></ms-button>
+        <ms-button id="payments-balance" kind="secondary" icon="balance" label="Kontostand"
+                   href="@($"/Groups/Balance?groupId={Model.GroupId}")"></ms-button>
+        <ms-button id="payments-history" kind="secondary" icon="history" label="Historie"
+                   href="@($"/Groups/History?groupId={Model.GroupId}")"></ms-button>
+    </ms-actions>
+</ms-list>

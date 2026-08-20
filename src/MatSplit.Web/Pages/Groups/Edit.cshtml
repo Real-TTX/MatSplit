@@ -1,0 +1,54 @@
+@page
+@model MatSplit.Web.Pages.Groups.EditModel
+
+@if (!Model.IsNew)
+{
+    <partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.Id!.Value, MatSplit.Web.Pages.Groups.GroupNav.Settings, true)" />
+}
+
+<ms-card id="group-card"
+         title="@(Model.IsNew ? "Neue Gruppe" : "Gruppe bearbeiten")"
+         subtitle="Name, Währung und Einladung der gemeinsamen Kasse"
+         icon="group">
+
+    <ms-form id="group-form" columns="2">
+        <ms-field id="gf-name" for="Input.Name" full-width="true"
+                  placeholder="z. B. Sommerurlaub 2026" autofocus="true"></ms-field>
+
+        <ms-field id="gf-currency" for="Input.Currency" type="select"
+                  items="Model.CurrencyOptions"
+                  hint="Alle Beträge dieser Gruppe werden in dieser Währung geführt."></ms-field>
+
+        <ms-field id="gf-invite" for="Input.InviteEnabled" type="checkbox"
+                  hint="Mitglieder können ohne Konto per Link beitreten."></ms-field>
+
+        <ms-field id="gf-description" for="Input.Description" type="textarea" rows="3" full-width="true"
+                  placeholder="Worum geht es in dieser Gruppe?"></ms-field>
+
+        @if (!Model.IsNew)
+        {
+            <ms-field id="gf-invite-url" type="static" label="Einladungslink"
+                      value="@Model.InviteUrl" full-width="true"
+                      depends-on="Input.InviteEnabled" depends-value="true"
+                      hint="Kopieren, Neuerzeugen und QR-Anzeige findest du unter Mitglieder."></ms-field>
+
+            <ms-field id="gf-invite-new" for="Input.RegenerateInvite" type="checkbox" full-width="true"
+                      depends-on="Input.InviteEnabled" depends-value="true"
+                      hint="Der bisherige Link wird dadurch ungültig."></ms-field>
+        }
+
+        <ms-field id="gf-id" for="Input.Id" type="hidden"></ms-field>
+
+        <ms-button-row id="gf-buttons">
+            <ms-button id="gf-save" kind="primary" icon="save" label="Speichern"></ms-button>
+            <ms-button id="gf-back" kind="secondary" icon="back" label="Zurück" type="button"
+                       href="@(Model.IsNew ? "/Groups" : $"/Groups/Details?groupId={Model.Id}")"></ms-button>
+            @if (!Model.IsNew)
+            {
+                <ms-button id="gf-delete" kind="danger" icon="trash" label="Löschen"
+                           handler="Delete"
+                           confirm="Gruppe wirklich löschen? Ausgaben und Zahlungen werden mit archiviert."></ms-button>
+            }
+        </ms-button-row>
+    </ms-form>
+</ms-card>

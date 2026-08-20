@@ -1,0 +1,552 @@
+/* ==========================================================================
+   App shell: left menu, right content with header and breadcrumb.
+   Below 900px the menu becomes an off canvas drawer.
+   ========================================================================== */
+
+.ms-app {
+    min-height: 100dvh;
+}
+
+.ms-shell {
+    display: grid;
+    grid-template-columns: var(--ms-sidebar-width) minmax(0, 1fr);
+    min-height: 100dvh;
+}
+
+.ms-shell--bare {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* ------------------------------- menu ----------------------------------- */
+
+.ms-shell__nav {
+    position: sticky;
+    top: 0;
+    z-index: var(--ms-z-menu);
+    height: 100dvh;
+    border-right: 1px solid var(--ms-border);
+    background: var(--ms-gradient-menu);
+}
+
+.ms-menu {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: calc(var(--ms-safe-top) + var(--ms-space-4)) var(--ms-space-3)
+             calc(var(--ms-safe-bottom) + var(--ms-space-3)) calc(var(--ms-safe-left) + var(--ms-space-3));
+}
+
+.ms-menu__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ms-space-2);
+    padding: 0 var(--ms-space-2) var(--ms-space-4);
+}
+
+.ms-menu__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-3);
+    color: var(--ms-text);
+    font-size: var(--ms-text-lg);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.ms-menu__brand:hover {
+    color: var(--ms-primary);
+    text-decoration: none;
+}
+
+.ms-menu__logo {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+    filter: drop-shadow(0 2px 4px rgba(239, 108, 20, 0.35));
+}
+
+.ms-menu__close {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--ms-border);
+    border-radius: var(--ms-radius);
+    background: var(--ms-surface);
+    color: var(--ms-text-soft);
+    cursor: pointer;
+}
+
+.ms-menu__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: var(--ms-space-4);
+}
+
+.ms-menu__foot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-1);
+    padding-top: var(--ms-space-3);
+    border-top: 1px solid var(--ms-border);
+}
+
+.ms-menu__user {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ------------------------------- nav ------------------------------------ */
+
+.ms-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ms-nav__caption {
+    margin: var(--ms-space-5) var(--ms-space-3) var(--ms-space-2);
+    font-size: var(--ms-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ms-text-muted);
+}
+
+.ms-nav__link {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-3);
+    padding: 9px var(--ms-space-3);
+    border-radius: var(--ms-radius);
+    color: var(--ms-text-soft);
+    font-weight: 550;
+    transition: background var(--ms-transition), color var(--ms-transition);
+}
+
+.ms-nav__link:hover {
+    background: var(--ms-surface);
+    color: var(--ms-text);
+    text-decoration: none;
+}
+
+.ms-nav__link.is-active {
+    background: var(--ms-primary);
+    color: var(--ms-primary-contrast);
+    box-shadow: var(--ms-shadow-1);
+}
+
+.ms-nav__link.is-active:hover {
+    color: var(--ms-primary-contrast);
+}
+
+.ms-nav__groups {
+    list-style: none;
+    margin: 2px 0 2px var(--ms-space-4);
+    padding: 0 0 0 var(--ms-space-2);
+    border-left: 1px solid var(--ms-border-strong);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ms-nav__details {
+    border-radius: var(--ms-radius-sm);
+}
+
+.ms-nav__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-2);
+    padding: 7px var(--ms-space-2);
+    border-radius: var(--ms-radius-sm);
+    color: var(--ms-text-soft);
+    font-size: var(--ms-text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.ms-nav__summary::-webkit-details-marker {
+    display: none;
+}
+
+.ms-nav__summary:hover {
+    background: var(--ms-surface);
+    color: var(--ms-text);
+}
+
+.ms-nav__summary-text {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ms-nav__dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--ms-gradient-sun);
+}
+
+.ms-nav__chevron {
+    flex: 0 0 auto;
+    color: var(--ms-text-muted);
+    transition: transform var(--ms-transition);
+}
+
+.ms-nav__details[open] > .ms-nav__summary .ms-nav__chevron {
+    transform: rotate(180deg);
+}
+
+.ms-nav__badge-icon {
+    color: var(--ms-primary);
+}
+
+.ms-nav__sublist {
+    list-style: none;
+    margin: 2px 0 var(--ms-space-2);
+    padding: 0 0 0 var(--ms-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.ms-nav__sub {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-2);
+    padding: 6px var(--ms-space-2);
+    border-radius: var(--ms-radius-sm);
+    color: var(--ms-text-muted);
+    font-size: var(--ms-text-sm);
+}
+
+.ms-nav__sub:hover {
+    background: var(--ms-surface);
+    color: var(--ms-text);
+    text-decoration: none;
+}
+
+.ms-nav__sub.is-active {
+    background: var(--ms-primary-soft);
+    color: var(--ms-primary);
+    font-weight: 650;
+}
+
+.ms-nav__sub--add {
+    margin: var(--ms-space-1) 0 0 var(--ms-space-6);
+    color: var(--ms-primary);
+    font-weight: 600;
+}
+
+/* --------------------------- theme switcher ----------------------------- */
+
+.ms-theme {
+    display: flex;
+    gap: 2px;
+    margin-top: var(--ms-space-2);
+    padding: 3px;
+    border: 1px solid var(--ms-border);
+    border-radius: var(--ms-radius-pill);
+    background: var(--ms-surface);
+}
+
+.ms-theme__btn {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+    border: none;
+    border-radius: var(--ms-radius-pill);
+    background: transparent;
+    color: var(--ms-text-muted);
+    cursor: pointer;
+    transition: background var(--ms-transition), color var(--ms-transition);
+}
+
+.ms-theme__btn:hover {
+    color: var(--ms-text);
+    background: var(--ms-surface-3);
+}
+
+.ms-theme__btn[aria-pressed="true"] {
+    background: var(--ms-gradient-sun);
+    color: var(--ms-primary-contrast);
+    box-shadow: var(--ms-shadow-1);
+}
+
+/* ------------------------------- main ----------------------------------- */
+
+.ms-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 100dvh;
+    background: var(--ms-bg);
+}
+
+.ms-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--ms-z-header);
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-3);
+    min-height: var(--ms-header-height);
+    padding: calc(var(--ms-safe-top) + var(--ms-space-3)) calc(var(--ms-safe-right) + var(--ms-space-5))
+             var(--ms-space-3) var(--ms-space-5);
+    border-bottom: 1px solid var(--ms-border);
+    background: color-mix(in srgb, var(--ms-bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+}
+
+.ms-header__burger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    border: 1px solid var(--ms-border);
+    border-radius: var(--ms-radius);
+    background: var(--ms-surface);
+    color: var(--ms-text);
+    cursor: pointer;
+}
+
+.ms-header__brand {
+    display: none;
+}
+
+.ms-header__titles {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.ms-header__title {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-2);
+    font-size: var(--ms-text-xl);
+    color: var(--ms-text);
+}
+
+.ms-header__title .ms-icon {
+    color: var(--ms-primary);
+    flex: 0 0 auto;
+}
+
+.ms-header__title span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ms-header__subtitle {
+    margin-top: 2px;
+    color: var(--ms-text-muted);
+    font-size: var(--ms-text-sm);
+}
+
+/* ----------------------------- breadcrumb ------------------------------- */
+
+.ms-breadcrumb {
+    padding: var(--ms-space-3) var(--ms-space-5) 0;
+}
+
+.ms-breadcrumb__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--ms-text-sm);
+}
+
+.ms-breadcrumb__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.ms-breadcrumb__link,
+.ms-breadcrumb__current {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 7px;
+    border-radius: var(--ms-radius-sm);
+}
+
+.ms-breadcrumb__link {
+    color: var(--ms-text-muted);
+}
+
+.ms-breadcrumb__link:hover {
+    background: var(--ms-surface-3);
+    color: var(--ms-primary);
+    text-decoration: none;
+}
+
+.ms-breadcrumb__current {
+    color: var(--ms-text);
+    font-weight: 600;
+}
+
+.ms-breadcrumb__sep {
+    color: var(--ms-border-strong);
+    flex: 0 0 auto;
+}
+
+/* ------------------------------ content --------------------------------- */
+
+.ms-content {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: var(--ms-content-max);
+    padding: var(--ms-space-5) calc(var(--ms-safe-right) + var(--ms-space-5))
+             var(--ms-space-7) var(--ms-space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-5);
+}
+
+.ms-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ms-space-2);
+    padding: var(--ms-space-4) var(--ms-space-5) calc(var(--ms-safe-bottom) + var(--ms-space-4));
+    border-top: 1px solid var(--ms-border);
+    color: var(--ms-text-muted);
+    font-size: var(--ms-text-xs);
+}
+
+.ms-footer__sep {
+    opacity: 0.6;
+}
+
+/* ------------------------------ overlay --------------------------------- */
+
+.ms-shell__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ms-z-overlay);
+    background: var(--ms-overlay);
+    opacity: 0;
+    transition: opacity var(--ms-transition);
+}
+
+.ms-shell__overlay:not([hidden]) {
+    opacity: 1;
+}
+
+/* ----------------------------- responsive ------------------------------- */
+
+@media (max-width: 899px) {
+    .ms-shell {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ms-shell__nav {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(86vw, 320px);
+        height: 100dvh;
+        transform: translateX(-102%);
+        visibility: hidden;
+        box-shadow: var(--ms-shadow-3);
+        transition: transform var(--ms-transition-slow), visibility var(--ms-transition-slow);
+    }
+
+    .ms-drawer-open .ms-shell__nav {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    .ms-menu__close {
+        display: inline-flex;
+    }
+
+    .ms-header__burger {
+        display: inline-flex;
+    }
+
+    .ms-header__brand {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .ms-header {
+        padding-left: var(--ms-space-4);
+        padding-right: calc(var(--ms-safe-right) + var(--ms-space-4));
+    }
+
+    .ms-header__title {
+        font-size: var(--ms-text-lg);
+    }
+
+    .ms-breadcrumb {
+        padding: var(--ms-space-3) var(--ms-space-4) 0;
+    }
+
+    .ms-content {
+        padding: var(--ms-space-4) calc(var(--ms-safe-right) + var(--ms-space-4))
+                 var(--ms-space-6) calc(var(--ms-safe-left) + var(--ms-space-4));
+        gap: var(--ms-space-4);
+    }
+
+    .ms-footer {
+        padding-left: var(--ms-space-4);
+        padding-right: var(--ms-space-4);
+    }
+
+    body.ms-drawer-open {
+        overflow: hidden;
+    }
+}
+
+@media (min-width: 900px) {
+    .ms-shell__overlay {
+        display: none;
+    }
+}
+
+/* iOS standalone: the status bar area belongs to the app */
+html[data-standalone="true"] .ms-header {
+    padding-top: calc(var(--ms-safe-top) + var(--ms-space-4));
+}
+
+@media print {
+    .ms-shell__nav,
+    .ms-shell__overlay,
+    .ms-header__burger,
+    .ms-footer,
+    .ms-actions,
+    .ms-toolbar,
+    .ms-button-row {
+        display: none !important;
+    }
+
+    .ms-shell {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body {
+        background: #ffffff;
+    }
+}

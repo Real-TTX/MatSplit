@@ -1,0 +1,40 @@
+@page
+@model MatSplit.Web.Pages.Account.LoginModel
+
+<div class="ms-stack">
+    <ms-card id="login-card" title="Willkommen bei @Model.AppName"
+             subtitle="Melde dich mit E-Mail-Adresse oder Benutzername an." icon="logo">
+        <ms-form id="login-form" autocomplete="on">
+            <ms-field id="lf-login" for="Input.EmailOrName" autofocus="true"
+                      autocomplete="username" placeholder="z. B. admin"></ms-field>
+            <ms-field id="lf-password" for="Input.Password" type="password"
+                      autocomplete="current-password"></ms-field>
+            <ms-field id="lf-remember" for="Input.RememberMe" type="checkbox"
+                      hint="@("Die Anmeldung bleibt auf diesem Ger\u00e4t erhalten.")"></ms-field>
+            <ms-field id="lf-return" name="ReturnUrl" type="hidden" value="@Model.ReturnUrl"></ms-field>
+
+            <ms-button-row id="lf-buttons" divider="false">
+                <ms-button id="lf-submit" kind="primary" icon="check" label="Anmelden" full-width="true"></ms-button>
+            </ms-button-row>
+        </ms-form>
+    </ms-card>
+
+    @if (Model.ShowDevelopmentHint)
+    {
+        <ms-alert id="login-dev" tone="info" title="Entwicklungsmodus">
+            Seed-Zugang: Benutzer <strong>admin</strong>, Passwort <strong>admin</strong>
+            (E-Mail <strong>admin&#64;matsplit.local</strong>). Bitte direkt nach der ersten
+            Anmeldung unter <em>Konto</em> ein eigenes Passwort setzen.
+        </ms-alert>
+    }
+
+    @if (Model.AllowAnonymousJoin)
+    {
+        <ms-card id="login-join" title="Mit Einladungslink beitreten" icon="link" tone="muted">
+            <p class="ms-muted">
+                Du hast einen Einladungslink f&#252;r eine Gruppe bekommen? Dann brauchst du kein
+                Konto: &#246;ffne den Link, w&#228;hle einen Anzeigenamen und du bist dabei.
+            </p>
+        </ms-card>
+    }
+</div>

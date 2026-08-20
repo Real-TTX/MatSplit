@@ -1,0 +1,68 @@
+{
+  "name": "MatSplit",
+  "short_name": "MatSplit",
+  "description": "Gemeinsame Ausgaben fuer Urlaub und WG selbst gehostet verwalten.",
+  "lang": "de",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#fff8f1",
+  "theme_color": "#f2701d",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/icon-512.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Gruppen",
+      "short_name": "Gruppen",
+      "url": "/Groups",
+      "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Neue Gruppe",
+      "short_name": "Neue Gruppe",
+      "url": "/Groups/Edit",
+      "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Profil",
+      "short_name": "Profil",
+      "url": "/Account/Profile",
+      "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

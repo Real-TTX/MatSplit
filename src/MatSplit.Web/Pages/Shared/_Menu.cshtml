@@ -1,0 +1,170 @@
+@inject AppConfigService AppConfig
+@{
+    var appName = ViewData.ReadString(LayoutKeys.AppName) ?? AppConfig.Current.AppName;
+    var path = ViewContext.HttpContext.Request.Path.Value ?? "/";
+    path = path.Length > 1 ? path.TrimEnd('/') : "/";
+    var groups = ViewData.ReadMenuGroups();
+    var activeGroupId = ViewData.ReadActiveGroupId();
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isAdmin = ViewData.ReadFlag(LayoutKeys.IsAdmin) || User.IsInRole(nameof(UserRole.Admin));
+    var displayName = ViewData.ReadString(LayoutKeys.CurrentUserName) ?? User.Identity?.Name ?? "Gast";
+
+    bool IsPath(string target)
+        => path.Equals(target, StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith(target + "/", StringComparison.OrdinalIgnoreCase);
+
+    string LinkClass(string target, bool exact = false)
+    {
+        var active = exact
+            ? path.Equals(target, StringComparison.OrdinalIgnoreCase)
+            : IsPath(target);
+        return active ? "ms-nav__link is-active" : "ms-nav__link";
+    }
+
+    string SubClass(string target, long groupId)
+    {
+        var active = path.Equals(target, StringComparison.OrdinalIgnoreCase) && activeGroupId == groupId;
+        return active ? "ms-nav__sub is-active" : "ms-nav__sub";
+    }
+}
+<nav class="ms-shell__nav" id="ms-menu" aria-label="Hauptnavigation">
+    <div class="ms-menu">
+        <div class="ms-menu__top">
+            <a class="ms-menu__brand" href="/" aria-label="@appName Startseite">
+                <img class="ms-menu__logo" src="~/img/logo-mark.svg" width="32" height="32" alt="" />
+                <span class="ms-menu__brand-name">@appName</span>
+            </a>
+            <button class="ms-menu__close" type="button" data-ms-drawer-close="true" aria-label="Men&#252; schlie&#223;en">
+                <ms-icon name="close" size="20"></ms-icon>
+            </button>
+        </div>
+
+        <div class="ms-menu__scroll" data-ms-scroll="true">
+            <ul class="ms-nav">
+                <li>
+                    <a class="@LinkClass("/", exact: true)" href="/">
+                        <ms-icon name="home" size="18"></ms-icon>
+                        <span>Start</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="@LinkClass("/Groups")" href="/Groups">
+                        <ms-icon name="group" size="18"></ms-icon>
+                        <span>Gruppen</span>
+                    </a>
+                    @if (groups.Count > 0)
+                    {
+                        <ul class="ms-nav__groups">
+                            @foreach (var group in groups)
+                            {
+                                var isActiveGroup = activeGroupId == group.Id;
+                                <li>
+                                    <details class="ms-nav__details" open="@(isActiveGroup ? "open" : null)">
+                                        <summary class="ms-nav__summary">
+                                            <span class="ms-nav__dot" aria-hidden="true"></span>
+                                            <span class="ms-nav__summary-text">@group.Name</span>
+                                            @if (group.IsGroupAdmin)
+                                            {
+                                                <ms-icon name="admin" size="14" class="ms-nav__badge-icon"></ms-icon>
+                                            }
+                                            <ms-icon name="chevron-down" size="16" class="ms-nav__chevron"></ms-icon>
+                                        </summary>
+                                        <ul class="ms-nav__sublist">
+                                            <li>
+                                                <a class="@SubClass("/Groups/Details", group.Id)" href="/Groups/Details?groupId=@group.Id">
+                                                    <ms-icon name="info" size="15"></ms-icon><span>&#220;bersicht</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="@SubClass("/Groups/Expenses", group.Id)" href="/Groups/Expenses?groupId=@group.Id">
+                                                    <ms-icon name="expense" size="15"></ms-icon><span>Ausgaben</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="@SubClass("/Groups/Payments", group.Id)" href="/Groups/Payments?groupId=@group.Id">
+                                                    <ms-icon name="paypal" size="15"></ms-icon><span>Zahlungen</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="@SubClass("/Groups/Balance", group.Id)" href="/Groups/Balance?groupId=@group.Id">
+                                                    <ms-icon name="balance" size="15"></ms-icon><span>Kontostand</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="@SubClass("/Groups/Members", group.Id)" href="/Groups/Members?groupId=@group.Id">
+                                                    <ms-icon name="user" size="15"></ms-icon><span>Mitglieder</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="@SubClass("/Groups/History", group.Id)" href="/Groups/History?groupId=@group.Id">
+                                                    <ms-icon name="history" size="15"></ms-icon><span>Historie</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <a class="ms-nav__sub ms-nav__sub--add" href="/Groups/Edit">
+                        <ms-icon name="plus" size="15"></ms-icon>
+                        <span>Neue Gruppe</span>
+                    </a>
+                </li>
+            </ul>
+
+            @if (isAdmin)
+            {
+                <p class="ms-nav__caption" id="ms-menu-admin">Administration</p>
+                <ul class="ms-nav" aria-labelledby="ms-menu-admin">
+                    <li>
+                        <a class="@LinkClass("/Admin", exact: true)" href="/Admin">
+                            <ms-icon name="admin" size="18"></ms-icon>
+                            <span>&#220;bersicht</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="@LinkClass("/Admin/Users")" href="/Admin/Users">
+                            <ms-icon name="users" size="18"></ms-icon>
+                            <span>Benutzer</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="@LinkClass("/Admin/Groups")" href="/Admin/Groups">
+                            <ms-icon name="group" size="18"></ms-icon>
+                            <span>Gruppen</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="@LinkClass("/Admin/Settings")" href="/Admin/Settings">
+                            <ms-icon name="settings" size="18"></ms-icon>
+                            <span>Einstellungen</span>
+                        </a>
+                    </li>
+                </ul>
+            }
+        </div>
+
+        <div class="ms-menu__foot">
+            @if (isAuthenticated)
+            {
+                <a class="@LinkClass("/Account/Profile")" href="/Account/Profile">
+                    <ms-icon name="user" size="18"></ms-icon>
+                    <span class="ms-menu__user">@displayName</span>
+                </a>
+                <a class="ms-nav__link" href="/Account/Logout">
+                    <ms-icon name="logout" size="18"></ms-icon>
+                    <span>Abmelden</span>
+                </a>
+            }
+            else
+            {
+                <a class="@LinkClass("/Account/Login")" href="/Account/Login">
+                    <ms-icon name="logout" size="18"></ms-icon>
+                    <span>Anmelden</span>
+                </a>
+            }
+            <partial name="_ThemeSwitcher" />
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,28 @@
+@{
+    // Every signed in user gets the server side persistence, not only the
+    // profile page: the switcher lives in the layout menu.
+    var saveUrl = ViewData.ReadString("ThemeSaveUrl")
+        ?? (User.Identity?.IsAuthenticated == true
+            ? MatSplit.Web.Pages.Account.ProfileModel.ThemeSaveUrl
+            : null);
+}
+<div class="ms-theme" role="group" aria-label="Farbschema" data-ms-theme-switcher="true" data-ms-theme-url="@saveUrl">
+    <button class="ms-theme__btn" type="button" data-ms-theme="system" aria-pressed="false" title="System">
+        <ms-icon name="monitor" size="16"></ms-icon>
+        <span class="ms-visually-hidden">System</span>
+    </button>
+    <button class="ms-theme__btn" type="button" data-ms-theme="dark" aria-pressed="false" title="Dunkel">
+        <ms-icon name="moon" size="16"></ms-icon>
+        <span class="ms-visually-hidden">Dunkel</span>
+    </button>
+    <button class="ms-theme__btn" type="button" data-ms-theme="light" aria-pressed="false" title="Hell">
+        <ms-icon name="sun" size="16"></ms-icon>
+        <span class="ms-visually-hidden">Hell</span>
+    </button>
+</div>
+@if (!string.IsNullOrEmpty(saveUrl))
+{
+    @* js/site.js posts the preference with this token; pages without a form
+       would otherwise have none and the handler would answer 400. *@
+    @Html.AntiForgeryToken()
+}

@@ -1,0 +1,45 @@
+# ---------------------------------------------------------------------------
+# MatSplit - Release / Selfhost Stack
+#   Start:  docker compose up -d
+#   App:    http://localhost:4774
+# ---------------------------------------------------------------------------
+name: matsplit
+
+services:
+  msbi:
+    image: ghcr.io/real-ttx/matsplit:latest
+    # Fallback: builds locally when the image cannot be pulled
+    # (or explicitly via "docker compose up -d --build").
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+        APP_VERSION: ${MATSPLIT_VERSION:-local}
+    container_name: matsplit
+    restart: unless-stopped
+    ports:
+      - "4774:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      MATSPLIT_DATA_DIR: /data
+      TZ: ${TZ:-Europe/Berlin}
+    volumes:
+      # /data/db, /data/config, /data/receipts, /data/keys, /data/logs
+      - matsplit-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  matsplit-data:
+    name: matsplit-data

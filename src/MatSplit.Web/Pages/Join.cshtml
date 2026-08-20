@@ -1,0 +1,79 @@
+@page
+@model MatSplit.Web.Pages.JoinModel
+
+<div class="ms-stack">
+    @if (Model.Group is null)
+    {
+        <ms-card id="join-error" title="@("Beitritt nicht m\u00f6glich")" icon="warning" tone="danger">
+            <ms-alert id="join-error-text" tone="error" text="@Model.ErrorText"></ms-alert>
+            <div class="ms-row">
+                <ms-button id="join-error-login" kind="secondary" icon="user" label="Zur Anmeldung"
+                           type="button" href="/Account/Login"></ms-button>
+            </div>
+        </ms-card>
+    }
+    else
+    {
+        <ms-card id="join-group" title="@Model.Group.Name"
+                 subtitle="Du wurdest zu dieser Gruppe eingeladen" icon="group" tone="accent">
+            @if (!string.IsNullOrWhiteSpace(Model.Group.Description))
+            {
+                <p>@Model.Group.Description</p>
+            }
+            <dl class="ms-kv">
+                <dt>Gruppe</dt>
+                <dd>@Model.Group.Name</dd>
+                <dt>W&#228;hrung</dt>
+                <dd>@Model.Group.Currency</dd>
+            </dl>
+        </ms-card>
+
+        @if (Model.IsSignedIn)
+        {
+            <ms-card id="join-existing" title="Mit deinem Konto beitreten" icon="user">
+                <ms-form id="join-existing-form" handler="Existing">
+                    <p>
+                        Du bist als <strong>@Model.SignedInName</strong> angemeldet. Du kannst der
+                        Gruppe direkt mit diesem Konto beitreten &#8211; dann bleiben alle deine
+                        Gruppen und Ausgaben zusammen.
+                    </p>
+
+                    <ms-field id="jx-token" name="Token" type="hidden" value="@Model.Token"></ms-field>
+
+                    <ms-button-row id="jx-buttons">
+                        <ms-button id="jx-submit" kind="primary" icon="check" label="Jetzt beitreten"></ms-button>
+                        <ms-button id="jx-switch" kind="secondary" icon="logout" label="Anderes Konto verwenden"
+                                   type="button" href="/Account/Logout"></ms-button>
+                    </ms-button-row>
+                </ms-form>
+            </ms-card>
+        }
+        else
+        {
+            <ms-card id="join-guest" title="Als Gast beitreten" icon="link">
+                <ms-form id="join-form">
+                    <p>
+                        Gib einen Namen an, unter dem dich die anderen Mitglieder sehen. Ein Konto
+                        oder Passwort brauchst du daf&#252;r nicht.
+                    </p>
+
+                    <ms-field id="jf-name" for="Input.DisplayName" autofocus="true"
+                              placeholder="z. B. Horst" autocomplete="nickname"
+                              hint="@("Du kannst den Namen sp\u00e4ter im Konto \u00e4ndern.")"></ms-field>
+                    <ms-field id="jf-token" name="Token" type="hidden" value="@Model.Token"></ms-field>
+
+                    <ms-button-row id="jf-buttons" divider="false">
+                        <ms-button id="jf-submit" kind="primary" icon="check" label="Beitreten"
+                                   full-width="true"></ms-button>
+                    </ms-button-row>
+                </ms-form>
+
+                <div class="ms-row">
+                    <span class="ms-muted">Du hast schon ein Konto?</span>
+                    <ms-button id="join-login" kind="ghost" size="sm" icon="user" label="Anmelden"
+                               type="button" href="@Model.LoginUrl"></ms-button>
+                </div>
+            </ms-card>
+        }
+    }
+</div>

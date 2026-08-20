@@ -1,0 +1,26 @@
+@page
+@model MatSplit.Web.Pages.AccessDeniedModel
+
+<ms-card id="denied-card" title="Kein Zugriff" subtitle="Fehler 403" icon="warning" tone="warning">
+    <p>@Model.Reason</p>
+
+    @if (Model.IsAnonymousUser)
+    {
+        <ms-alert id="denied-guest" tone="info" title="Gastzugang">
+            Du bist als Gast &#252;ber einen Einladungslink angemeldet. Unter <em>Konto</em> kannst
+            du dein Konto mit E-Mail und Passwort sichern und erweitern.
+        </ms-alert>
+    }
+
+    <div class="ms-row">
+        @if (!string.IsNullOrWhiteSpace(Model.SafeReturnUrl))
+        {
+            <ms-button id="denied-back" kind="primary" icon="back" label="@("Zur\u00fcck")"
+                       type="button" href="@Model.SafeReturnUrl"></ms-button>
+        }
+        <ms-button id="denied-groups" kind="secondary" icon="group" label="Meine Gruppen"
+                   type="button" href="/Groups"></ms-button>
+        <ms-button id="denied-profile" kind="ghost" icon="user" label="Konto"
+                   type="button" href="/Account/Profile"></ms-button>
+    </div>
+</ms-card>

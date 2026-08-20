@@ -1,0 +1,222 @@
+@page
+@model MatSplit.Web.Pages.Account.ProfileModel
+@{
+    var roleText = Model.Role switch
+    {
+        UserRole.Admin => "Administrator",
+        UserRole.User => "Benutzer",
+        _ => "Gast (Einladungslink)"
+    };
+}
+
+<div class="ms-stack">
+    @if (Model.IsAnonymousAccount)
+    {
+        <ms-card id="profile-upgrade" title="Konto sichern"
+                 subtitle="Aus dem Gastzugang ein richtiges Konto machen" icon="link" tone="accent">
+            <ms-form id="upgrade-form" handler="Upgrade" columns="2">
+                <p>
+                    Dein Konto wurde &#252;ber einen Einladungslink erstellt und hat noch kein
+                    Passwort. Vergib eine E-Mail-Adresse und ein Passwort, damit du dich auch ohne
+                    den Einladungslink anmelden kannst.
+                </p>
+
+                <ms-field id="uf-email" name="email" type="email" label="E-Mail" required="true"
+                          value="@Model.UpgradeEmail" autocomplete="email"
+                          placeholder="name@@beispiel.de"></ms-field>
+                <ms-field id="uf-password" name="password" type="password" label="Passwort"
+                          required="true" autocomplete="new-password"
+                          hint="Mindestens 6 Zeichen."></ms-field>
+                <ms-field id="uf-confirm" name="confirmPassword" type="password"
+                          label="Passwort wiederholen" required="true"
+                          autocomplete="new-password"></ms-field>
+
+                <ms-button-row id="uf-buttons">
+                    <ms-button id="uf-save" kind="primary" icon="save" label="Konto einrichten"></ms-button>
+                </ms-button-row>
+            </ms-form>
+        </ms-card>
+    }
+
+    <ms-card id="profile-card" title="Profil" subtitle="Name, Kontakt und Farbschema" icon="user">
+        <ms-form id="profile-form" columns="2">
+            <ms-field id="pf-name" for="Input.DisplayName" full-width="true"
+                      autocomplete="name" placeholder="z. B. Horst"></ms-field>
+
+            <ms-field id="pf-email" for="Input.Email" type="email" autocomplete="email"
+                      placeholder="name@@beispiel.de"
+                      hint="@("Wird f\u00fcr die Anmeldung verwendet. Optional.")"></ms-field>
+            <ms-field id="pf-theme" for="Input.Theme" type="select" items="Model.ThemeOptions"
+                      hint="@("Gilt auf allen Ger\u00e4ten dieses Kontos.")"></ms-field>
+
+            <ms-field id="pf-paypal" for="Input.PayPalAddress"
+                      placeholder="horst oder https://paypal.me/horst"
+                      hint="paypal.me-Name, paypal.me-Adresse oder PayPal-E-Mail-Adresse."></ms-field>
+            <ms-field id="pf-paypal-preview" type="static" label="PayPal-Link"
+                      value="@(Model.PayPalPreview ?? "\u2013")"
+                      hint="@("Mit diesem Link k\u00f6nnen dir andere Mitglieder Geld schicken.")"></ms-field>
+
+            @if (Model.HasPassword)
+            {
+                <hr />
+
+                <ms-field id="pf-change" for="Input.ChangePassword" type="checkbox" full-width="true"></ms-field>
+                <ms-field id="pf-current" for="Input.CurrentPassword" type="password"
+                          autocomplete="current-password"
+                          depends-on="Input.ChangePassword" depends-value="true"></ms-field>
+                <ms-field id="pf-new" for="Input.NewPassword" type="password"
+                          autocomplete="new-password" hint="Mindestens 6 Zeichen."
+                          depends-on="Input.ChangePassword" depends-value="true"></ms-field>
+                <ms-field id="pf-confirm" for="Input.ConfirmPassword" type="password"
+                          autocomplete="new-password"
+                          depends-on="Input.ChangePassword" depends-value="true"></ms-field>
+            }
+
+            <ms-button-row id="pf-buttons">
+                <ms-button id="pf-save" kind="primary" icon="save" label="Speichern"></ms-button>
+                <ms-button id="pf-back" kind="secondary" icon="back" label="@("Zur\u00fcck")"
+                           type="button" href="/Groups"></ms-button>
+            </ms-button-row>
+        </ms-form>
+    </ms-card>
+
+    <ms-card id="profile-sessions" title="Aktive Sitzungen"
+             subtitle="@("Ger\u00e4te, die aktuell angemeldet sind")" icon="users">
+        <ms-form id="sessions-form" handler="EndSession" validation-summary="none">
+            <ms-table id="sessions-table" caption="Aktive Sitzungen dieses Kontos" dense="true">
+                <thead>
+                    <tr>
+                        <th scope="col">Ger&#228;t</th>
+                        <th scope="col">Angemeldet</th>
+                        <th scope="col">Letzter Zugriff</th>
+                        <th scope="col">L&#228;uft ab</th>
+                        <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var session in Model.SessionRows)
+                    {
+                        var confirmText = session.IsCurrent
+                            ? "Diese Sitzung beenden? Du wirst dabei abgemeldet."
+                            : "Diese Sitzung wirklich beenden?";
+                        <tr>
+                            <td data-label="Ger&#228;t">
+                                @session.Device
+                                @if (session.IsCurrent)
+                                {
+                                    <span class="ms-chip">Diese Sitzung</span>
+                                }
+                            </td>
+                            <td data-label="Angemeldet">@session.CreatedUtc.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td data-label="Letzter Zugriff">@session.LastSeenUtc.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td data-label="L&#228;uft ab">@session.ExpiresUtc.ToString("dd.MM.yyyy")</td>
+                            <td data-label="Aktionen">
+                                <div class="ms-table__rowactions">
+                                    <ms-button id="@($"session-{session.Id}-end")" kind="danger" size="sm"
+                                               icon="logout" icon-only="true" label="Abmelden"
+                                               name="sessionId" value="@session.Id"
+                                               confirm="@confirmText"></ms-button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </ms-table>
+
+            @if (Model.SessionRows.Count == 0)
+            {
+                <ms-empty-state id="sessions-empty" title="Keine Sitzungen"
+                                text="Es sind derzeit keine Sitzungen registriert."
+                                icon="users"></ms-empty-state>
+            }
+
+            <ms-button-row id="sessions-buttons">
+                <ms-button id="sessions-end-others" kind="danger" icon="logout"
+                           label="Andere Sitzungen abmelden" handler="EndOtherSessions"
+                           confirm="Alle anderen Sitzungen wirklich beenden?"></ms-button>
+            </ms-button-row>
+        </ms-form>
+    </ms-card>
+
+    <ms-card id="profile-meta" title="Kontodaten" icon="info">
+        <dl class="ms-kv">
+            <dt>Anzeigename</dt>
+            <dd>@Model.DisplayName</dd>
+            <dt>Rolle</dt>
+            <dd>@roleText</dd>
+            <dt>Passwort</dt>
+            <dd>@(Model.HasPassword ? "gesetzt" : "nicht gesetzt")</dd>
+            <dt>Konto-Kennung</dt>
+            <dd class="ms-muted">@Model.UserToken</dd>
+        </dl>
+        <div class="ms-row">
+            <ms-button id="profile-logout" kind="secondary" icon="logout" label="Abmelden"
+                       type="button" href="/Account/Logout"></ms-button>
+        </div>
+    </ms-card>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var input = document.getElementById('pf-paypal');
+            var preview = document.getElementById('pf-paypal-preview');
+            if (!input || !preview) {
+                return;
+            }
+
+            var pattern = /^[A-Za-z0-9._-]{1,64}$/;
+
+            function extractHandle(raw) {
+                var value = (raw || '').trim();
+                if (!value || value.indexOf('@@') >= 0) {
+                    return null;
+                }
+
+                var lower = value.toLowerCase();
+                var marker = lower.indexOf('paypal.me/');
+                if (marker >= 0) {
+                    value = value.substring(marker + 10);
+                } else {
+                    marker = lower.indexOf('paypal.com/paypalme/');
+                    if (marker >= 0) {
+                        value = value.substring(marker + 20);
+                    }
+                }
+
+                var cut = value.search(/[?#]/);
+                if (cut >= 0) {
+                    value = value.substring(0, cut);
+                }
+
+                value = value.replace(/^\/+/, '').replace(/\/+$/, '').trim();
+
+                var slash = value.indexOf('/');
+                if (slash >= 0) {
+                    value = value.substring(0, slash);
+                }
+
+                return pattern.test(value) ? value : null;
+            }
+
+            function update() {
+                var handle = extractHandle(input.value);
+                if (handle) {
+                    preview.textContent = 'https://paypal.me/' + handle;
+                    return;
+                }
+
+                if ((input.value || '').indexOf('@@') >= 0) {
+                    preview.textContent = 'E-Mail-Adressen lassen sich nicht als paypal.me-Link darstellen.';
+                    return;
+                }
+
+                preview.textContent = '\u2013';
+            }
+
+            input.addEventListener('input', update);
+            input.addEventListener('change', update);
+            update();
+        })();
+    </script>
+}

@@ -1,0 +1,82 @@
+# ---------------------------------------------------------------------------
+# MatSplit - Development Stack
+#   Start:  docker compose -f docker-compose.dev.yml up -d --build
+#   App:    http://localhost:4774
+#   DB:     http://localhost:4775   (SQLite browser on the same volume)
+#
+# The DB browser replaces the originally requested mssql-server/pgadmin combo,
+# see README.md -> "Abweichungen von der Spezifikation".
+# ---------------------------------------------------------------------------
+name: matsplit-dev
+
+services:
+  msbi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_CONFIGURATION: Debug
+        APP_VERSION: ${MATSPLIT_VERSION:-local-dev}
+    image: matsplit:dev
+    container_name: matsplit-dev
+    restart: unless-stopped
+    ports:
+      - "4774:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      MATSPLIT_DATA_DIR: /data
+      Logging__LogLevel__Default: Debug
+      TZ: ${TZ:-Europe/Berlin}
+    volumes:
+      - matsplit-dev-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # SQLite web browser for /data/db/matsplit.db.
+  #
+  # Two details are essential here, both learned the hard way:
+  #  1) user 1654:1654 is the "app" user of the runtime image. The image would
+  #     otherwise run as root and any file it creates on the shared volume ends
+  #     up root-owned - the app (uid 1654) then dies with
+  #     "SQLite Error 8: attempt to write a readonly database".
+  #  2) sqlite_web CREATES the file it is pointed at. Starting it before the app
+  #     has run EnsureCreated() would leave an empty database behind, so this
+  #     container waits for a healthy app and for a non-empty database file.
+  sqliteweb:
+    image: coleifer/sqlite-web:latest
+    container_name: matsplit-dev-sqliteweb
+    restart: unless-stopped
+    user: "1654:1654"
+    depends_on:
+      msbi:
+        condition: service_healthy
+    ports:
+      - "4775:8080"
+    environment:
+      SQLITE_DATABASE: /data/db/matsplit.db
+      TZ: ${TZ:-Europe/Berlin}
+    # -H bind all, -p port, -x no browser, -f enable foreign_keys pragma
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while [ ! -s /data/db/matsplit.db ]; do
+          echo "waiting for /data/db/matsplit.db ..."
+          sleep 2
+        done
+        exec sqlite_web -H 0.0.0.0 -p 8080 -x -f /data/db/matsplit.db
+    volumes:
+      - matsplit-dev-data:/data
+
+volumes:
+  matsplit-dev-data:
+    name: matsplit-dev-data

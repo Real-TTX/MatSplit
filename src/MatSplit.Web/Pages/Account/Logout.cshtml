@@ -1,0 +1,24 @@
+@page
+@model MatSplit.Web.Pages.Account.LogoutModel
+
+<ms-card id="logout-card" title="Abmelden" subtitle="@Model.DisplayName" icon="logout">
+    <ms-form id="logout-form" validation-summary="none">
+        <p>M&#246;chtest du dich wirklich abmelden? Die aktuelle Sitzung wird dabei beendet.</p>
+
+        @if (Model.IsAnonymousUser)
+        {
+            <ms-alert id="logout-anon" tone="warning" title="Gastkonto">
+                Dein Konto wurde &#252;ber einen Einladungslink erstellt und hat kein Passwort.
+                Du kommst nur mit demselben Einladungslink wieder hinein &#8211; sichere dein
+                Konto vorher am besten unter <em>Konto</em> mit E-Mail und Passwort.
+            </ms-alert>
+        }
+
+        <ms-button-row id="logout-buttons">
+            <ms-button id="logout-back" kind="secondary" icon="back" label="@("Zur\u00fcck")"
+                       type="button" href="/"></ms-button>
+            <ms-button id="logout-submit" kind="danger" icon="logout" label="Abmelden"
+                       confirm="Wirklich abmelden?"></ms-button>
+        </ms-button-row>
+    </ms-form>
+</ms-card>

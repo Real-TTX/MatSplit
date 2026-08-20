@@ -1,0 +1,83 @@
+@model MatSplit.Web.Pages.Groups.Expenses.ReceiptPreviewModel
+@*
+    Receipt card of the expense edit page: upload form (camera capable) plus the
+    list of stored receipts. The images are streamed by the authorized endpoint
+    /receipts/{id}, never directly from the file system.
+*@
+
+<ms-card id="receipt-card" title="Belege" subtitle="Fotos und PDF-Belege dieser Ausgabe" icon="receipt">
+
+    <ms-form id="receipt-upload-form" action="@Model.UploadUrl" has-files="true" validation-summary="none">
+        <ms-field id="rc-file" name="Receipt" type="file" label="Beleg aufnehmen oder auswählen"
+                  accept="image/*,application/pdf" capture="environment" full-width="true"
+                  data-ms-receipt="true" data-ms-max-mb="@Model.MaxReceiptSizeMb"
+                  hint="@($"Erlaubt sind Bilder und PDF bis {Model.MaxReceiptSizeMb} MB. Fotos werden vor dem Upload auf maximal 1600 Pixel verkleinert.")"></ms-field>
+        <ms-button id="rc-upload" kind="primary" icon="upload" label="Beleg hochladen"></ms-button>
+    </ms-form>
+
+    @if (Model.Receipts.Count == 0)
+    {
+        <ms-empty-state id="rc-empty" title="Noch kein Beleg"
+                        text="Fotografiere den Kassenzettel direkt mit dem Handy, damit die Ausgabe belegt ist."
+                        icon="camera"></ms-empty-state>
+    }
+    else
+    {
+        <ms-table id="rc-table" caption="Belege dieser Ausgabe" dense="true">
+            <thead>
+                <tr>
+                    <th scope="col">Vorschau</th>
+                    <th scope="col">Datei</th>
+                    <th scope="col" class="ms-num">Gr&#246;&#223;e</th>
+                    <th scope="col">Hochgeladen</th>
+                    <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var receipt in Model.Receipts)
+                {
+                    <tr>
+                        <td data-label="Vorschau">
+                            @if (MatSplit.Web.Pages.Groups.Expenses.ReceiptPreviewModel.IsImage(receipt))
+                            {
+                                <a href="@($"/receipts/{receipt.Id}")" target="_blank" rel="noopener">
+                                    <img src="@($"/receipts/{receipt.Id}")" alt="@receipt.FileName"
+                                         width="96" loading="lazy" decoding="async" />
+                                </a>
+                            }
+                            else
+                            {
+                                <ms-icon name="receipt" label="PDF-Beleg"></ms-icon>
+                            }
+                        </td>
+                        <td data-label="Datei">
+                            <a href="@($"/receipts/{receipt.Id}")" target="_blank" rel="noopener">@receipt.FileName</a>
+                        </td>
+                        <td data-label="Gr&#246;&#223;e" class="ms-num">
+                            @MatSplit.Web.Pages.Groups.Expenses.ReceiptPreviewModel.FormatSize(receipt.FileSizeBytes)
+                        </td>
+                        <td data-label="Hochgeladen">@receipt.CreateDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                        <td data-label="Aktionen">
+                            <div class="ms-table__rowactions">
+                                <ms-button id="@($"rc-{receipt.Id}-open")" kind="ghost" size="sm" icon="forward"
+                                           icon-only="true" label="Beleg öffnen"
+                                           href="@($"/receipts/{receipt.Id}")" target="_blank"></ms-button>
+                                @if (Model.CanDelete(receipt))
+                                {
+                                    <ms-form id="@($"rc-{receipt.Id}-form")" action="@Model.DeleteUrl"
+                                             validation-summary="none">
+                                        <ms-field id="@($"rc-{receipt.Id}-id")" name="receiptId" type="hidden"
+                                                  value="@receipt.Id"></ms-field>
+                                        <ms-button id="@($"rc-{receipt.Id}-delete")" kind="danger" size="sm"
+                                                   icon="trash" icon-only="true" label="Beleg löschen"
+                                                   confirm="Beleg wirklich löschen?"></ms-button>
+                                    </ms-form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </ms-table>
+    }
+</ms-card>

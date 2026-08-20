@@ -1,0 +1,54 @@
+# ---------------------------------------------------------------------------
+# Keep the build context small. Everything the image needs must NOT be listed:
+#   MatSplit.sln, Directory.Build.props, src/**
+# ---------------------------------------------------------------------------
+
+# VCS / tooling
+.git
+.git/**
+.gitattributes
+.gitignore
+.github
+.vs
+.vscode
+.idea
+*.user
+*.suo
+*.DotSettings
+
+# build output
+**/bin/
+**/obj/
+**/out/
+**/publish/
+**/TestResults/
+artifacts/
+
+# runtime data (never bake local databases / receipts into the image)
+data/
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# node / frontend tooling
+**/node_modules/
+**/npm-debug.log
+**/yarn-error.log
+
+# docker / compose / scripts (not needed inside the image)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+scripts/
+
+# docs
+README.md
+CHANGELOG.md
+LICENSE
+docs/
+*.md
+
+# os junk
+**/.DS_Store
+Thumbs.db
+desktop.ini

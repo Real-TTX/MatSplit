@@ -1,0 +1,218 @@
+@page
+@model MatSplit.Web.Pages.Groups.DetailsModel
+@{
+    var currency = Model.Group.Currency;
+    var myBalanceCents = Model.MyBalance?.BalanceCents ?? 0;
+    var myTone = myBalanceCents > 0 ? "success" : myBalanceCents < 0 ? "warning" : "muted";
+}
+
+<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Details, Model.CanManage)" />
+
+<div class="ms-grid ms-grid--3">
+    <ms-card id="kpi-expenses" title="Ausgaben" icon="expense" tone="accent">
+        <p><ms-money cents="@Model.Balance.TotalExpensesCents" currency="@currency" strong="true"></ms-money></p>
+        <p class="ms-muted">@Model.ExpenseCount Einträge</p>
+    </ms-card>
+    <ms-card id="kpi-payments" title="Zahlungen" icon="paypal">
+        <p><ms-money cents="@Model.Balance.TotalPaymentsCents" currency="@currency" strong="true"></ms-money></p>
+        <p class="ms-muted">bereits untereinander ausgeglichen</p>
+    </ms-card>
+    <ms-card id="kpi-balance" title="Dein Saldo" icon="balance" tone="@myTone">
+        <p><ms-money cents="@myBalanceCents" currency="@currency" show-sign="true" strong="true"></ms-money></p>
+        <p class="ms-muted">
+            @if (Model.MyBalance is null)
+            {
+                <text>Du bist kein Mitglied dieser Gruppe.</text>
+            }
+            else if (myBalanceCents > 0)
+            {
+                <text>Du bekommst Geld zurück.</text>
+            }
+            else if (myBalanceCents < 0)
+            {
+                <text>Du musst noch etwas beisteuern.</text>
+            }
+            else
+            {
+                <text>Alles ausgeglichen.</text>
+            }
+        </p>
+    </ms-card>
+</div>
+
+<div class="ms-grid ms-grid--2">
+    <ms-card id="group-info" title="Gruppe" icon="info">
+        <dl class="ms-kv">
+            <dt>Name</dt>
+            <dd>@Model.Group.Name</dd>
+            <dt>Beschreibung</dt>
+            <dd>@(string.IsNullOrWhiteSpace(Model.Group.Description) ? "–" : Model.Group.Description)</dd>
+            <dt>Währung</dt>
+            <dd>@currency</dd>
+            <dt>Einladungslink</dt>
+            <dd>@(Model.Group.InviteEnabled ? "aktiv" : "deaktiviert")</dd>
+            <dt>Angelegt</dt>
+            <dd>@MatSplit.Web.Pages.Groups.DetailsModel.FormatMoment(Model.Group.CreateDate)</dd>
+        </dl>
+    </ms-card>
+
+    <ms-card id="group-members" title="Mitglieder" subtitle="@($"{Model.Members.Count} Personen")" icon="users">
+        <div class="ms-row">
+            @foreach (var member in Model.Members)
+            {
+                <span class="ms-chip">
+                    @(member.User?.DisplayName ?? "Unbekannt")
+                    @if (member.ShareFactor != 1)
+                    {
+                        <text> · Faktor @member.ShareFactor</text>
+                    }
+                    @if (member.IsGroupAdmin)
+                    {
+                        <text> · Admin</text>
+                    }
+                </span>
+            }
+        </div>
+        <div class="ms-row">
+            <ms-button id="group-members-link" kind="secondary" icon="users" label="Mitglieder verwalten"
+                       href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-button>
+        </div>
+    </ms-card>
+</div>
+
+<ms-card id="group-settlements" title="Offener Ausgleich" subtitle="Minimale Anzahl an Überweisungen" icon="balance">
+    @if (Model.Balance.Settlements.Count == 0)
+    {
+        <ms-empty-state id="group-settlements-empty" title="Alles ausgeglichen"
+                        text="Zwischen den Mitgliedern stehen aktuell keine Zahlungen offen."
+                        icon="check"></ms-empty-state>
+    }
+    else
+    {
+        <ms-table id="group-settlements-table" caption="Offene Ausgleichszahlungen">
+            <thead>
+                <tr>
+                    <th scope="col">Von</th>
+                    <th scope="col">An</th>
+                    <th scope="col" class="ms-num">Betrag</th>
+                    <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var settlement in Model.Balance.Settlements)
+                {
+                    <tr>
+                        <td data-label="Von">@settlement.FromDisplayName</td>
+                        <td data-label="An">@settlement.ToDisplayName</td>
+                        <td data-label="Betrag" class="ms-num">
+                            <ms-money cents="@settlement.AmountCents" currency="@currency"></ms-money>
+                        </td>
+                        <td data-label="Aktionen">
+                            <div class="ms-table__rowactions">
+                                @if (!string.IsNullOrWhiteSpace(settlement.PayPalUrl))
+                                {
+                                    <ms-button id="@($"settle-{settlement.FromUserId}-{settlement.ToUserId}-paypal")"
+                                               kind="ghost" size="sm" icon="paypal" label="PayPal"
+                                               href="@settlement.PayPalUrl" target="_blank"></ms-button>
+                                }
+                                <ms-button id="@($"settle-{settlement.FromUserId}-{settlement.ToUserId}-pay")"
+                                           kind="ghost" size="sm" icon="plus" label="Zahlung erfassen"
+                                           href="@($"/Groups/Payments/Edit?groupId={Model.GroupId}&fromUserId={settlement.FromUserId}&toUserId={settlement.ToUserId}&amountCents={settlement.AmountCents}")"></ms-button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </ms-table>
+    }
+    <div class="ms-row">
+        <ms-button id="group-balance-link" kind="secondary" icon="balance" label="Kontostand im Detail"
+                   href="@($"/Groups/Balance?groupId={Model.GroupId}")"></ms-button>
+    </div>
+</ms-card>
+
+<ms-card id="group-expenses" title="Letzte Ausgaben" icon="expense">
+    @if (Model.RecentExpenses.Count == 0)
+    {
+        <ms-empty-state id="group-expenses-empty" title="Noch keine Ausgaben"
+                        text="Trage die erste Ausgabe ein, damit die Abrechnung starten kann."
+                        icon="expense"
+                        action-url="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}")"
+                        action-label="Ausgabe erfassen"></ms-empty-state>
+    }
+    else
+    {
+        <ms-table id="group-expenses-table" caption="Die fünf neuesten Ausgaben">
+            <thead>
+                <tr>
+                    <th scope="col">Datum</th>
+                    <th scope="col">Beschreibung</th>
+                    <th scope="col">Bezahlt von</th>
+                    <th scope="col" class="ms-num">Betrag</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var expense in Model.RecentExpenses)
+                {
+                    <tr>
+                        <td data-label="Datum">@expense.ExpenseDate.ToString("dd.MM.yyyy")</td>
+                        <td data-label="Beschreibung">
+                            <a href="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}&id={expense.Id}")">@expense.Description</a>
+                        </td>
+                        <td data-label="Bezahlt von">@(expense.PaidByUser?.DisplayName ?? "Unbekannt")</td>
+                        <td data-label="Betrag" class="ms-num">
+                            <ms-money cents="@expense.AmountCents" currency="@expense.Currency"></ms-money>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </ms-table>
+    }
+    <div class="ms-row">
+        <ms-button id="group-expenses-new" kind="primary" icon="plus" label="Ausgabe erfassen"
+                   href="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}")"></ms-button>
+        <ms-button id="group-expenses-link" kind="secondary" icon="expense" label="Alle Ausgaben"
+                   href="@($"/Groups/Expenses?groupId={Model.GroupId}")"></ms-button>
+        <ms-button id="group-payments-new" kind="secondary" icon="paypal" label="Zahlung erfassen"
+                   href="@($"/Groups/Payments/Edit?groupId={Model.GroupId}")"></ms-button>
+    </div>
+</ms-card>
+
+<ms-card id="group-activity" title="Letzte Aktivität" icon="history">
+    @if (Model.RecentHistory.Count == 0)
+    {
+        <ms-empty-state id="group-activity-empty" title="Noch keine Historie"
+                        text="Sobald etwas passiert, steht es hier." icon="history"></ms-empty-state>
+    }
+    else
+    {
+        <ms-table id="group-activity-table" caption="Die fünf neuesten Ereignisse">
+            <thead>
+                <tr>
+                    <th scope="col">Zeitpunkt</th>
+                    <th scope="col">Wer</th>
+                    <th scope="col">Was</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in Model.RecentHistory)
+                {
+                    <tr>
+                        <td data-label="Zeitpunkt">@MatSplit.Web.Pages.Groups.DetailsModel.FormatMoment(entry.CreateDate)</td>
+                        <td data-label="Wer">@(entry.User?.DisplayName ?? "System")</td>
+                        <td data-label="Was">@entry.Summary</td>
+                    </tr>
+                }
+            </tbody>
+        </ms-table>
+    }
+    <div class="ms-row">
+        <ms-button id="group-history-link" kind="secondary" icon="history" label="Vollständige Historie"
+                   href="@($"/Groups/History?groupId={Model.GroupId}")"></ms-button>
+        @if (Model.CanManage)
+        {
+            <ms-button id="group-edit-link" kind="secondary" icon="edit" label="Gruppe bearbeiten"
+                       href="@($"/Groups/Edit?id={Model.GroupId}")"></ms-button>
+        }
+    </div>
+</ms-card>

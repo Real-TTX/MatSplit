@@ -1,0 +1,8 @@
+/* ==========================================================================
+   MatSplit style bundle. The layout only references this file.
+   Order matters: tokens first, then layout, controls and scrollbars.
+   ========================================================================== */
+@import url("theme.css");
+@import url("layout.css");
+@import url("controls.css");
+@import url("scrollbars.css");

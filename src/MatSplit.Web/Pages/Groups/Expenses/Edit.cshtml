@@ -1,0 +1,113 @@
+@page
+@model MatSplit.Web.Pages.Groups.Expenses.EditModel
+
+<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Expenses, Model.CanManage)" />
+
+<ms-card id="expense-card" title="@(Model.IsExisting ? "Ausgabe bearbeiten" : "Neue Ausgabe")"
+         subtitle="@Model.Group.Name" icon="expense">
+    <ms-form id="expense-form" columns="2" has-files="true">
+        <ms-field id="ef-desc" for="Input.Description" full-width="true"
+                  placeholder="z. B. Pizza am Strand"></ms-field>
+        <ms-field id="ef-amount" for="Input.Amount" type="money" currency="@Model.Input.Currency"></ms-field>
+        <ms-field id="ef-date" for="Input.ExpenseDate" type="date"></ms-field>
+        <ms-field id="ef-payer" for="Input.PaidByUserId" type="select"
+                  items="Model.MemberOptions" option-label="Bitte wählen"></ms-field>
+        <ms-field id="ef-currency" for="Input.Currency" max-length="3"
+                  hint="Dreistelliger Code, zum Beispiel EUR."></ms-field>
+        <ms-field id="ef-category" for="Input.Category" full-width="true"
+                  hint="@Model.CategoryHint" placeholder="z. B. Essen"></ms-field>
+
+        <h3>Aufteilung</h3>
+
+        <div class="ms-field ms-field--full" id="ef-mode-field">
+            <span class="ms-field__label" id="ef-mode-label"><span>Aufteilung</span></span>
+            <div class="ms-form__row" role="radiogroup" aria-labelledby="ef-mode-label">
+                @foreach (var option in Model.ShareModeOptions)
+                {
+                    var optionId = $"ef-mode-{option.Value.ToLowerInvariant()}";
+                    <label class="ms-check" for="@optionId">
+                        <input class="ms-checkbox" type="radio" id="@optionId"
+                               name="Input.ShareMode" value="@option.Value"
+                               checked="@(string.Equals(Model.Input.ShareMode, option.Value, StringComparison.Ordinal))" />
+                        <span class="ms-check__label">@option.Label</span>
+                    </label>
+                }
+            </div>
+            @foreach (var option in Model.ShareModeOptions)
+            {
+                <p class="ms-field__hint ms-field--conditional"
+                   data-depends-on="Input.ShareMode" data-depends-value="@option.Value" hidden>@option.Hint</p>
+            }
+        </div>
+
+        @if (Model.Input.Shares.Count > 0)
+        {
+            <p class="ms-field__hint ms-field--conditional"
+               data-depends-on="Input.ShareMode" data-depends-value="Equal" hidden>
+                Beteiligt sind alle Mitglieder:
+                @string.Join(", ", Model.Input.Shares.Select(x => x.ShareFactor > 1
+                    ? $"{x.DisplayName} (Faktor {x.ShareFactor})"
+                    : x.DisplayName))
+            </p>
+        }
+
+        @for (var index = 0; index < Model.Input.Shares.Count; index++)
+        {
+            var line = Model.Input.Shares[index];
+            var rowId = $"ef-share-{index}";
+
+            <div class="ms-form__row ms-field--conditional"
+                 data-depends-on="Input.ShareMode" data-depends-value="Factors,Amounts" hidden>
+                @* Explicit name/value: an indexed hidden field bound with for="" resolves to an empty value. *@
+                <ms-field id="@($"{rowId}-user")" name="@($"Input.Shares[{index}].UserId")" type="hidden"
+                          value="@line.UserId"></ms-field>
+                <ms-field id="@($"{rowId}-in")" for="Input.Shares[index].IsIncluded" type="checkbox"
+                          label="@line.DisplayName"></ms-field>
+                <ms-field id="@($"{rowId}-factor")" for="Input.Shares[index].ShareFactor" type="number"
+                          min="1" max="100" step="1"
+                          depends-on="Input.ShareMode" depends-value="Factors"></ms-field>
+                <ms-field id="@($"{rowId}-amount")" for="Input.Shares[index].Amount" type="money"
+                          currency="@Model.Input.Currency"
+                          depends-on="Input.ShareMode" depends-value="Amounts"></ms-field>
+            </div>
+        }
+
+        @if (!Model.IsExisting)
+        {
+            <hr />
+            <ms-field id="ef-receipt" name="Receipt" type="file" label="Belegfoto" full-width="true"
+                      accept="image/*,application/pdf" capture="environment" data-ms-receipt="true"
+                      data-ms-max-mb="@Model.MaxReceiptSizeMb"
+                      hint="@($"Optional: Foto direkt mit der Kamera aufnehmen. Maximal {Model.MaxReceiptSizeMb} MB, Bilder werden vor dem Upload automatisch verkleinert.")"></ms-field>
+        }
+
+        <ms-field id="ef-id" for="Input.Id" type="hidden"></ms-field>
+
+        <ms-button-row id="ef-buttons">
+            <ms-button id="ef-save" kind="primary" icon="save" label="Speichern"></ms-button>
+            <ms-button id="ef-back" kind="secondary" icon="back" label="Zurück"
+                       type="button" href="@Model.ListUrl"></ms-button>
+            @if (Model.IsExisting && Model.CanManage)
+            {
+                <ms-button id="ef-delete" kind="danger" icon="trash" label="Löschen"
+                           handler="Delete" confirm="Ausgabe wirklich löschen?"></ms-button>
+            }
+        </ms-button-row>
+    </ms-form>
+</ms-card>
+
+@if (Model.IsExisting)
+{
+    <partial name="_ReceiptPreview" model="Model.ReceiptPreview" />
+}
+else
+{
+    <ms-card id="receipt-hint-card" title="Belege" icon="receipt" tone="muted">
+        <ms-alert id="receipt-hint" tone="info"
+                  text="Weitere Belege können erfasst werden, sobald die Ausgabe gespeichert ist."></ms-alert>
+    </ms-card>
+}
+
+@section Scripts {
+    <script src="~/js/receipt-capture.js" asp-append-version="true" defer></script>
+}

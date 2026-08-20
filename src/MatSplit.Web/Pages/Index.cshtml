@@ -1,0 +1,15 @@
+@page
+@model MatSplit.Web.Pages.IndexModel
+@{
+    ViewData[LayoutKeys.Title] = "Start";
+    ViewData[LayoutKeys.TitleIcon] = "home";
+}
+
+<ms-card id="home-card" title="Willkommen bei MatSplit" icon="logo" tone="accent">
+    <p class="ms-muted">
+        Gemeinsame Ausgaben für Urlaub und WG – du wirst zur Gruppenübersicht weitergeleitet.
+    </p>
+    <div class="ms-row">
+        <ms-button id="home-groups" kind="primary" icon="group" label="Zu den Gruppen" href="/Groups"></ms-button>
+    </div>
+</ms-card>
