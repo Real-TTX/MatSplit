@@ -304,11 +304,11 @@
     align-items: center;
     gap: var(--ms-space-3);
     min-height: var(--ms-header-height);
-    padding: calc(var(--ms-safe-top) + var(--ms-space-3)) calc(var(--ms-safe-right) + var(--ms-space-5))
-             var(--ms-space-3) var(--ms-space-5);
+    padding: calc(var(--ms-safe-top) + var(--ms-space-3)) calc(var(--ms-safe-right) + var(--ms-space-7))
+             var(--ms-space-3) var(--ms-space-7);
     border-bottom: 1px solid var(--ms-border);
-    background: color-mix(in srgb, var(--ms-bg) 88%, transparent);
-    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--ms-bg) 85%, transparent);
+    backdrop-filter: blur(12px);
 }
 
 .ms-header__burger {
@@ -362,7 +362,7 @@
 /* ----------------------------- breadcrumb ------------------------------- */
 
 .ms-breadcrumb {
-    padding: var(--ms-space-3) var(--ms-space-5) 0;
+    padding: var(--ms-space-4) var(--ms-space-7) 0;
 }
 
 .ms-breadcrumb__list {
@@ -417,18 +417,18 @@
     flex: 1 1 auto;
     width: 100%;
     max-width: var(--ms-content-max);
-    padding: var(--ms-space-5) calc(var(--ms-safe-right) + var(--ms-space-5))
-             var(--ms-space-7) var(--ms-space-5);
+    padding: var(--ms-space-6) calc(var(--ms-safe-right) + var(--ms-space-7))
+             var(--ms-space-8) var(--ms-space-7);
     display: flex;
     flex-direction: column;
-    gap: var(--ms-space-5);
+    gap: var(--ms-space-6);
 }
 
 .ms-footer {
     display: flex;
     flex-wrap: wrap;
     gap: var(--ms-space-2);
-    padding: var(--ms-space-4) var(--ms-space-5) calc(var(--ms-safe-bottom) + var(--ms-space-4));
+    padding: var(--ms-space-5) var(--ms-space-7) calc(var(--ms-safe-bottom) + var(--ms-space-5));
     border-top: 1px solid var(--ms-border);
     color: var(--ms-text-muted);
     font-size: var(--ms-text-xs);
@@ -517,6 +517,19 @@
 
     body.ms-drawer-open {
         overflow: hidden;
+    }
+}
+
+/* Reserve room for the fixed mobile tab bar so the footer and the last
+   content row are never hidden behind it. Matches .ms-tabbar in mobile.css,
+   which is visible at the same breakpoint. */
+@media (max-width: 900px) {
+    .ms-main {
+        padding-bottom: calc(var(--ms-tabbar-height) + var(--ms-safe-bottom));
+    }
+
+    .ms-footer {
+        padding-bottom: var(--ms-space-4);
     }
 }
 

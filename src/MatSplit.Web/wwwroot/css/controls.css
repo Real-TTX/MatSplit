@@ -199,6 +199,14 @@
     backdrop-filter: blur(8px);
 }
 
+/* Keep a sticky action bar above the fixed mobile tab bar. */
+@media (max-width: 900px) {
+    .ms-button-row--sticky {
+        bottom: calc(var(--ms-tabbar-height) + var(--ms-safe-bottom));
+        padding-bottom: var(--ms-space-3);
+    }
+}
+
 /* -------------------------------- list ---------------------------------- */
 
 .ms-list {
@@ -242,9 +250,9 @@
     flex-wrap: wrap;
     align-items: flex-end;
     gap: var(--ms-space-3);
-    padding: var(--ms-space-3);
+    padding: var(--ms-space-4);
     border: 1px solid var(--ms-border);
-    border-radius: var(--ms-radius-lg);
+    border-radius: var(--ms-radius-xl);
     background: var(--ms-surface-2);
 }
 
@@ -278,7 +286,7 @@
 .ms-table-wrap {
     overflow-x: auto;
     border: 1px solid var(--ms-border);
-    border-radius: var(--ms-radius-lg);
+    border-radius: var(--ms-radius-xl);
     background: var(--ms-surface);
     box-shadow: var(--ms-shadow-1);
 }
@@ -298,7 +306,7 @@
 
 .ms-table th,
 .ms-table td {
-    padding: var(--ms-space-3) var(--ms-space-4);
+    padding: var(--ms-space-4) var(--ms-space-4);
     text-align: left;
     vertical-align: middle;
     border-bottom: 1px solid var(--ms-border);
@@ -306,12 +314,12 @@
 
 .ms-table thead th {
     position: relative;
-    color: var(--ms-text-soft);
+    color: var(--ms-text-muted);
     font-size: var(--ms-text-xs);
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    background: var(--ms-surface-3);
+    background: var(--ms-surface-2);
     white-space: nowrap;
 }
 
@@ -330,7 +338,7 @@
 }
 
 .ms-table tbody tr:hover {
-    background: var(--ms-primary-soft);
+    background: var(--ms-surface-3);
 }
 
 .ms-table--dense th,
@@ -485,7 +493,7 @@
 .ms-card {
     display: block;
     border: 1px solid var(--ms-border);
-    border-radius: var(--ms-radius-lg);
+    border-radius: var(--ms-radius-xl);
     background: var(--ms-surface);
     box-shadow: var(--ms-shadow-1);
 }
@@ -559,7 +567,7 @@
 
 .ms-card--flush .ms-table-wrap {
     border: none;
-    border-radius: 0 0 var(--ms-radius-lg) var(--ms-radius-lg);
+    border-radius: 0 0 var(--ms-radius-xl) var(--ms-radius-xl);
     box-shadow: none;
 }
 
@@ -905,7 +913,7 @@
     gap: var(--ms-space-3);
     padding: var(--ms-space-8) var(--ms-space-5);
     border: 1px dashed var(--ms-border-strong);
-    border-radius: var(--ms-radius-lg);
+    border-radius: var(--ms-radius-xl);
     background: var(--ms-surface-2);
     text-align: center;
 }

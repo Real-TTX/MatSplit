@@ -12,7 +12,7 @@
    ========================================================================== */
 'use strict';
 
-var CACHE_VERSION = 'v3';
+var CACHE_VERSION = 'v4';
 var SHELL_CACHE = 'matsplit-shell-' + CACHE_VERSION;
 var ASSET_CACHE = 'matsplit-assets-' + CACHE_VERSION;
 var MEDIA_CACHE = 'matsplit-media-' + CACHE_VERSION;

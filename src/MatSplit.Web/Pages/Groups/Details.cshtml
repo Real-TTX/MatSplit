@@ -3,101 +3,110 @@
 @{
     var currency = Model.Group.Currency;
     var myBalanceCents = Model.MyBalance?.BalanceCents ?? 0;
-    var myTone = myBalanceCents > 0 ? "success" : myBalanceCents < 0 ? "warning" : "muted";
+    var myOwedCents = Model.MyBalance?.OwedCents ?? 0;
+    var expenseEditUrl = $"/Groups/Expenses/Edit?groupId={Model.GroupId}";
+    var shareUrl = $"/Groups/Share?groupId={Model.GroupId}";
+    var groupNav = new MatSplit.Web.Pages.Groups.GroupNav(
+        Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Details, Model.CanManage) { Pills = true };
 }
 
-<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Details, Model.CanManage)" />
-
-<div class="ms-grid ms-grid--3">
-    <ms-card id="kpi-expenses" title="Ausgaben" icon="expense" tone="accent">
-        <p><ms-money cents="@Model.Balance.TotalExpensesCents" currency="@currency" strong="true"></ms-money></p>
-        <p class="ms-muted">@Model.ExpenseCount Einträge</p>
-    </ms-card>
-    <ms-card id="kpi-payments" title="Zahlungen" icon="paypal">
-        <p><ms-money cents="@Model.Balance.TotalPaymentsCents" currency="@currency" strong="true"></ms-money></p>
-        <p class="ms-muted">bereits untereinander ausgeglichen</p>
-    </ms-card>
-    <ms-card id="kpi-balance" title="Dein Saldo" icon="balance" tone="@myTone">
-        <p><ms-money cents="@myBalanceCents" currency="@currency" show-sign="true" strong="true"></ms-money></p>
-        <p class="ms-muted">
-            @if (Model.MyBalance is null)
-            {
-                <text>Du bist kein Mitglied dieser Gruppe.</text>
-            }
-            else if (myBalanceCents > 0)
-            {
-                <text>Du bekommst Geld zurück.</text>
-            }
-            else if (myBalanceCents < 0)
-            {
-                <text>Du musst noch etwas beisteuern.</text>
-            }
-            else
-            {
-                <text>Alles ausgeglichen.</text>
-            }
-        </p>
-    </ms-card>
+@* Screen 3 "Ibiza Trip": large orange balance hero with the own saldo, the
+   share of the total spend and a subtle sparkline of the recent spending. *@
+<div class="ms-balance-hero" id="group-balance-hero">
+    <span class="ms-balance-hero__label">Kontostand</span>
+    <span class="ms-balance-hero__amount">
+        <ms-money cents="@myBalanceCents" currency="@currency" show-sign="true"></ms-money>
+    </span>
+    <span class="ms-balance-hero__share">
+        Dein Anteil <strong><ms-money cents="@myOwedCents" currency="@currency"></ms-money></strong>
+        von <ms-money cents="@Model.Balance.TotalExpensesCents" currency="@currency"></ms-money>
+    </span>
+    <span class="ms-balance-hero__chart">
+        <svg viewBox="0 0 108 46" aria-hidden="true" focusable="false">
+            <path d="@Model.BalanceSparkline()" />
+        </svg>
+    </span>
 </div>
 
-<div class="ms-grid ms-grid--2">
-    <ms-card id="group-info" title="Gruppe" icon="info">
-        <dl class="ms-kv">
-            <dt>Name</dt>
-            <dd>@Model.Group.Name</dd>
-            <dt>Beschreibung</dt>
-            <dd>@(string.IsNullOrWhiteSpace(Model.Group.Description) ? "–" : Model.Group.Description)</dd>
-            <dt>Währung</dt>
-            <dd>@currency</dd>
-            <dt>Einladungslink</dt>
-            <dd>@(Model.Group.InviteEnabled ? "aktiv" : "deaktiviert")</dd>
-            <dt>Angelegt</dt>
-            <dd>@MatSplit.Web.Pages.Groups.DetailsModel.FormatMoment(Model.Group.CreateDate)</dd>
-        </dl>
-    </ms-card>
+@* Tab pills on mobile (Übersicht / Ausgaben / Mitglieder …), underline tabs on desktop. *@
+<partial name="_GroupNav" model="groupNav" />
 
-    <ms-card id="group-members" title="Mitglieder" subtitle="@($"{Model.Members.Count} Personen")" icon="users"
-             header-action-url="@($"/Groups/Members?groupId={Model.GroupId}#member-invite")"
-             header-action-icon="share" header-action-label="Einladung teilen">
-        <div class="ms-row">
-            @foreach (var member in Model.Members)
+<ms-card id="group-expenses" title="Letzte Ausgaben" icon="expense"
+         subtitle="@(Model.ExpenseCount == 1 ? "1 Eintrag insgesamt" : $"{Model.ExpenseCount} Einträge insgesamt")"
+         header-action-url="@expenseEditUrl"
+         header-action-icon="plus" header-action-label="Ausgabe hinzufügen">
+    @if (Model.RecentExpenses.Count == 0)
+    {
+        <ms-empty-state id="group-expenses-empty" title="Noch keine Ausgaben"
+                        text="Trage die erste Ausgabe ein, damit die Abrechnung starten kann."
+                        icon="expense"
+                        action-url="@expenseEditUrl"
+                        action-label="Ausgabe erfassen"></ms-empty-state>
+    }
+    else
+    {
+        @* Mobile: icon list rows (icon circle + description + payer + amount + relative time). *@
+        <div class="ms-dash-recent">
+            @foreach (var expense in Model.RecentExpenses)
             {
-                <span class="ms-chip">
-                    @(member.User?.DisplayName ?? "Unbekannt")
-                    @if (member.ShareFactor != 1)
-                    {
-                        <text> · Faktor @member.ShareFactor</text>
-                    }
-                    @if (member.IsGroupAdmin)
-                    {
-                        <text> · Admin</text>
-                    }
-                </span>
+                <div class="ms-listrow">
+                    <span class="ms-listrow__icon"><ms-icon name="expense" size="20"></ms-icon></span>
+                    <span class="ms-listrow__main">
+                        <a class="ms-listrow__title" href="@($"{expenseEditUrl}&id={expense.Id}")">@expense.Description</a>
+                        <span class="ms-listrow__sub">@(expense.PaidByUser?.DisplayName ?? "Unbekannt")</span>
+                    </span>
+                    <span class="ms-listrow__amount">
+                        <ms-money cents="@expense.AmountCents" currency="@expense.Currency"></ms-money>
+                        <span class="ms-listrow__sub">@MatSplit.Web.Pages.Groups.DetailsModel.RelativeDay(expense.ExpenseDate)</span>
+                    </span>
+                </div>
             }
         </div>
-        @if (Model.Group.InviteEnabled)
-        {
-            <p class="ms-muted">Neue Leute per Link einladen – ganz ohne Konto, ideal für die WhatsApp-Gruppe.</p>
-            <div class="ms-row">
-                <ms-button id="group-invite-whatsapp" kind="primary" icon="whatsapp" label="Per WhatsApp teilen"
-                           href="@Model.WhatsAppUrl" target="_blank"></ms-button>
-                <ms-button id="group-invite-share" kind="secondary" icon="share" label="Teilen" type="button"
-                           data-ms-share="true" data-ms-share-url="@Model.InviteUrl"
-                           data-ms-share-title="MatSplit-Einladung" data-ms-share-text="@Model.ShareText"></ms-button>
-                <ms-button id="group-members-link" kind="ghost" icon="users" label="Mitglieder verwalten"
-                           href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-button>
-            </div>
-        }
-        else
-        {
-            <p class="ms-muted">Der Einladungslink ist deaktiviert. Aktiviere ihn, um die Gruppe per Link zu teilen.</p>
-            <div class="ms-row">
-                <ms-button id="group-members-link" kind="secondary" icon="users" label="Mitglieder verwalten"
-                           href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-button>
-            </div>
-        }
-    </ms-card>
-</div>
+
+        @* Desktop: the accessible data table stays intact. *@
+        <ms-table id="group-expenses-table" caption="Die fünf neuesten Ausgaben">
+            <thead>
+                <tr>
+                    <th scope="col">Datum</th>
+                    <th scope="col">Beschreibung</th>
+                    <th scope="col">Bezahlt von</th>
+                    <th scope="col" class="ms-num">Betrag</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var expense in Model.RecentExpenses)
+                {
+                    <tr>
+                        <td data-label="Datum">@expense.ExpenseDate.ToString("dd.MM.yyyy")</td>
+                        <td data-label="Beschreibung">
+                            <a href="@($"{expenseEditUrl}&id={expense.Id}")">@expense.Description</a>
+                        </td>
+                        <td data-label="Bezahlt von">@(expense.PaidByUser?.DisplayName ?? "Unbekannt")</td>
+                        <td data-label="Betrag" class="ms-num">
+                            <ms-money cents="@expense.AmountCents" currency="@expense.Currency"></ms-money>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </ms-table>
+    }
+
+    @* Full-width primary call to action, as in the mockup (mobile only). *@
+    <div class="ms-dash-cta">
+        <ms-button id="group-expenses-new-mobile" kind="primary" icon="plus" full-width="true"
+                   label="Ausgabe hinzufügen" href="@expenseEditUrl"></ms-button>
+    </div>
+
+    @* Desktop action row (kept for the roomier desktop layout). *@
+    <div class="ms-row ms-dash-actions">
+        <ms-button id="group-expenses-new" kind="primary" icon="plus" label="Ausgabe erfassen"
+                   href="@expenseEditUrl"></ms-button>
+        <ms-button id="group-expenses-link" kind="secondary" icon="expense" label="Alle Ausgaben"
+                   href="@($"/Groups/Expenses?groupId={Model.GroupId}")"></ms-button>
+        <ms-button id="group-payments-new" kind="secondary" icon="paypal" label="Zahlung erfassen"
+                   href="@($"/Groups/Payments/Edit?groupId={Model.GroupId}")"></ms-button>
+    </div>
+</ms-card>
 
 <ms-card id="group-settlements" title="Offener Ausgleich" subtitle="Minimale Anzahl an Überweisungen" icon="balance">
     @if (Model.Balance.Settlements.Count == 0)
@@ -150,54 +159,61 @@
     </div>
 </ms-card>
 
-<ms-card id="group-expenses" title="Letzte Ausgaben" icon="expense"
-         header-action-url="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}")"
-         header-action-icon="plus" header-action-label="Ausgabe hinzufügen">
-    @if (Model.RecentExpenses.Count == 0)
-    {
-        <ms-empty-state id="group-expenses-empty" title="Noch keine Ausgaben"
-                        text="Trage die erste Ausgabe ein, damit die Abrechnung starten kann."
-                        icon="expense"
-                        action-url="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}")"
-                        action-label="Ausgabe erfassen"></ms-empty-state>
-    }
-    else
-    {
-        <ms-table id="group-expenses-table" caption="Die fünf neuesten Ausgaben">
-            <thead>
-                <tr>
-                    <th scope="col">Datum</th>
-                    <th scope="col">Beschreibung</th>
-                    <th scope="col">Bezahlt von</th>
-                    <th scope="col" class="ms-num">Betrag</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var expense in Model.RecentExpenses)
-                {
-                    <tr>
-                        <td data-label="Datum">@expense.ExpenseDate.ToString("dd.MM.yyyy")</td>
-                        <td data-label="Beschreibung">
-                            <a href="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}&id={expense.Id}")">@expense.Description</a>
-                        </td>
-                        <td data-label="Bezahlt von">@(expense.PaidByUser?.DisplayName ?? "Unbekannt")</td>
-                        <td data-label="Betrag" class="ms-num">
-                            <ms-money cents="@expense.AmountCents" currency="@expense.Currency"></ms-money>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </ms-table>
-    }
-    <div class="ms-row">
-        <ms-button id="group-expenses-new" kind="primary" icon="plus" label="Ausgabe erfassen"
-                   href="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}")"></ms-button>
-        <ms-button id="group-expenses-link" kind="secondary" icon="expense" label="Alle Ausgaben"
-                   href="@($"/Groups/Expenses?groupId={Model.GroupId}")"></ms-button>
-        <ms-button id="group-payments-new" kind="secondary" icon="paypal" label="Zahlung erfassen"
-                   href="@($"/Groups/Payments/Edit?groupId={Model.GroupId}")"></ms-button>
-    </div>
-</ms-card>
+<div class="ms-grid ms-grid--2">
+    <ms-card id="group-info" title="Gruppe" icon="info">
+        <dl class="ms-kv">
+            <dt>Name</dt>
+            <dd>@Model.Group.Name</dd>
+            <dt>Beschreibung</dt>
+            <dd>@(string.IsNullOrWhiteSpace(Model.Group.Description) ? "–" : Model.Group.Description)</dd>
+            <dt>Währung</dt>
+            <dd>@currency</dd>
+            <dt>Einladungslink</dt>
+            <dd>@(Model.Group.InviteEnabled ? "aktiv" : "deaktiviert")</dd>
+            <dt>Angelegt</dt>
+            <dd>@MatSplit.Web.Pages.Groups.DetailsModel.FormatMoment(Model.Group.CreateDate)</dd>
+        </dl>
+    </ms-card>
+
+    <ms-card id="group-members" title="Mitglieder" subtitle="@($"{Model.Members.Count} Personen")" icon="users"
+             header-action-url="@shareUrl"
+             header-action-icon="share" header-action-label="Einladung teilen">
+        <div class="ms-row">
+            @foreach (var member in Model.Members)
+            {
+                <span class="ms-chip">
+                    @(member.User?.DisplayName ?? "Unbekannt")
+                    @if (member.ShareFactor != 1)
+                    {
+                        <text> · Faktor @member.ShareFactor</text>
+                    }
+                    @if (member.IsGroupAdmin)
+                    {
+                        <text> · Admin</text>
+                    }
+                </span>
+            }
+        </div>
+        @if (Model.Group.InviteEnabled)
+        {
+            <p class="ms-muted">Neue Leute per Link einladen – ganz ohne Konto, ideal für die WhatsApp-Gruppe.</p>
+            <div class="ms-row">
+                <ms-button id="group-invite-share" kind="primary" icon="share" label="Einladung teilen"
+                           href="@shareUrl"></ms-button>
+                <ms-button id="group-members-link" kind="ghost" icon="users" label="Mitglieder verwalten"
+                           href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-button>
+            </div>
+        }
+        else
+        {
+            <p class="ms-muted">Der Einladungslink ist deaktiviert. Aktiviere ihn, um die Gruppe per Link zu teilen.</p>
+            <div class="ms-row">
+                <ms-button id="group-members-link" kind="secondary" icon="users" label="Mitglieder verwalten"
+                           href="@($"/Groups/Members?groupId={Model.GroupId}")"></ms-button>
+            </div>
+        }
+    </ms-card>
+</div>
 
 <ms-card id="group-activity" title="Letzte Aktivität" icon="history">
     @if (Model.RecentHistory.Count == 0)
@@ -237,3 +253,51 @@
         }
     </div>
 </ms-card>
+
+<style>
+    /* Screen 3 "Gruppen-Dashboard": mobile-only chrome that mirrors the mockup.
+       Page-scoped selectors only; no foundation styles are changed. Both the
+       list rows and the desktop table render the same data — this block toggles
+       which one is visible at the 900px breakpoint. */
+    .ms-dash-recent,
+    .ms-dash-cta {
+        display: none;
+    }
+
+    @@media (max-width: 900px) {
+        .ms-dash-recent,
+        .ms-dash-cta {
+            display: block;
+        }
+
+        /* Desktop chrome the mobile view replaces: the expenses table and the
+           multi-button action row (the full-width CTA takes over on mobile). */
+        #group-expenses-table-wrap,
+        .ms-dash-actions {
+            display: none;
+        }
+
+        /* The group nav renders as scrollable pills on the mobile dashboard. */
+        .ms-tabs--pills > .ms-tabs__nav {
+            border-bottom: none;
+            gap: var(--ms-space-2);
+        }
+
+        .ms-tabs--pills > .ms-tabs__nav > .ms-tabs__tab {
+            border: 1px solid transparent;
+            border-radius: var(--ms-radius-pill);
+            background: var(--ms-surface-3);
+            color: var(--ms-text-soft);
+            padding: 8px var(--ms-space-4);
+            font-size: var(--ms-text-sm);
+            font-weight: 650;
+        }
+
+        .ms-tabs--pills > .ms-tabs__nav > .ms-tabs__tab.is-active {
+            border-color: transparent;
+            background: var(--ms-gradient-sun);
+            color: #fff;
+            box-shadow: var(--ms-shadow-1);
+        }
+    }
+</style>

@@ -6,22 +6,31 @@
 <ms-card id="expense-card" title="@(Model.IsExisting ? "Ausgabe bearbeiten" : "Neue Ausgabe")"
          subtitle="@Model.Group.Name" icon="expense">
     <ms-form id="expense-form" columns="2" has-files="true">
+        @* Screen 4 "Neue Ausgabe": Titel, Betrag (mit €), Bezahlt von, Datum. *@
         <ms-field id="ef-desc" for="Input.Description" full-width="true"
-                  placeholder="z. B. Pizza am Strand"></ms-field>
+                  placeholder="z. B. Abendessen im Restaurant"></ms-field>
+
         <ms-field id="ef-amount" for="Input.Amount" type="money" currency="@Model.Input.Currency"></ms-field>
-        <ms-field id="ef-date" for="Input.ExpenseDate" type="date"></ms-field>
-        <ms-field id="ef-payer" for="Input.PaidByUserId" type="select"
-                  items="Model.MemberOptions" option-label="Bitte wählen"></ms-field>
         <ms-field id="ef-currency" for="Input.Currency" max-length="3"
                   hint="Dreistelliger Code, zum Beispiel EUR."></ms-field>
+
+        <ms-field id="ef-payer" for="Input.PaidByUserId" type="select"
+                  items="Model.MemberOptions" option-label="Bitte wählen"></ms-field>
+        <ms-field id="ef-date" for="Input.ExpenseDate" type="date"></ms-field>
+
         <ms-field id="ef-category" for="Input.Category" full-width="true"
                   hint="@Model.CategoryHint" placeholder="z. B. Essen"></ms-field>
 
-        <h3>Aufteilung</h3>
+        @* "Für wen?" (Aufteilung): Auswahl der Split-Methode, darunter erscheinen
+           bei Bedarf die abweichenden Anteile je Mitglied (progressive disclosure). *@
+        <h3 class="ef-section">
+            <ms-icon name="users" size="20"></ms-icon>
+            <span>Für wen?</span>
+        </h3>
 
         <div class="ms-field ms-field--full" id="ef-mode-field">
             <span class="ms-field__label" id="ef-mode-label"><span>Aufteilung</span></span>
-            <div class="ms-form__row" role="radiogroup" aria-labelledby="ef-mode-label">
+            <div class="ms-form__row ef-modes" role="radiogroup" aria-labelledby="ef-mode-label">
                 @foreach (var option in Model.ShareModeOptions)
                 {
                     var optionId = $"ef-mode-{option.Value.ToLowerInvariant()}";
@@ -56,7 +65,7 @@
             var line = Model.Input.Shares[index];
             var rowId = $"ef-share-{index}";
 
-            <div class="ms-form__row ms-field--conditional"
+            <div class="ms-form__row ef-share-row ms-field--conditional"
                  data-depends-on="Input.ShareMode" data-depends-value="Factors,Amounts" hidden>
                 @* Explicit name/value: an indexed hidden field bound with for="" resolves to an empty value. *@
                 <ms-field id="@($"{rowId}-user")" name="@($"Input.Shares[{index}].UserId")" type="hidden"
@@ -111,3 +120,64 @@ else
 @section Scripts {
     <script src="~/js/receipt-capture.js" asp-append-version="true" defer></script>
 }
+
+<style>
+    /* Page-local polish for the expense form only (scoped to #expense-form).
+       The whole split configuration keeps working through the unchanged
+       depends-on / depends-value attributes; this block only makes the section
+       heading, the split-mode choices and the per-member share rows read
+       cleanly on mobile and desktop. No foundation styles are changed. */
+    #expense-card .ef-section {
+        display: flex;
+        align-items: center;
+        gap: var(--ms-space-2);
+        font-size: var(--ms-text-lg);
+    }
+
+    #expense-card .ef-section .ms-icon {
+        color: var(--ms-primary);
+    }
+
+    /* Split-mode radios as a clean, stacked set of selectable option rows. */
+    #expense-form .ef-modes {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--ms-space-2);
+    }
+
+    #expense-form .ef-modes .ms-check {
+        align-items: center;
+        min-height: 0;
+        padding: var(--ms-space-3);
+        border: 1px solid var(--ms-border);
+        border-radius: var(--ms-radius);
+        transition: border-color var(--ms-transition), background var(--ms-transition);
+    }
+
+    #expense-form .ef-modes .ms-check:has(:checked) {
+        border-color: var(--ms-primary);
+        background: var(--ms-primary-soft);
+    }
+
+    /* Per-member share rows: name grows, the (single, mode-dependent) value
+       input stays compact on the right. */
+    #expense-form .ef-share-row {
+        align-items: flex-end;
+        gap: var(--ms-space-3);
+    }
+
+    #expense-form .ef-share-row > .ms-field--checkbox {
+        flex: 1 1 auto;
+        min-width: 140px;
+    }
+
+    #expense-form .ef-share-row > .ms-field--number {
+        flex: 0 0 auto;
+        width: 130px;
+    }
+
+    #expense-form .ef-share-row > .ms-field--money {
+        flex: 0 0 auto;
+        width: 170px;
+    }
+</style>

@@ -3,13 +3,13 @@
 
 <partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.History, Model.CanManage)" />
 
-<ms-list id="history" title="Historie" subtitle="Alle Änderungen dieser Gruppe"
-         icon="history" count="@Model.Result.TotalCount">
+<ms-list id="history" title="Aktivitäten" subtitle="Alle Änderungen dieser Gruppe"
+         icon="activity" count="@Model.Result.TotalCount">
 
     <ms-toolbar id="history-filter"
                 action="/Groups/History"
                 reset-url="@($"/Groups/History?groupId={Model.GroupId}")"
-                preserve="groupId"
+                preserve="groupId,filter"
                 auto-submit-text="true">
         <ms-field id="history-search" name="search" type="search" label="Suche"
                   value="@Model.Search" placeholder="Text, Typ oder Person"></ms-field>
@@ -23,43 +23,66 @@
                   items="Model.SortOptions"></ms-field>
     </ms-toolbar>
 
-    <div class="ms-stack">
-        @for (var dayIndex = 0; dayIndex < Model.Days.Count; dayIndex++)
-        {
-            var day = Model.Days[dayIndex];
-            <ms-card id="@($"history-day-{dayIndex}")" icon="calendar"
-                     title="@MatSplit.Web.Pages.Groups.HistoryModel.FormatDay(day.Date)"
-                     subtitle="@(day.Entries.Count == 1 ? "1 Eintrag" : $"{day.Entries.Count} Einträge")">
-                <div class="ms-stack">
-                    @foreach (var entry in day.Entries)
-                    {
-                        <div class="ms-row">
-                            <span class="ms-chip">@MatSplit.Web.Pages.Groups.HistoryModel.FormatTime(entry.CreateDate)</span>
-                            <ms-icon name="@MatSplit.Web.Pages.Groups.HistoryModel.ActionIcon(entry.Action)" size="16"
-                                     label="@MatSplit.Web.Pages.Groups.HistoryModel.ActionLabel(entry.Action)"></ms-icon>
-                            <strong>@MatSplit.Web.Pages.Groups.HistoryModel.ActionLabel(entry.Action)</strong>
-                            <span class="ms-chip">@MatSplit.Web.Pages.Groups.HistoryModel.EntityLabel(entry.EntityType)</span>
-                            <span>@entry.Summary</span>
-                            <span class="ms-muted">@MatSplit.Web.Pages.Groups.HistoryModel.ActorName(entry)</span>
-                        </div>
-                        @if (!string.IsNullOrWhiteSpace(entry.DetailsJson))
+    <div class="ms-pills" aria-label="Aktivitäten filtern">
+        <a class="ms-pill @(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterAll ? "is-active" : null)"
+           href="@Model.BuildFilterUrl(MatSplit.Web.Pages.Groups.HistoryModel.FilterAll)"
+           aria-current="@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterAll ? "page" : null)">Alle</a>
+        <a class="ms-pill @(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterExpenses ? "is-active" : null)"
+           href="@Model.BuildFilterUrl(MatSplit.Web.Pages.Groups.HistoryModel.FilterExpenses)"
+           aria-current="@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterExpenses ? "page" : null)">Ausgaben</a>
+        <a class="ms-pill @(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterPayments ? "is-active" : null)"
+           href="@Model.BuildFilterUrl(MatSplit.Web.Pages.Groups.HistoryModel.FilterPayments)"
+           aria-current="@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterPayments ? "page" : null)">Zahlungen</a>
+        <a class="ms-pill @(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterJoins ? "is-active" : null)"
+           href="@Model.BuildFilterUrl(MatSplit.Web.Pages.Groups.HistoryModel.FilterJoins)"
+           aria-current="@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterJoins ? "page" : null)">Beitritte</a>
+    </div>
+
+    @if (Model.Entries.Count > 0)
+    {
+        <div class="ms-feed">
+            @foreach (var entry in Model.Entries)
+            {
+                var actor = MatSplit.Web.Pages.Groups.HistoryModel.ActorName(entry);
+                var icon = MatSplit.Web.Pages.Groups.HistoryModel.FeedIcon(entry);
+                var title = MatSplit.Web.Pages.Groups.HistoryModel.FeedTitle(entry);
+                var money = MatSplit.Web.Pages.Groups.HistoryModel.FeedAmount(entry);
+
+                <div class="ms-feed__item">
+                    <span class="ms-feed__avatar">
+                        @if (icon is not null)
                         {
-                            <details>
-                                <summary class="ms-muted">Details</summary>
-                                <p class="ms-muted">@entry.DetailsJson</p>
-                            </details>
+                            <ms-icon name="@icon" size="22"></ms-icon>
                         }
+                        else
+                        {
+                            <ms-avatar name="@actor" size="md"></ms-avatar>
+                        }
+                    </span>
+                    <span class="ms-feed__text">
+                        <strong>@actor</strong> @MatSplit.Web.Pages.Groups.HistoryModel.FeedSentence(entry)
+                        @if (title is not null)
+                        {
+                            <span class="ms-feed__title">@title</span>
+                        }
+                        <span class="ms-feed__time">@MatSplit.Web.Pages.Groups.HistoryModel.RelativeTime(entry.CreateDate)</span>
+                    </span>
+                    @if (money is not null)
+                    {
+                        <span class="ms-feed__amount">
+                            <ms-money cents="@money.Cents" currency="@money.Currency"></ms-money>
+                        </span>
                     }
                 </div>
-            </ms-card>
-        }
-    </div>
+            }
+        </div>
+    }
 
     @if (Model.Result.TotalCount == 0)
     {
         <ms-empty-state id="history-empty" title="Noch keine Einträge"
-                        text="Sobald Ausgaben, Zahlungen oder Mitglieder geändert werden, entsteht hier die Historie."
-                        icon="history"
+                        text="Sobald Ausgaben, Zahlungen oder Mitglieder geändert werden, entsteht hier die Aktivität."
+                        icon="activity"
                         action-url="@($"/Groups/Expenses?groupId={Model.GroupId}")"
                         action-label="Zu den Ausgaben"></ms-empty-state>
     }
@@ -79,3 +102,13 @@
                    href="@($"/Groups/Expenses?groupId={Model.GroupId}")"></ms-button>
     </ms-actions>
 </ms-list>
+
+@* The desktop toolbar (search, date range, sort) is a desktop only addition;
+   on mobile the category pills replace it to match the mockup. *@
+<style>
+    @@media (max-width: 900px) {
+        #history-filter {
+            display: none;
+        }
+    }
+</style>

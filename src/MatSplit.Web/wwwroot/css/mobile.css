@@ -1,0 +1,587 @@
+/* ==========================================================================
+   MatSplit mobile design system.
+   The rounded, airy "summer" components from the mockup: balance hero, group
+   list, pills, activity feed, icon list rows, share buttons, avatars, the fixed
+   bottom tab bar, hero icon and screen title. All colours come from the tokens
+   in theme.css, so every component follows light and dark mode automatically.
+   These components are used on both mobile and desktop; only .ms-tabbar is
+   mobile-only (hidden >= 901px).
+   ========================================================================== */
+
+/* ------------------------------- avatar --------------------------------- */
+
+.ms-avatar {
+    --ms-avatar-size: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: var(--ms-avatar-size);
+    height: var(--ms-avatar-size);
+    border-radius: 50%;
+    background: var(--ms-avatar-bg, var(--ms-primary));
+    color: #fff;
+    font-size: calc(var(--ms-avatar-size) * 0.4);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    user-select: none;
+    overflow: hidden;
+}
+
+.ms-avatar--sm {
+    --ms-avatar-size: 30px;
+}
+
+.ms-avatar--md {
+    --ms-avatar-size: 40px;
+}
+
+.ms-avatar--lg {
+    --ms-avatar-size: 56px;
+}
+
+.ms-avatar--you {
+    box-shadow: 0 0 0 2px var(--ms-surface), 0 0 0 4px var(--ms-primary);
+}
+
+/* ---------------------------- balance hero ------------------------------ */
+
+.ms-balance-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-2);
+    padding: var(--ms-space-5) var(--ms-space-5) var(--ms-space-6);
+    border-radius: var(--ms-radius-xl);
+    background: var(--ms-gradient-sun);
+    color: #fff;
+    box-shadow: var(--ms-shadow-2);
+    isolation: isolate;
+}
+
+.ms-balance-hero::after {
+    /* soft light bloom in the top right, like the mockup */
+    content: "";
+    position: absolute;
+    top: -40%;
+    right: -20%;
+    width: 70%;
+    height: 140%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.28), transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.ms-balance-hero__label {
+    font-size: var(--ms-text-sm);
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+.ms-balance-hero__amount {
+    font-size: var(--ms-text-2xl);
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.ms-balance-hero__share {
+    margin-top: 2px;
+    font-size: var(--ms-text-sm);
+    font-weight: 600;
+    opacity: 0.92;
+}
+
+.ms-balance-hero__share strong {
+    font-weight: 750;
+}
+
+.ms-balance-hero__chart {
+    position: absolute;
+    top: var(--ms-space-5);
+    right: var(--ms-space-5);
+    width: 108px;
+    height: 46px;
+    color: #fff;
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.ms-balance-hero__chart svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* the money tag helper renders green/red; inside the hero everything is white */
+.ms-balance-hero .ms-money,
+.ms-balance-hero .ms-money.is-positive,
+.ms-balance-hero .ms-money.is-negative {
+    color: #fff;
+}
+
+/* ----------------------------- group list ------------------------------- */
+
+.ms-grouplist {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-4);
+}
+
+.ms-grouplist__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-3);
+    padding: var(--ms-space-4) var(--ms-space-5);
+    border: 1px solid var(--ms-border);
+    border-radius: var(--ms-radius-xl);
+    background: var(--ms-surface);
+    box-shadow: var(--ms-shadow-1);
+    color: inherit;
+}
+
+a.ms-grouplist__item {
+    transition: transform var(--ms-transition), box-shadow var(--ms-transition),
+                border-color var(--ms-transition);
+}
+
+a.ms-grouplist__item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--ms-shadow-2);
+    border-color: var(--ms-border-strong);
+    text-decoration: none;
+    color: inherit;
+}
+
+.ms-grouplist__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ms-space-3);
+}
+
+.ms-grouplist__name {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-2);
+    font-size: var(--ms-text-lg);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    min-width: 0;
+}
+
+.ms-grouplist__balance {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    flex: 0 0 auto;
+    text-align: right;
+}
+
+.ms-grouplist__balance-label {
+    font-size: var(--ms-text-xs);
+    font-weight: 600;
+    color: var(--ms-text-muted);
+}
+
+.ms-grouplist__meta {
+    color: var(--ms-text-muted);
+    font-size: var(--ms-text-sm);
+    font-weight: 550;
+}
+
+.ms-grouplist__bar {
+    position: relative;
+    height: 8px;
+    border-radius: var(--ms-radius-pill);
+    background: var(--ms-primary-soft);
+    overflow: hidden;
+}
+
+.ms-grouplist__bar > span {
+    display: block;
+    height: 100%;
+    min-width: 6px;
+    border-radius: inherit;
+    background: var(--ms-gradient-sun);
+}
+
+.ms-grouplist__spent {
+    color: var(--ms-text-muted);
+    font-size: var(--ms-text-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------- pills --------------------------------- */
+
+.ms-pills {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-2);
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+}
+
+.ms-pills::-webkit-scrollbar {
+    height: 0;
+}
+
+.ms-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px var(--ms-space-4);
+    border: 1px solid transparent;
+    border-radius: var(--ms-radius-pill);
+    background: var(--ms-surface-3);
+    color: var(--ms-text-soft);
+    font-family: inherit;
+    font-size: var(--ms-text-sm);
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--ms-transition), color var(--ms-transition),
+                box-shadow var(--ms-transition);
+}
+
+.ms-pill:hover {
+    background: var(--ms-primary-soft);
+    color: var(--ms-primary);
+    text-decoration: none;
+}
+
+.ms-pill.is-active {
+    background: var(--ms-gradient-sun);
+    color: #fff;
+    box-shadow: var(--ms-shadow-1);
+}
+
+.ms-pill.is-active:hover {
+    color: #fff;
+}
+
+/* --------------------------- activity feed ------------------------------ */
+
+.ms-feed {
+    display: flex;
+    flex-direction: column;
+}
+
+.ms-feed__item {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-3);
+    padding: var(--ms-space-3) 0;
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.ms-feed__item:last-child {
+    border-bottom: none;
+}
+
+.ms-feed__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--ms-primary-soft);
+    color: var(--ms-primary);
+    overflow: hidden;
+}
+
+.ms-feed__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: var(--ms-text-sm);
+    color: var(--ms-text-soft);
+    line-height: 1.4;
+}
+
+.ms-feed__text strong {
+    color: var(--ms-text);
+    font-weight: 700;
+}
+
+.ms-feed__title {
+    display: block;
+    color: var(--ms-text);
+    font-weight: 650;
+}
+
+.ms-feed__time {
+    display: block;
+    margin-top: 1px;
+    color: var(--ms-text-muted);
+    font-size: var(--ms-text-xs);
+}
+
+.ms-feed__amount {
+    flex: 0 0 auto;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* ------------------------------ list rows ------------------------------- */
+
+.ms-listrow {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-3);
+    padding: var(--ms-space-3) 0;
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.ms-listrow:last-child {
+    border-bottom: none;
+}
+
+.ms-listrow__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--ms-primary-soft);
+    color: var(--ms-primary);
+    overflow: hidden;
+}
+
+.ms-listrow__main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ms-listrow__main > strong,
+.ms-listrow__title {
+    display: block;
+    color: var(--ms-text);
+    font-weight: 650;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ms-listrow__sub {
+    display: block;
+    margin-top: 1px;
+    color: var(--ms-text-muted);
+    font-size: var(--ms-text-sm);
+}
+
+.ms-listrow__amount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    flex: 0 0 auto;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.ms-listrow__amount .ms-listrow__sub {
+    font-weight: 500;
+}
+
+/* --------------------------- social / share ----------------------------- */
+
+.ms-social {
+    display: flex;
+    justify-content: center;
+    gap: var(--ms-space-7);
+    flex-wrap: wrap;
+}
+
+.ms-social__btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ms-space-2);
+    color: var(--ms-text-soft);
+    font-size: var(--ms-text-xs);
+    font-weight: 600;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.ms-social__btn:hover {
+    text-decoration: none;
+    color: var(--ms-text);
+}
+
+.ms-social__btn .ms-icon {
+    width: 56px;
+    height: 56px;
+    padding: 16px;
+    border-radius: 50%;
+    color: #fff;
+    box-shadow: var(--ms-shadow-1);
+    transition: transform var(--ms-transition), box-shadow var(--ms-transition);
+}
+
+.ms-social__btn:hover .ms-icon {
+    transform: translateY(-2px);
+    box-shadow: var(--ms-shadow-2);
+}
+
+.ms-social__btn--whatsapp .ms-icon {
+    background: #25d366;
+}
+
+.ms-social__btn--telegram .ms-icon {
+    background: #229ed9;
+}
+
+.ms-social__btn--more .ms-icon {
+    background: var(--ms-surface-3);
+    color: var(--ms-text-soft);
+    box-shadow: inset 0 0 0 1px var(--ms-border);
+}
+
+/* ------------------------------ hero icon ------------------------------- */
+
+.ms-hero-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: var(--ms-gradient-sun);
+    color: #fff;
+    box-shadow: var(--ms-shadow-2);
+}
+
+.ms-hero-icon .ms-icon {
+    width: 44px;
+    height: 44px;
+}
+
+.ms-hero-icon--soft {
+    background: var(--ms-primary-soft);
+    color: var(--ms-primary);
+    box-shadow: none;
+}
+
+/* ----------------------------- screen title ----------------------------- */
+
+.ms-screen-title {
+    font-size: var(--ms-text-2xl);
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    color: var(--ms-text);
+}
+
+.ms-screen-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ms-space-3);
+}
+
+.ms-screen-head__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: var(--ms-gradient-sun);
+    color: #fff;
+    box-shadow: var(--ms-shadow-1);
+    cursor: pointer;
+    transition: transform var(--ms-transition), box-shadow var(--ms-transition);
+}
+
+.ms-screen-head__action:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--ms-shadow-2);
+    color: #fff;
+    text-decoration: none;
+}
+
+/* ---------------------------- bottom tab bar ---------------------------- */
+
+.ms-tabbar {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .ms-tabbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: var(--ms-z-header);
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
+        gap: var(--ms-space-1);
+        padding: var(--ms-space-2) calc(var(--ms-safe-right) + var(--ms-space-2))
+                 calc(var(--ms-safe-bottom) + var(--ms-space-2)) calc(var(--ms-safe-left) + var(--ms-space-2));
+        background: color-mix(in srgb, var(--ms-surface) 90%, transparent);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--ms-border);
+        box-shadow: 0 -2px 14px rgba(76, 38, 15, 0.08);
+    }
+}
+
+.ms-tabbar__item {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 0;
+    border-radius: var(--ms-radius);
+    color: var(--ms-text-muted);
+    font-size: var(--ms-text-xs);
+    font-weight: 650;
+    transition: color var(--ms-transition), background var(--ms-transition);
+}
+
+.ms-tabbar__item:hover {
+    color: var(--ms-text);
+    text-decoration: none;
+}
+
+.ms-tabbar__item.is-active {
+    color: var(--ms-primary);
+}
+
+.ms-tabbar__label {
+    line-height: 1;
+}
+
+/* ------------------------- theme fine tuning ---------------------------- */
+
+[data-theme="dark"] .ms-social__btn--more .ms-icon {
+    box-shadow: inset 0 0 0 1px var(--ms-border-strong);
+}
+
+[data-theme="dark"] .ms-tabbar {
+    box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.4);
+}

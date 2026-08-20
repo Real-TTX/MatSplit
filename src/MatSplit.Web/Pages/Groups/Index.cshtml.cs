@@ -17,7 +17,7 @@ namespace MatSplit.Web.Pages.Groups;
 public class IndexModel(
     CurrentUserService currentUser,
     GroupService groups,
-    ExpenseService expenses,
+    BalanceService balances,
     HistoryService history) : PageModel
 {
     /// <summary>Free text filter on name and description.</summary>
@@ -38,6 +38,13 @@ public class IndexModel(
     public PagedResult<GroupRow> Result { get; private set; } = PagedResult<GroupRow>.Empty();
 
     public bool IsAdmin => currentUser.IsAdmin;
+
+    /// <summary>
+    /// Highest total-expenses value among the groups on the current page.
+    /// Used purely visually to scale the progress bar of the mobile group
+    /// cards (each bar shows its share of the biggest spender). 0 when empty.
+    /// </summary>
+    public long MaxExpensesCents { get; private set; }
 
     /// <summary>Options of the sort dropdown, the current key is preselected.</summary>
     public IReadOnlyList<SelectListItem> SortOptions { get; private set; } = [];
@@ -83,7 +90,14 @@ public class IndexModel(
         foreach (var group in matching.Skip(Paging.Skip(page, pageSize)).Take(pageSize))
         {
             var members = await groups.ListMembersAsync(group.Id, cancellationToken);
-            var totalCents = await expenses.GetTotalCentsAsync(group.Id, cancellationToken);
+
+            // One full balance snapshot per row (N+1): needed for the member's
+            // own saldo shown on the mobile group cards. TotalExpensesCents is
+            // taken from the same snapshot, so no extra expense query is issued.
+            var balance = await balances.CalculateBalancesAsync(group.Id, cancellationToken);
+            var ownBalanceCents = balance.Balances
+                .FirstOrDefault(b => b.UserId == userId)?.BalanceCents ?? 0;
+
             var lastEntries = await history.ListHistoryAsync(
                 group.Id, page: 1, pageSize: 1, cancellationToken: cancellationToken);
 
@@ -98,11 +112,13 @@ public class IndexModel(
                 group.Currency,
                 members.Count,
                 members.Sum(m => m.ShareFactor),
-                totalCents,
+                balance.TotalExpensesCents,
+                ownBalanceCents,
                 lastActivity,
                 manageFlags[group.Id]));
         }
 
+        MaxExpensesCents = rows.Count > 0 ? rows.Max(r => r.TotalExpensesCents) : 0;
         Result = new PagedResult<GroupRow>(rows, page, pageSize, matching.Count);
     }
 
@@ -172,6 +188,7 @@ public class IndexModel(
     /// <param name="MemberCount">Number of active members.</param>
     /// <param name="ShareTotal">Sum of all member share factors.</param>
     /// <param name="TotalExpensesCents">Sum of all expenses in cents.</param>
+    /// <param name="OwnBalanceCents">Current user's saldo in this group (positive = credit).</param>
     /// <param name="LastActivityUtc">Timestamp of the newest history entry.</param>
     /// <param name="CanManage">True when the user may edit the group.</param>
     public sealed record GroupRow(
@@ -182,6 +199,7 @@ public class IndexModel(
         int MemberCount,
         int ShareTotal,
         long TotalExpensesCents,
+        long OwnBalanceCents,
         DateTime LastActivityUtc,
         bool CanManage);
 }

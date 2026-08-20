@@ -101,4 +101,83 @@ public class DetailsModel(
 
     /// <summary>Formats an audit timestamp (stored as UTC) in local time.</summary>
     public static string FormatMoment(DateTime utc) => IndexModel.FormatMoment(utc);
+
+    /// <summary>
+    /// Formats an expense date relative to today: "Heute", "Gestern" or the
+    /// German short date. Used for the mobile "Letzte Ausgaben" list rows.
+    /// </summary>
+    public static string RelativeDay(DateTime date)
+    {
+        var day = date.Date;
+        var today = DateTime.Today;
+
+        if (day == today)
+        {
+            return "Heute";
+        }
+
+        if (day == today.AddDays(-1))
+        {
+            return "Gestern";
+        }
+
+        return day.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.GetCultureInfo("de-DE"));
+    }
+
+    /// <summary>
+    /// Builds the SVG path for the balance hero sparkline from the cumulative
+    /// spend of the recent expenses (oldest to newest), so the line trends
+    /// upwards like in the mockup. Falls back to a gentle placeholder curve when
+    /// there are not enough data points to plot.
+    /// </summary>
+    public string BalanceSparkline()
+    {
+        const string placeholder = "M2 34 20 28 38 32 56 18 74 22 92 8 106 12";
+
+        var amounts = RecentExpenses
+            .OrderBy(expense => expense.ExpenseDate)
+            .ThenBy(expense => expense.Id)
+            .Select(expense => expense.AmountCents)
+            .ToList();
+
+        if (amounts.Count < 2)
+        {
+            return placeholder;
+        }
+
+        var cumulative = new long[amounts.Count];
+        long running = 0;
+
+        for (var i = 0; i < amounts.Count; i++)
+        {
+            running += amounts[i];
+            cumulative[i] = running;
+        }
+
+        var min = cumulative.Min();
+        var max = cumulative.Max();
+        double range = max - min;
+
+        if (range <= 0)
+        {
+            range = 1;
+        }
+
+        const double xLeft = 2, xRight = 106, yTop = 6, yBottom = 40;
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        var path = new System.Text.StringBuilder();
+
+        for (var i = 0; i < cumulative.Length; i++)
+        {
+            var x = xLeft + ((xRight - xLeft) * i / (cumulative.Length - 1));
+            var y = yBottom - ((cumulative[i] - min) / range * (yBottom - yTop));
+
+            path.Append(i == 0 ? "M" : " L");
+            path.Append(x.ToString("0.#", culture));
+            path.Append(' ');
+            path.Append(y.ToString("0.#", culture));
+        }
+
+        return path.ToString();
+    }
 }

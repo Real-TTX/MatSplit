@@ -62,6 +62,7 @@
     --ms-radius-sm: 8px;
     --ms-radius: 12px;
     --ms-radius-lg: 18px;
+    --ms-radius-xl: 22px;
     --ms-radius-pill: 999px;
 
     /* spacing */
@@ -89,6 +90,7 @@
     /* layout */
     --ms-sidebar-width: 268px;
     --ms-header-height: 62px;
+    --ms-tabbar-height: 64px;
     --ms-content-max: 1180px;
     --ms-safe-top: env(safe-area-inset-top, 0px);
     --ms-safe-bottom: env(safe-area-inset-bottom, 0px);

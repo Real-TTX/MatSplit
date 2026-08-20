@@ -17,6 +17,7 @@ namespace MatSplit.Web.Pages.Groups;
 public class MembersModel(
     CurrentUserService currentUser,
     GroupService groups,
+    BalanceService balances,
     HistoryService history,
     AppConfigService appConfig) : PageModel
 {
@@ -47,6 +48,9 @@ public class MembersModel(
     public IReadOnlyList<SelectListItem> SortOptions { get; private set; } = [];
 
     public string InviteUrl { get; private set; } = string.Empty;
+
+    /// <summary>Compact link to the dedicated share screen (Screen "Gruppe teilen").</summary>
+    public string ShareUrl => $"/Groups/Share?groupId={GroupId}";
 
     /// <summary>Prefilled message when sharing the anonymous invite link.</summary>
     public string ShareText => $"Tritt unserer MatSplit-Gruppe »{Group?.Name}« bei:";
@@ -161,6 +165,9 @@ public class MembersModel(
         MemberCount = members.Count;
         SortOptions = BuildSortOptions(Sort);
 
+        var balance = await balances.CalculateBalancesAsync(GroupId, cancellationToken);
+        var balanceByUser = balance.Balances.ToDictionary(b => b.UserId, b => b.BalanceCents);
+
         var rows = members
             .Select(m => new MemberRow(
                 m.UserId,
@@ -170,7 +177,8 @@ public class MembersModel(
                 m.ShareFactor,
                 m.IsGroupAdmin,
                 m.CreateDate,
-                m.UserId == userId))
+                m.UserId == userId,
+                balanceByUser.TryGetValue(m.UserId, out var cents) ? cents : 0))
             .ToList();
 
         rows = Filter(rows, Search);
@@ -306,6 +314,7 @@ public class MembersModel(
     /// <param name="IsGroupAdmin">True when the member administers the group.</param>
     /// <param name="JoinedUtc">Creation date of the membership.</param>
     /// <param name="IsCurrentUser">True for the signed in user.</param>
+    /// <param name="BalanceCents">Net balance in cents; positive = gets money back.</param>
     public sealed record MemberRow(
         long UserId,
         string DisplayName,
@@ -314,5 +323,6 @@ public class MembersModel(
         int ShareFactor,
         bool IsGroupAdmin,
         DateTime JoinedUtc,
-        bool IsCurrentUser);
+        bool IsCurrentUser,
+        long BalanceCents);
 }

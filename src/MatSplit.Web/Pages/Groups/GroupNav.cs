@@ -10,6 +10,13 @@ namespace MatSplit.Web.Pages.Groups;
 /// <param name="CanManage">True for group admins, adds the settings tab.</param>
 public sealed record GroupNav(long GroupId, string Active, bool CanManage = false)
 {
+    /// <summary>
+    /// Renders the tab strip as horizontally scrollable pills instead of the
+    /// default underline tabs. Only takes effect on mobile (&lt;= 900px); used by
+    /// the group dashboard to match the mockup. Desktop stays as underline tabs.
+    /// </summary>
+    public bool Pills { get; init; }
+
     /// <summary>Tab key of /Groups/Details.</summary>
     public const string Details = "details";
 

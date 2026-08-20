@@ -1,6 +1,16 @@
 @page
 @model MatSplit.Web.Pages.Groups.IndexModel
 
+@* Mobile-only screen head (Screen 2 "Meine Gruppen"): big title + round orange add button. *@
+<div class="ms-groups-mhead">
+    <div class="ms-screen-head">
+        <h2 class="ms-screen-title">Meine Gruppen</h2>
+        <a class="ms-screen-head__action" href="/Groups/Edit" aria-label="Neue Gruppe">
+            <ms-icon name="plus" size="22"></ms-icon>
+        </a>
+    </div>
+</div>
+
 <ms-list id="groups" title="Gruppen"
          subtitle="@(Model.IsAdmin ? "Als Administrator siehst du alle Gruppen." : "Alle Gruppen, in denen du mitrechnest.")"
          icon="group" count="@Model.Result.TotalCount">
@@ -11,6 +21,36 @@
         <ms-field id="groups-sort" name="sort" type="select" label="Sortierung"
                   items="Model.SortOptions"></ms-field>
     </ms-toolbar>
+
+    @* Mobile card rendering. Same data as the table below; CSS shows only one
+       of them per breakpoint. Card = name (+ emoji), own saldo, member count,
+       spending progress bar and total spent. *@
+    @if (Model.Result.TotalCount > 0)
+    {
+        <div class="ms-grouplist">
+            @foreach (var group in Model.Result.Items)
+            {
+                var spentPct = Model.MaxExpensesCents > 0
+                    ? Math.Clamp((int)Math.Round(group.TotalExpensesCents * 100d / Model.MaxExpensesCents), 0, 100)
+                    : 0;
+
+                <a class="ms-grouplist__item" href="@($"/Groups/Details?groupId={group.Id}")">
+                    <div class="ms-grouplist__top">
+                        <span class="ms-grouplist__name">@group.Name</span>
+                        <span class="ms-grouplist__balance">
+                            <span class="ms-grouplist__balance-label">Saldo</span>
+                            <ms-money cents="@group.OwnBalanceCents" currency="@group.Currency" show-sign="true"></ms-money>
+                        </span>
+                    </div>
+                    <span class="ms-grouplist__meta">@group.MemberCount @(group.MemberCount == 1 ? "Mitglied" : "Mitglieder")</span>
+                    <span class="ms-grouplist__bar"><span style="width:@spentPct%"></span></span>
+                    <span class="ms-grouplist__spent">
+                        <ms-money cents="@group.TotalExpensesCents" currency="@group.Currency"></ms-money> ausgegeben
+                    </span>
+                </a>
+            }
+        </div>
+    }
 
     <ms-table id="groups-table" caption="Gruppenübersicht">
         <thead>
@@ -87,3 +127,35 @@
         <ms-button id="groups-new" kind="primary" icon="plus" label="Neue Gruppe" href="/Groups/Edit"></ms-button>
     </ms-actions>
 </ms-list>
+
+<style>
+    /* Screen 2 "Meine Gruppen": the .ms-grouplist cards are the mobile view,
+       the ms-table stays the desktop view. Both render the same rows; this
+       block toggles which one is visible at the 900px breakpoint. It only
+       targets this page's own markup, no foundation styles are changed. */
+    .ms-groups-mhead {
+        display: none;
+    }
+
+    #groups > .ms-list__free {
+        display: none;
+    }
+
+    @@media (max-width: 900px) {
+        .ms-groups-mhead {
+            display: block;
+        }
+
+        #groups > .ms-list__free {
+            display: block;
+        }
+
+        /* Desktop chrome the cards replace: in-list heading, the table and the
+           bottom "Neue Gruppe" action (creation lives in the round + above). */
+        #groups > .ms-list__head,
+        #groups #groups-table-wrap,
+        #groups #groups-actions {
+            display: none;
+        }
+    }
+</style>

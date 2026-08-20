@@ -1,6 +1,16 @@
 @page
 @model MatSplit.Web.Pages.Groups.MembersModel
 
+@* Members: full data table on desktop, clean avatar rows (mockup screen 8) on mobile (<=900px). *@
+<style>
+    .members-cards { display: none; }
+    .members-legend { margin: 0; font-size: var(--ms-text-sm); }
+    @@media (max-width: 900px) {
+        #members-table-wrap { display: none; }
+        .members-cards { display: block; }
+    }
+</style>
+
 <partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Members, Model.CanManage)" />
 
 <ms-list id="members" title="Mitglieder" subtitle="Anteilsfaktoren, Rechte und Zugehörigkeit"
@@ -23,10 +33,40 @@
                   text="Nur Gruppen-Administratoren können Mitglieder ändern oder entfernen."></ms-alert>
     }
 
+    @* Mobile view: avatar + name (+ "(du)") + coloured balance, factor chip only when != 1. *@
+    <div class="members-cards">
+        @if (Model.Result.TotalCount > 0)
+        {
+            <ms-card id="members-mobile">
+                <div class="members-rows">
+                    @foreach (var member in Model.Result.Items)
+                    {
+                        <div class="ms-listrow">
+                            <ms-avatar name="@member.DisplayName" size="md" you="@member.IsCurrentUser"></ms-avatar>
+                            <span class="ms-listrow__main">
+                                <strong>@member.DisplayName@(member.IsCurrentUser ? " (du)" : "")</strong>
+                                @if (member.ShareFactor != 1)
+                                {
+                                    <span class="ms-listrow__sub">
+                                        <span class="ms-chip">Faktor @member.ShareFactor</span>
+                                    </span>
+                                }
+                            </span>
+                            <span class="ms-listrow__amount">
+                                <ms-money cents="@member.BalanceCents" show-sign="true"></ms-money>
+                            </span>
+                        </div>
+                    }
+                </div>
+            </ms-card>
+        }
+    </div>
+
     <ms-table id="members-table" caption="Mitglieder der Gruppe">
         <thead>
             <tr>
                 <th scope="col">Name</th>
+                <th scope="col" class="ms-num">Saldo</th>
                 <th scope="col" class="ms-num">Anteilsfaktor</th>
                 <th scope="col">Verwaltung</th>
                 <th scope="col">Beigetreten</th>
@@ -53,6 +93,9 @@
                         {
                             <span class="ms-muted">@member.Email</span>
                         }
+                    </td>
+                    <td data-label="Saldo" class="ms-num">
+                        <ms-money cents="@member.BalanceCents" show-sign="true"></ms-money>
                     </td>
                     <td data-label="Anteilsfaktor" class="ms-num">@member.ShareFactor</td>
                     <td data-label="Verwaltung">
@@ -112,8 +155,12 @@
     </ms-actions>
 </ms-list>
 
-<ms-card id="member-invite" title="Einladungslink" icon="link" tone="accent"
-         subtitle="Beitritt ohne Konto – ideal für Urlaubsbekanntschaften">
+<p class="ms-muted members-legend">
+    Positive Beträge = Dir steht Geld zu · Negative = Du schuldest Geld
+</p>
+
+<ms-card id="member-share" title="Gruppe teilen" icon="share" tone="accent"
+         subtitle="Teile den Einladungslink – jeder kann ohne Konto beitreten und mitmachen.">
     @if (!Model.AllowAnonymousJoin)
     {
         <ms-alert id="member-invite-off" tone="warning"
@@ -122,22 +169,12 @@
     else if (!Model.Group.InviteEnabled)
     {
         <ms-alert id="member-invite-disabled" tone="warning"
-                  text="Die Einladung ist für diese Gruppe deaktiviert. Der Link unten funktioniert erst nach dem Aktivieren."></ms-alert>
+                  text="Die Einladung ist für diese Gruppe deaktiviert. Der Link funktioniert erst nach dem Aktivieren."></ms-alert>
     }
 
-    <ms-field id="inv-url" type="static" label="Link zum Teilen" value="@Model.InviteUrl"
-              hint="Zeige den Link groß auf dem Bildschirm, dann kann er direkt abfotografiert oder per Messenger weitergegeben werden."></ms-field>
-
     <div class="ms-row">
-        <ms-button id="inv-whatsapp" kind="primary" icon="whatsapp" label="Per WhatsApp teilen"
-                   href="@Model.WhatsAppUrl" target="_blank"></ms-button>
-        <ms-button id="inv-share" kind="secondary" icon="share" label="Teilen" type="button"
-                   data-ms-share="true" data-ms-share-url="@Model.InviteUrl"
-                   data-ms-share-title="MatSplit-Einladung" data-ms-share-text="@Model.ShareText"></ms-button>
-        <ms-button id="inv-copy" kind="secondary" icon="copy" label="Kopieren" type="button"
-                   data-ms-copy="#inv-url"></ms-button>
-        <ms-button id="inv-open" kind="ghost" icon="link" label="Link öffnen"
-                   href="@Model.InviteUrl" target="_blank"></ms-button>
+        <ms-button id="member-share-open" kind="primary" icon="share" label="Gruppe teilen"
+                   href="@Model.ShareUrl"></ms-button>
     </div>
 
     @if (Model.CanManage)

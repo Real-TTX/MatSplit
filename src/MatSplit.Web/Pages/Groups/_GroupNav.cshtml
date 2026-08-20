@@ -1,6 +1,7 @@
 @model MatSplit.Web.Pages.Groups.GroupNav
 
-<ms-tabs id="@($"group-nav-{Model.GroupId}")" active="@Model.Active" label="Gruppenbereiche">
+<ms-tabs id="@($"group-nav-{Model.GroupId}")" active="@Model.Active" label="Gruppenbereiche"
+         class="@(Model.Pills ? "ms-tabs--pills" : null)">
     <ms-tab key="details" label="Übersicht" icon="info"
             href="@($"/Groups/Details?groupId={Model.GroupId}")"></ms-tab>
     <ms-tab key="expenses" label="Ausgaben" icon="expense"

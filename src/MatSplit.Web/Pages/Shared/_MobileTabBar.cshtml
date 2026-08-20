@@ -1,0 +1,40 @@
+@*
+    Mobile bottom navigation (Gruppen / Aktivitaeten / Profil). Only visible on
+    screens <= 900px; .ms-tabbar in mobile.css hides it on desktop. The active
+    tab is derived from the request path. "Aktivitaeten" links to the history of
+    the currently active group when one is known (via ViewData), otherwise it
+    falls back to the group list.
+*@
+@{
+    var tabPath = ViewContext.HttpContext.Request.Path.Value ?? "/";
+    tabPath = tabPath.Length > 1 ? tabPath.TrimEnd('/') : "/";
+    var tabActiveGroupId = ViewData.ReadActiveGroupId();
+
+    var activityHref = tabActiveGroupId.HasValue
+        ? $"/Groups/History?groupId={tabActiveGroupId.Value}"
+        : "/Groups";
+
+    var onActivity = tabPath.Equals("/Groups/History", StringComparison.OrdinalIgnoreCase);
+    var onProfile = tabPath.Equals("/Account/Profile", StringComparison.OrdinalIgnoreCase)
+        || tabPath.StartsWith("/Account/Profile/", StringComparison.OrdinalIgnoreCase);
+    var onGroups = !onActivity && !onProfile
+        && (tabPath.Equals("/Groups", StringComparison.OrdinalIgnoreCase)
+            || tabPath.StartsWith("/Groups/", StringComparison.OrdinalIgnoreCase)
+            || tabPath.Equals("/", StringComparison.OrdinalIgnoreCase));
+
+    string TabClass(bool active) => active ? "ms-tabbar__item is-active" : "ms-tabbar__item";
+}
+<nav class="ms-tabbar" aria-label="Hauptbereiche">
+    <a class="@TabClass(onGroups)" href="/Groups" aria-current="@(onGroups ? "page" : null)">
+        <ms-icon name="group" size="22"></ms-icon>
+        <span class="ms-tabbar__label">Gruppen</span>
+    </a>
+    <a class="@TabClass(onActivity)" href="@activityHref" aria-current="@(onActivity ? "page" : null)">
+        <ms-icon name="activity" size="22"></ms-icon>
+        <span class="ms-tabbar__label">Aktivit&#228;ten</span>
+    </a>
+    <a class="@TabClass(onProfile)" href="/Account/Profile" aria-current="@(onProfile ? "page" : null)">
+        <ms-icon name="profile" size="22"></ms-icon>
+        <span class="ms-tabbar__label">Profil</span>
+    </a>
+</nav>

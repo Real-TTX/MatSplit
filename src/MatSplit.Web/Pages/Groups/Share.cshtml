@@ -1,0 +1,105 @@
+@page
+@model MatSplit.Web.Pages.Groups.ShareModel
+
+<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Members, Model.CanManage)" />
+
+<ms-card id="share-card">
+    <div class="ms-share">
+        <div class="ms-hero-icon">
+            <ms-icon name="link" size="44"></ms-icon>
+        </div>
+
+        <p class="ms-share__lead">
+            Teile den Link mit deiner Gruppe – jeder kann anonym beitreten und mitarbeiten.
+        </p>
+
+        @if (!Model.AllowAnonymousJoin)
+        {
+            <ms-alert id="share-off" tone="warning"
+                      text="Der anonyme Beitritt ist installationsweit deaktiviert. Der Link funktioniert erst wieder, wenn ein Administrator ihn in den Einstellungen erlaubt."></ms-alert>
+        }
+        else if (!Model.Group.InviteEnabled)
+        {
+            <ms-alert id="share-disabled" tone="warning"
+                      text="Die Einladung ist für diese Gruppe deaktiviert. Aktiviere den Link in der Mitgliederverwaltung, damit neue Leute beitreten können."></ms-alert>
+        }
+
+        <ms-field id="share-url" type="static" label="Dein Einladungslink"
+                  value="@Model.InviteUrl"></ms-field>
+
+        @if (Model.CanShare)
+        {
+            <ms-button id="share-copy" kind="primary" full-width="true" type="button"
+                       label="Link kopieren" data-ms-copy="#share-url"></ms-button>
+
+            <div class="ms-social">
+                <a class="ms-social__btn ms-social__btn--whatsapp" href="@Model.WhatsAppUrl"
+                   target="_blank" rel="noopener">
+                    <ms-icon name="whatsapp" size="24"></ms-icon>
+                    <span>WhatsApp</span>
+                </a>
+                <a class="ms-social__btn ms-social__btn--telegram" href="@Model.TelegramUrl"
+                   target="_blank" rel="noopener">
+                    <ms-icon name="telegram" size="24"></ms-icon>
+                    <span>Telegram</span>
+                </a>
+                <button type="button" class="ms-social__btn ms-social__btn--more"
+                        data-ms-share="true" data-ms-share-url="@Model.InviteUrl"
+                        data-ms-share-title="MatSplit-Einladung" data-ms-share-text="@Model.ShareText">
+                    <ms-icon name="dots" size="24"></ms-icon>
+                    <span>Mehr</span>
+                </button>
+            </div>
+        }
+        else
+        {
+            <ms-button id="share-members" kind="secondary" icon="users" full-width="true"
+                       label="Zur Mitgliederverwaltung" href="@Model.MembersUrl"></ms-button>
+        }
+    </div>
+</ms-card>
+
+@section Styles {
+    <style>
+        /* Focused share screen – centred hero column, roomy on desktop too. */
+        .ms-share {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--ms-space-5);
+            max-width: 26rem;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .ms-share__lead {
+            margin: 0;
+            color: var(--ms-text-soft);
+            font-size: var(--ms-text-lg);
+            line-height: 1.5;
+        }
+
+        .ms-share > .ms-field,
+        .ms-share > .ms-alert,
+        .ms-share > .ms-btn,
+        .ms-share > .ms-social {
+            width: 100%;
+        }
+
+        .ms-share > .ms-alert {
+            text-align: left;
+        }
+
+        .ms-share .ms-field__label {
+            justify-content: center;
+            text-align: center;
+        }
+
+        .ms-share .ms-static {
+            justify-content: center;
+            text-align: center;
+            font-weight: 600;
+            word-break: break-all;
+        }
+    </style>
+}

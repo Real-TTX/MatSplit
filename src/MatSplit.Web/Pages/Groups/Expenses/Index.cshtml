@@ -3,6 +3,16 @@
 
 <partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Expenses, Model.CanManage)" />
 
+@* Mobile-only screen head (Screen 3 "Letzte Ausgaben"): title + round orange add button. *@
+<div class="ms-expenses-mhead">
+    <div class="ms-screen-head">
+        <h1 class="ms-screen-title">Ausgaben</h1>
+        <a class="ms-screen-head__action" href="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}")" aria-label="Neue Ausgabe">
+            <ms-icon name="plus" size="22"></ms-icon>
+        </a>
+    </div>
+</div>
+
 <ms-list id="expenses" title="Ausgaben" subtitle="@($"Alle Ausgaben der Gruppe {Model.Group.Name}")"
          icon="expense" count="@Model.Result.TotalCount">
 
@@ -28,6 +38,32 @@
         @* Form owner for the row checkboxes: the bulk delete button lives in ms-actions. *@
         <ms-form id="expenses-bulk" action="@Model.ListUrl" handler="DeleteSelected"
                  validation-summary="none"></ms-form>
+    }
+
+    @* Mobile card rendering (Screen 3 "Letzte Ausgaben"): same rows as the desktop
+       table below, the style block toggles which one shows at the 900px breakpoint.
+       Icon circle + description + payer, amount + relative date on the right; the
+       whole row links to the edit page (delete lives there per the CRUD guideline). *@
+    @if (Model.Rows.Count > 0)
+    {
+        <ms-card id="expenses-cards" class="ms-expenses-cards">
+            @foreach (var row in Model.Rows)
+            {
+                <a class="ms-listrow" href="@($"/Groups/Expenses/Edit?groupId={Model.GroupId}&id={row.Id}")">
+                    <span class="ms-listrow__icon">
+                        <ms-icon name="@(row.ReceiptCount > 0 ? "receipt" : "expense")" size="20"></ms-icon>
+                    </span>
+                    <span class="ms-listrow__main">
+                        <strong>@row.Description</strong>
+                        <span class="ms-listrow__sub">@row.PaidByName</span>
+                    </span>
+                    <span class="ms-listrow__amount">
+                        <ms-money cents="@row.AmountCents" currency="@row.Currency"></ms-money>
+                        <span class="ms-listrow__sub">@RelativeDate(row.ExpenseDate)</span>
+                    </span>
+                </a>
+            }
+        </ms-card>
     }
 
     <ms-table id="expenses-table" caption="Ausgaben der Gruppe">
@@ -147,3 +183,69 @@
         }
     </ms-actions>
 </ms-list>
+
+@functions {
+    // Relative day label for the mobile rows (Heute / Gestern / date), matching
+    // the mockup's "Letzte Ausgaben" time column. Presentation only.
+    private static string RelativeDate(DateTime date)
+    {
+        var day = date.Date;
+        var today = DateTime.UtcNow.Date;
+
+        if (day == today)
+        {
+            return "Heute";
+        }
+
+        if (day == today.AddDays(-1))
+        {
+            return "Gestern";
+        }
+
+        return day.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+    }
+}
+
+<style>
+    /* Expenses list (Screen 3 "Letzte Ausgaben"): the .ms-listrow cards are the
+       mobile view (free content inside .ms-list__free), the ms-table stays the
+       desktop view. Both render the same rows; this block toggles which one
+       shows at the 900px breakpoint and only targets this page's own markup. */
+    .ms-expenses-mhead {
+        display: none;
+    }
+
+    #expenses > .ms-list__free {
+        display: none;
+    }
+
+    #expenses a.ms-listrow {
+        color: var(--ms-text);
+        text-decoration: none;
+        border-radius: var(--ms-radius);
+    }
+
+    @@media (max-width: 900px) {
+        .ms-expenses-mhead {
+            display: block;
+        }
+
+        #expenses > .ms-list__free {
+            display: block;
+        }
+
+        /* Desktop chrome the cards replace: the in-list heading, the table and
+           the bottom actions (add lives in the round + above; export and bulk
+           delete stay desktop-only power tools). */
+        #expenses > .ms-list__head,
+        #expenses #expenses-table-wrap,
+        #expenses #expenses-actions {
+            display: none;
+        }
+
+        #expenses a.ms-listrow:hover {
+            background: var(--ms-surface-2);
+            text-decoration: none;
+        }
+    }
+</style>

@@ -10,6 +10,14 @@
 }
 
 <div class="ms-stack">
+    <div class="ms-profile-head">
+        <ms-avatar name="@Model.DisplayName" size="lg" you="true"></ms-avatar>
+        <div class="ms-profile-head__meta">
+            <span class="ms-profile-head__name">@Model.DisplayName</span>
+            <span class="ms-profile-head__role">@roleText</span>
+        </div>
+    </div>
+
     @if (Model.IsAnonymousAccount)
     {
         <ms-card id="profile-upgrade" title="Konto sichern"
@@ -155,6 +163,34 @@
         </div>
     </ms-card>
 </div>
+
+<style>
+    .ms-profile-head {
+        display: flex;
+        align-items: center;
+        gap: var(--ms-space-3);
+    }
+
+    .ms-profile-head__meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .ms-profile-head__name {
+        font-size: var(--ms-text-lg);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--ms-text);
+        word-break: break-word;
+    }
+
+    .ms-profile-head__role {
+        color: var(--ms-text-muted);
+        font-size: var(--ms-text-sm);
+    }
+</style>
 
 @section Scripts {
     <script>

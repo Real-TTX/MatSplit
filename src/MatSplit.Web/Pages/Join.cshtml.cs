@@ -167,7 +167,9 @@ public class JoinModel(
             }
         }
 
-        this.SetTitle("Gruppe beitreten", Group?.Name ?? config.AppName, "link");
+        // The centred hero on the page itself carries the big "Gruppe beitreten"
+        // heading, so the top bar shows the group as context instead of echoing it.
+        this.SetTitle(Group?.Name ?? "Gruppe beitreten", Group is null ? null : "Einladung", "link");
         ViewData[LayoutKeys.HideMenu] = true;
     }
 }
