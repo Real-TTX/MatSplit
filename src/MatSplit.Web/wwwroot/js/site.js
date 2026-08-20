@@ -378,6 +378,40 @@
         restoreFocus();
     }
 
+    /* -------------------------- toolbar toggle --------------------------- */
+
+    /*
+        On mobile the filter toolbar is collapsed (see controls.css) and opened
+        from the filter icon in the app bar. The icon is hidden by default and
+        only revealed when the current page actually has a .ms-toolbar, so pages
+        without filters keep a clean app bar. The DOM and the server side
+        search / sort are untouched, the toolbar is only shown / hidden.
+    */
+    function initToolbarToggle() {
+        var toggle = document.querySelector('[data-ms-toolbar-toggle]');
+        if (!toggle) {
+            return;
+        }
+
+        var toolbar = document.querySelector('.ms-toolbar');
+        if (!toolbar) {
+            return;
+        }
+
+        toggle.hidden = false;
+
+        toggle.addEventListener('click', function () {
+            var open = toolbar.classList.toggle('is-open');
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) {
+                var field = toolbar.querySelector('input, select, textarea');
+                if (field) {
+                    field.focus({ preventScroll: true });
+                }
+            }
+        });
+    }
+
     /* ------------------------------ confirm ------------------------------ */
 
     function initConfirm() {
@@ -876,6 +910,7 @@
         initScrollbars();
         initConditionals(document);
         initToolbars();
+        initToolbarToggle();
         initConfirm();
         initTabs();
         initDismiss();

@@ -1,27 +1,64 @@
 @{
     var title = ViewData.ReadString(LayoutKeys.Title);
-    var subtitle = ViewData.ReadString(LayoutKeys.Subtitle);
     var titleIcon = ViewData.ReadString(LayoutKeys.TitleIcon);
+
+    // The mobile app bar shows a back arrow to the parent page when the
+    // breadcrumb has an ancestor, otherwise the drawer / menu toggle. The
+    // "parent" is the second to last breadcrumb entry (the last one is the
+    // current page). Top level pages keep the menu toggle so the drawer stays
+    // reachable.
+    var crumbs = ViewData.ReadBreadcrumb();
+    string? backUrl = null;
+    if (crumbs.Count >= 2)
+    {
+        var parent = crumbs[crumbs.Count - 2];
+        backUrl = string.IsNullOrWhiteSpace(parent.Url) ? "/" : parent.Url;
+    }
+
+    // Optional context action on the right of the app bar. Pages fill these
+    // ViewData slots (see contractsForOthers). When unset nothing is rendered.
+    var actionUrl = ViewData.ReadString("AppBarActionUrl");
+    var actionIcon = ViewData.ReadString("AppBarActionIcon");
+    var actionLabel = ViewData.ReadString("AppBarActionLabel") ?? "Aktion";
 }
-<header class="ms-header">
-    <button class="ms-header__burger" type="button" data-ms-drawer-toggle="true"
-            aria-controls="ms-menu" aria-expanded="false" aria-label="Men&#252; anzeigen">
-        <ms-icon name="menu" size="22"></ms-icon>
-    </button>
-    <a class="ms-header__brand" href="/" aria-label="Startseite">
-        <img src="~/img/logo-mark.svg" width="28" height="28" alt="" />
-    </a>
-    <div class="ms-header__titles">
-        <h1 class="ms-header__title">
+<header class="ms-header ms-appbar">
+    <div class="ms-appbar__lead">
+        @if (backUrl is not null)
+        {
+            <a class="ms-appbar__icon-btn" href="@backUrl" aria-label="Zur&#252;ck">
+                <ms-icon name="arrow-left" size="22"></ms-icon>
+            </a>
+        }
+        else
+        {
+            <button class="ms-appbar__icon-btn ms-header__burger" type="button" data-ms-drawer-toggle="true"
+                    aria-controls="ms-menu" aria-expanded="false" aria-label="Men&#252; anzeigen">
+                <ms-icon name="menu" size="22"></ms-icon>
+            </button>
+        }
+    </div>
+    <div class="ms-appbar__titles ms-header__titles">
+        <h1 class="ms-appbar__title ms-header__title">
             @if (!string.IsNullOrWhiteSpace(titleIcon))
             {
-                <ms-icon name="@titleIcon" size="22"></ms-icon>
+                <ms-icon name="@titleIcon" size="20"></ms-icon>
             }
             <span>@(string.IsNullOrWhiteSpace(title) ? "MatSplit" : title)</span>
         </h1>
-        @if (!string.IsNullOrWhiteSpace(subtitle))
+    </div>
+    <div class="ms-appbar__actions">
+        @* Filter / search toggle for list pages. Hidden until site.js finds a
+           .ms-toolbar on the page and reveals it (mobile: toolbar is collapsed
+           by default and this button opens it). *@
+        <button class="ms-appbar__icon-btn" type="button" data-ms-toolbar-toggle="true"
+                aria-label="Filter anzeigen" aria-expanded="false" hidden>
+            <ms-icon name="filter" size="20"></ms-icon>
+        </button>
+        @if (!string.IsNullOrWhiteSpace(actionUrl) && !string.IsNullOrWhiteSpace(actionIcon))
         {
-            <p class="ms-header__subtitle">@subtitle</p>
+            <a class="ms-appbar__icon-btn ms-appbar__icon-btn--accent" href="@actionUrl" aria-label="@actionLabel">
+                <ms-icon name="@actionIcon" size="20"></ms-icon>
+            </a>
         }
     </div>
 </header>

@@ -1,15 +1,13 @@
 @page
 @model MatSplit.Web.Pages.Groups.IndexModel
-
-@* Mobile-only screen head (Screen 2 "Meine Gruppen"): big title + round orange add button. *@
-<div class="ms-groups-mhead">
-    <div class="ms-screen-head">
-        <h2 class="ms-screen-title">Meine Gruppen</h2>
-        <a class="ms-screen-head__action" href="/Groups/Edit" aria-label="Neue Gruppe">
-            <ms-icon name="plus" size="22"></ms-icon>
-        </a>
-    </div>
-</div>
+@{
+    // Mobile app bar context action (top level page => menu toggle on the left,
+    // this "+" on the right). On desktop the app bar is hidden and the bottom
+    // "Neue Gruppe" action / the list head carry creation instead.
+    ViewData["AppBarActionUrl"] = "/Groups/Edit";
+    ViewData["AppBarActionIcon"] = "plus";
+    ViewData["AppBarActionLabel"] = "Neue Gruppe";
+}
 
 <ms-list id="groups" title="Gruppen"
          subtitle="@(Model.IsAdmin ? "Als Administrator siehst du alle Gruppen." : "Alle Gruppen, in denen du mitrechnest.")"
@@ -129,31 +127,17 @@
 </ms-list>
 
 <style>
-    /* Screen 2 "Meine Gruppen": the .ms-grouplist cards are the mobile view,
-       the ms-table stays the desktop view. Both render the same rows; this
-       block toggles which one is visible at the 900px breakpoint. It only
-       targets this page's own markup, no foundation styles are changed. */
-    .ms-groups-mhead {
-        display: none;
-    }
-
-    #groups > .ms-list__free {
+    /* The group list uses the .ms-grouplist card optic on every breakpoint
+       (mockup style), so the ms-table is only the accessible / print fallback
+       and stays hidden on screen. Both render the same rows; only this page's
+       own markup is targeted, no foundation styles are changed. */
+    #groups #groups-table-wrap {
         display: none;
     }
 
     @@media (max-width: 900px) {
-        .ms-groups-mhead {
-            display: block;
-        }
-
-        #groups > .ms-list__free {
-            display: block;
-        }
-
-        /* Desktop chrome the cards replace: in-list heading, the table and the
-           bottom "Neue Gruppe" action (creation lives in the round + above). */
-        #groups > .ms-list__head,
-        #groups #groups-table-wrap,
+        /* Creation lives in the app bar "+" on mobile, so the bottom action is
+           redundant there. */
         #groups #groups-actions {
             display: none;
         }

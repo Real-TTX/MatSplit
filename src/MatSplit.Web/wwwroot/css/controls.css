@@ -245,15 +245,18 @@
 
 /* ------------------------------- toolbar -------------------------------- */
 
+/* Slim filter row instead of a heavy bordered card: just a hairline that
+   separates the filters from the list below. */
 .ms-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
     gap: var(--ms-space-3);
-    padding: var(--ms-space-4);
-    border: 1px solid var(--ms-border);
-    border-radius: var(--ms-radius-xl);
-    background: var(--ms-surface-2);
+    padding: 0 0 var(--ms-space-4);
+    border: 0;
+    border-bottom: 1px solid var(--ms-border);
+    border-radius: 0;
+    background: transparent;
 }
 
 .ms-toolbar__fields {
@@ -861,7 +864,23 @@
     gap: 4px;
     overflow-x: auto;
     padding-bottom: 2px;
+    padding-inline-end: var(--ms-space-4);
+    scroll-padding-inline-end: var(--ms-space-4);
     border-bottom: 1px solid var(--ms-border);
+    scrollbar-width: none;
+}
+
+.ms-tabs__nav::-webkit-scrollbar {
+    height: 0;
+}
+
+/* Fade the right edge so an overflowing (scrollable) sub-nav signals "more"
+   instead of hard-cutting the next label (e.g. "Zahlunge"). */
+@media (max-width: 900px) {
+    .ms-tabs__nav {
+        -webkit-mask-image: linear-gradient(to right, #000 87%, transparent 100%);
+                mask-image: linear-gradient(to right, #000 87%, transparent 100%);
+    }
 }
 
 .ms-tabs__tab {
@@ -1087,11 +1106,24 @@
     margin: 0;
 }
 
-@media (max-width: 719px) {
+/* Mobile: the filter row is collapsed by default and opened from the app bar
+   filter icon (site.js toggles .is-open). The DOM and the server side
+   search / sort stay intact, they are only hidden. */
+@media (max-width: 900px) {
     .ms-toolbar {
-        padding: var(--ms-space-3);
+        display: none;
+        padding: var(--ms-space-4);
+        border: 1px solid var(--ms-border);
+        border-radius: var(--ms-radius-xl);
+        background: var(--ms-surface-2);
     }
 
+    .ms-toolbar.is-open {
+        display: flex;
+    }
+}
+
+@media (max-width: 719px) {
     .ms-toolbar__fields,
     .ms-toolbar__fields .ms-field {
         width: 100%;
