@@ -1,7 +1,6 @@
 @page
 @model MatSplit.Web.Pages.Groups.Payments.EditModel
 
-<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Payments, Model.CanManage)" />
 
 <ms-card id="payment-card" title="@(Model.IsExisting ? "Zahlung bearbeiten" : "Neue Zahlung")"
          subtitle="Wer hat wem Geld gegeben?" icon="paypal">

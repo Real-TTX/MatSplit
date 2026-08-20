@@ -1,11 +1,6 @@
 @page
 @model MatSplit.Web.Pages.Groups.EditModel
 
-@if (!Model.IsNew)
-{
-    <partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.Id!.Value, MatSplit.Web.Pages.Groups.GroupNav.Settings, true)" />
-}
-
 <ms-card id="group-card"
          title="@(Model.IsNew ? "Neue Gruppe" : "Gruppe bearbeiten")"
          subtitle="Name, Währung und Einladung der gemeinsamen Kasse"

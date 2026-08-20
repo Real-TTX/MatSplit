@@ -6,13 +6,13 @@
     var myOwedCents = Model.MyBalance?.OwedCents ?? 0;
     var expenseEditUrl = $"/Groups/Expenses/Edit?groupId={Model.GroupId}";
     var shareUrl = $"/Groups/Share?groupId={Model.GroupId}";
-    var groupNav = new MatSplit.Web.Pages.Groups.GroupNav(
-        Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Details, Model.CanManage) { Pills = true };
+    var balanceUrl = $"/Groups/Balance?groupId={Model.GroupId}";
 }
 
-@* Screen 3 "Ibiza Trip": large orange balance hero with the own saldo, the
-   share of the total spend and a subtle sparkline of the recent spending. *@
-<div class="ms-balance-hero" id="group-balance-hero">
+@* Large orange balance hero. Tapping it opens the Kontostand sub-page (no tabs;
+   the dashboard is the hub, sub-pages are reached from here with a back button). *@
+<a class="ms-balance-hero ms-balance-hero--link" id="group-balance-hero"
+   href="@balanceUrl" aria-label="Kontostand im Detail ansehen">
     <span class="ms-balance-hero__label">Kontostand</span>
     <span class="ms-balance-hero__amount">
         <ms-money cents="@myBalanceCents" currency="@currency" show-sign="true"></ms-money>
@@ -26,10 +26,7 @@
             <path d="@Model.BalanceSparkline()" />
         </svg>
     </span>
-</div>
-
-@* Tab pills on mobile (Übersicht / Ausgaben / Mitglieder …), underline tabs on desktop. *@
-<partial name="_GroupNav" model="groupNav" />
+</a>
 
 <ms-card id="group-expenses" title="Letzte Ausgaben" icon="expense"
          subtitle="@(Model.ExpenseCount == 1 ? "1 Eintrag insgesamt" : $"{Model.ExpenseCount} Einträge insgesamt")"
@@ -92,19 +89,13 @@
     }
 
     @* Full-width primary call to action, as in the mockup (mobile only). *@
-    <div class="ms-dash-cta">
-        <ms-button id="group-expenses-new-mobile" kind="primary" icon="plus" full-width="true"
-                   label="Ausgabe hinzufügen" href="@expenseEditUrl"></ms-button>
-    </div>
-
-    @* Desktop action row (kept for the roomier desktop layout). *@
-    <div class="ms-row ms-dash-actions">
-        <ms-button id="group-expenses-new" kind="primary" icon="plus" label="Ausgabe erfassen"
+    <div class="ms-row ms-dash-footer">
+        <ms-button id="group-expenses-new" kind="primary" icon="plus" label="Ausgabe hinzufügen"
                    href="@expenseEditUrl"></ms-button>
         <ms-button id="group-expenses-link" kind="secondary" icon="expense" label="Alle Ausgaben"
                    href="@($"/Groups/Expenses?groupId={Model.GroupId}")"></ms-button>
-        <ms-button id="group-payments-new" kind="secondary" icon="paypal" label="Zahlung erfassen"
-                   href="@($"/Groups/Payments/Edit?groupId={Model.GroupId}")"></ms-button>
+        <ms-button id="group-payments-link" kind="secondary" icon="paypal" label="Zahlungen"
+                   href="@($"/Groups/Payments?groupId={Model.GroupId}")"></ms-button>
     </div>
 </ms-card>
 
@@ -259,45 +250,23 @@
        Page-scoped selectors only; no foundation styles are changed. Both the
        list rows and the desktop table render the same data — this block toggles
        which one is visible at the 900px breakpoint. */
-    .ms-dash-recent,
-    .ms-dash-cta {
+    .ms-dash-recent {
         display: none;
     }
 
     @@media (max-width: 900px) {
-        .ms-dash-recent,
-        .ms-dash-cta {
+        .ms-dash-recent {
             display: block;
         }
 
-        /* Desktop chrome the mobile view replaces: the expenses table and the
-           multi-button action row (the full-width CTA takes over on mobile). */
-        #group-expenses-table-wrap,
-        .ms-dash-actions {
+        /* Mobile shows the icon list rows instead of the desktop table. */
+        #group-expenses-table-wrap {
             display: none;
         }
 
-        /* The group nav renders as scrollable pills on the mobile dashboard. */
-        .ms-tabs--pills > .ms-tabs__nav {
-            border-bottom: none;
-            gap: var(--ms-space-2);
-        }
-
-        .ms-tabs--pills > .ms-tabs__nav > .ms-tabs__tab {
-            border: 1px solid transparent;
-            border-radius: var(--ms-radius-pill);
-            background: var(--ms-surface-3);
-            color: var(--ms-text-soft);
-            padding: 8px var(--ms-space-4);
-            font-size: var(--ms-text-sm);
-            font-weight: 650;
-        }
-
-        .ms-tabs--pills > .ms-tabs__nav > .ms-tabs__tab.is-active {
-            border-color: transparent;
-            background: var(--ms-gradient-sun);
-            color: #fff;
-            box-shadow: var(--ms-shadow-1);
+        /* Big primary call-to-action on top, the two nav links wrap below it. */
+        .ms-dash-footer .ms-btn--primary {
+            width: 100%;
         }
     }
 </style>

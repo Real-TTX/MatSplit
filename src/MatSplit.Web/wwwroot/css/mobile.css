@@ -61,6 +61,21 @@
     isolation: isolate;
 }
 
+.ms-balance-hero--link {
+    text-decoration: none;
+    cursor: pointer;
+    color: #fff;
+    transition: transform var(--ms-transition), box-shadow var(--ms-transition);
+}
+
+.ms-balance-hero--link:hover,
+.ms-balance-hero--link:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: var(--ms-shadow-3);
+    color: #fff;
+    text-decoration: none;
+}
+
 .ms-balance-hero::after {
     /* soft light bloom in the top right, like the mockup */
     content: "";

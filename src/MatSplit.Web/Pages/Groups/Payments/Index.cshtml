@@ -1,7 +1,6 @@
 @page
 @model MatSplit.Web.Pages.Groups.Payments.IndexModel
 
-<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Payments, Model.CanManage)" />
 
 <ms-list id="payments" title="Zahlungen" subtitle="Wer hat wem Geld gegeben"
          icon="paypal" count="@Model.Result.TotalCount">

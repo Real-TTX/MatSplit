@@ -1,7 +1,6 @@
 @page
 @model MatSplit.Web.Pages.Groups.Expenses.EditModel
 
-<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Expenses, Model.CanManage)" />
 
 <ms-card id="expense-card" title="@(Model.IsExisting ? "Ausgabe bearbeiten" : "Neue Ausgabe")"
          subtitle="@Model.Group.Name" icon="expense">

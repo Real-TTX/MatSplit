@@ -1,7 +1,6 @@
 @page
 @model MatSplit.Web.Pages.Groups.MemberEditModel
 
-<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.Members, Model.CanManage)" />
 
 <ms-card id="member-card"
          title="@(Model.IsExisting ? "Mitglied bearbeiten" : "Mitglied hinzufügen")"

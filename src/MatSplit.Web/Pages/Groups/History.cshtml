@@ -1,7 +1,6 @@
 @page
 @model MatSplit.Web.Pages.Groups.HistoryModel
 
-<partial name="_GroupNav" model="new MatSplit.Web.Pages.Groups.GroupNav(Model.GroupId, MatSplit.Web.Pages.Groups.GroupNav.History, Model.CanManage)" />
 
 <ms-list id="history" title="Aktivitäten" subtitle="Alle Änderungen dieser Gruppe"
          icon="activity" count="@Model.Result.TotalCount">
