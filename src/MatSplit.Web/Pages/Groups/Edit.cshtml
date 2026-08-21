@@ -30,6 +30,15 @@
             <ms-field id="gf-invite-new" for="Input.RegenerateInvite" type="checkbox" full-width="true"
                       depends-on="Input.InviteEnabled" depends-value="true"
                       hint="Der bisherige Link wird dadurch ungültig."></ms-field>
+
+            <ms-field id="gf-created" type="static" label="Angelegt"
+                      value="@Model.CreatedDisplay"></ms-field>
+
+            @if (Model.UpdatedDisplay is not null)
+            {
+                <ms-field id="gf-updated" type="static" label="Zuletzt geändert"
+                          value="@Model.UpdatedDisplay"></ms-field>
+            }
         }
 
         <ms-field id="gf-id" for="Input.Id" type="hidden"></ms-field>
@@ -47,3 +56,18 @@
         </ms-button-row>
     </ms-form>
 </ms-card>
+
+@if (!Model.IsNew)
+{
+    @* Activity log lives under "Gruppe verwalten" now (moved off the dashboard):
+       a protocol/management feature reachable only from here. *@
+    <ms-card id="group-history-card"
+             title="Aktivitätsprotokoll"
+             subtitle="Chronologisches Protokoll aller Änderungen an dieser Gruppe"
+             icon="history">
+        <ms-button-row id="gh-buttons">
+            <ms-button id="gh-open" kind="secondary" icon="history" label="Protokoll öffnen" type="button"
+                       href="@($"/Groups/History?groupId={Model.Id}")"></ms-button>
+        </ms-button-row>
+    </ms-card>
+}

@@ -5,19 +5,17 @@
 <ms-card id="expense-card" title="@(Model.IsExisting ? "Ausgabe bearbeiten" : "Neue Ausgabe")"
          subtitle="@Model.Group.Name" icon="expense">
     <ms-form id="expense-form" columns="2" has-files="true">
-        @* Screen 4 "Neue Ausgabe": Titel, Betrag (mit €), Bezahlt von, Datum. *@
+        @* Screen 4 "Neue Ausgabe": Titel, Betrag (mit €), Datum, Bezahlt von.
+           Die Währung ist durch die Gruppe fix und wird serverseitig gesetzt. *@
         <ms-field id="ef-desc" for="Input.Description" full-width="true"
                   placeholder="z. B. Abendessen im Restaurant"></ms-field>
 
         <ms-field id="ef-amount" for="Input.Amount" type="money" currency="@Model.Input.Currency"></ms-field>
-        <ms-field id="ef-currency" for="Input.Currency" max-length="3"
-                  hint="Dreistelliger Code, zum Beispiel EUR."></ms-field>
+        <ms-field id="ef-date" for="Input.ExpenseDate" type="date"></ms-field>
 
         <ms-field id="ef-payer" for="Input.PaidByUserId" type="select"
                   items="Model.MemberOptions" option-label="Bitte wählen"></ms-field>
-        <ms-field id="ef-date" for="Input.ExpenseDate" type="date"></ms-field>
-
-        <ms-field id="ef-category" for="Input.Category" full-width="true"
+        <ms-field id="ef-category" for="Input.Category"
                   hint="@Model.CategoryHint" placeholder="z. B. Essen"></ms-field>
 
         @* "Für wen?" (Aufteilung): Auswahl der Split-Methode, darunter erscheinen
@@ -123,31 +121,43 @@ else
 <style>
     /* Page-local polish for the expense form only (scoped to #expense-form).
        The whole split configuration keeps working through the unchanged
-       depends-on / depends-value attributes; this block only makes the section
-       heading, the split-mode choices and the per-member share rows read
-       cleanly on mobile and desktop. No foundation styles are changed. */
+       depends-on / depends-value attributes; this block only tightens the
+       spacing, the section heading, the split-mode choices and the per-member
+       share rows so the form reads compactly on mobile and desktop. No
+       foundation styles are changed. */
+    #expense-form {
+        gap: var(--ms-space-3);
+    }
+
     #expense-card .ef-section {
         display: flex;
         align-items: center;
         gap: var(--ms-space-2);
-        font-size: var(--ms-text-lg);
+        margin: var(--ms-space-1) 0 calc(var(--ms-space-2) * -1);
+        font-size: var(--ms-text-base);
+        font-weight: 700;
     }
 
     #expense-card .ef-section .ms-icon {
         color: var(--ms-primary);
     }
 
-    /* Split-mode radios as a clean, stacked set of selectable option rows. */
+    /* Split-mode radios as a clean, tight set of selectable option rows. */
+    #expense-form #ef-mode-field {
+        gap: var(--ms-space-2);
+    }
+
     #expense-form .ef-modes {
         flex-direction: column;
         align-items: stretch;
-        gap: var(--ms-space-2);
+        gap: 6px;
     }
 
     #expense-form .ef-modes .ms-check {
         align-items: center;
         min-height: 0;
-        padding: var(--ms-space-3);
+        gap: var(--ms-space-2);
+        padding: var(--ms-space-2) var(--ms-space-3);
         border: 1px solid var(--ms-border);
         border-radius: var(--ms-radius);
         transition: border-color var(--ms-transition), background var(--ms-transition);
@@ -159,24 +169,44 @@ else
     }
 
     /* Per-member share rows: name grows, the (single, mode-dependent) value
-       input stays compact on the right. */
+       input stays compact on the right. Tight vertical rhythm so many members
+       stay scannable. */
     #expense-form .ef-share-row {
         align-items: flex-end;
         gap: var(--ms-space-3);
+        padding: 4px 0;
+    }
+
+    #expense-form .ef-share-row + .ef-share-row {
+        border-top: 1px solid var(--ms-border-soft, var(--ms-border));
+    }
+
+    #expense-form .ef-share-row > .ms-field {
+        gap: 2px;
     }
 
     #expense-form .ef-share-row > .ms-field--checkbox {
         flex: 1 1 auto;
-        min-width: 140px;
+        min-width: 130px;
+    }
+
+    #expense-form .ef-share-row .ms-check {
+        min-height: 0;
     }
 
     #expense-form .ef-share-row > .ms-field--number {
         flex: 0 0 auto;
-        width: 130px;
+        width: 96px;
     }
 
     #expense-form .ef-share-row > .ms-field--money {
         flex: 0 0 auto;
-        width: 170px;
+        width: 150px;
+    }
+
+    #expense-form > hr {
+        margin: var(--ms-space-1) 0;
+        border: 0;
+        border-top: 1px solid var(--ms-border);
     }
 </style>

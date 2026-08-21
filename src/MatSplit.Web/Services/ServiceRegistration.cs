@@ -32,6 +32,7 @@ public static class ServiceRegistration
         services.AddScoped<GroupService>();
         services.AddScoped<ExpenseService>();
         services.AddScoped<PaymentService>();
+        services.AddScoped<TransactionService>();
         services.AddScoped<BalanceService>();
         services.AddScoped<CurrentUserService>();
 

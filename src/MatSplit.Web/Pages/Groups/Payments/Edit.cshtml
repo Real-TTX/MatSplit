@@ -13,10 +13,10 @@
                   items="Model.MemberOptions" option-label="Bitte wählen"></ms-field>
 
         <ms-field id="pf-amount" for="Input.Amount" type="money" currency="@Model.Currency"
-                  hint="Betrag in @Model.Currency, z. B. 12,50"></ms-field>
+                  hint="z. B. 12,50"></ms-field>
         <ms-field id="pf-date" for="Input.PaymentDate" type="date"></ms-field>
 
-        <ms-field id="pf-note" for="Input.Note" type="textarea" rows="3" full-width="true"
+        <ms-field id="pf-note" for="Input.Note" type="textarea" rows="2" full-width="true"
                   hint="Optional, z. B. „Bar am Flughafen“"></ms-field>
 
         <ms-button-row id="pf-buttons">
@@ -31,3 +31,12 @@
         </ms-button-row>
     </ms-form>
 </ms-card>
+
+<style>
+    /* Page-local compaction for the payment form only (scoped to #payment-form).
+       Tightens the field rhythm so the short form (Von/An, Betrag/Datum, Notiz)
+       reads as one compact block. No foundation styles are changed. */
+    #payment-form {
+        gap: var(--ms-space-3);
+    }
+</style>

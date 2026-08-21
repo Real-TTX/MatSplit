@@ -51,7 +51,11 @@ public sealed class EditModel(
     /// <summary>Categories already used in this group, shown as a hint.</summary>
     public string? CategoryHint { get; private set; }
 
-    public string ListUrl => $"/Groups/Expenses?groupId={GroupId}";
+    /// <summary>
+    /// Back target: the group hub with the transactions panel open. The hub
+    /// replaces the former standalone expense list.
+    /// </summary>
+    public string ListUrl => $"/Groups/Details?groupId={GroupId}&tab=transaktionen";
 
     public string SelfUrl => IsExisting
         ? $"/Groups/Expenses/Edit?groupId={GroupId}&id={Id}"
@@ -60,11 +64,11 @@ public sealed class EditModel(
     public IReadOnlyList<ShareModeOption> ShareModeOptions { get; } =
     [
         new(ExpenseShareModes.Equal, "Gleichmäßig nach Anteilen",
-            "Alle Mitglieder zahlen nach ihrem Gruppen-Faktor."),
+            "Alle Mitglieder nach Gruppen-Faktor."),
         new(ExpenseShareModes.Factors, "Individuelle Anteile",
-            "Beteiligte auswählen und je Person einen Faktor vergeben."),
+            "Beteiligte wählen, je Person ein Faktor."),
         new(ExpenseShareModes.Amounts, "Feste Beträge",
-            "Je Person einen festen Betrag erfassen. Die Summe muss dem Gesamtbetrag entsprechen.")
+            "Fester Betrag je Person; Summe = Gesamtbetrag.")
     ];
 
     /// <summary>Receipt card model, rendered by the _ReceiptPreview partial.</summary>
@@ -135,6 +139,9 @@ public sealed class EditModel(
             Id = null;
         }
 
+        // The currency is fixed by the group and no longer entered on the form.
+        Input.Currency = NormalizeCurrency(Group.Currency);
+
         NormalizeMoneyInputs();
         SyncShareLines();
         ApplyLayout();
@@ -201,7 +208,7 @@ public sealed class EditModel(
             return RedirectToPage(new { groupId = GroupId, id = savedId });
         }
 
-        return RedirectToPage("./Index", new { groupId = GroupId });
+        return RedirectToPage("/Groups/Details", new { groupId = GroupId, tab = "transaktionen" });
     }
 
     /// <summary>Soft deletes the expense, group admins only.</summary>
@@ -232,7 +239,7 @@ public sealed class EditModel(
         }
 
         this.Flash("Die Ausgabe wurde gelöscht.");
-        return RedirectToPage("./Index", new { groupId = GroupId });
+        return RedirectToPage("/Groups/Details", new { groupId = GroupId, tab = "transaktionen" });
     }
 
     /// <summary>Multipart upload of a single receipt photo or pdf.</summary>
@@ -748,10 +755,10 @@ public sealed class ExpenseInputModel
     [DataType(DataType.Date)]
     public DateTime? ExpenseDate { get; set; }
 
-    [Required(ErrorMessage = "Bitte eine Währung angeben.")]
-    [StringLength(3, MinimumLength = 3, ErrorMessage = "Bitte einen dreistelligen Währungscode angeben.")]
-    [RegularExpression("[A-Za-z]{3}", ErrorMessage = "Bitte einen dreistelligen Währungscode angeben.")]
-    [Display(Name = "Währung")]
+    /// <summary>
+    /// Fixed by the group, filled server-side and used only to render the money
+    /// suffix and format validation messages. Not a user-editable field.
+    /// </summary>
     public string Currency { get; set; } = "EUR";
 
     [StringLength(60, ErrorMessage = "Maximal 60 Zeichen.")]

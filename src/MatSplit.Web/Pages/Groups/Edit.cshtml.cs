@@ -34,6 +34,12 @@ public class EditModel(
     /// <summary>Absolute invite url, only set for an existing group.</summary>
     public string? InviteUrl { get; private set; }
 
+    /// <summary>Read-only creation timestamp shown on the manage page.</summary>
+    public string? CreatedDisplay { get; private set; }
+
+    /// <summary>Read-only last-change timestamp, null when never changed.</summary>
+    public string? UpdatedDisplay { get; private set; }
+
     public IReadOnlyList<SelectListItem> CurrencyOptions { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
@@ -78,6 +84,8 @@ public class EditModel(
 
         CurrencyOptions = BuildCurrencyOptions(Input.Currency);
         InviteUrl = BuildInviteUrl(group);
+        CreatedDisplay = IndexModel.FormatMoment(group.CreateDate);
+        UpdatedDisplay = group.UpdateDate <= group.CreateDate ? null : IndexModel.FormatMoment(group.UpdateDate);
         SetChrome(group);
         return Page();
     }

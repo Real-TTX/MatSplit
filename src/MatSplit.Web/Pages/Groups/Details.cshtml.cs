@@ -8,21 +8,45 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace MatSplit.Web.Pages.Groups;
 
 /// <summary>
-/// Overview of a single group: key figures, open settlements, the newest
-/// expenses and the latest activity. Read only, every action links to the
-/// dedicated sub page.
+/// Group hub: the big balance hero (links to /Groups/Balance), a pill tab bar
+/// and, depending on the active tab, either the combined transaction list
+/// (expenses and payments merged for display) or a compact member preview.
+/// Every action links to the dedicated sub page.
 /// </summary>
 public class DetailsModel(
     CurrentUserService currentUser,
     GroupService groups,
     ExpenseService expenses,
     BalanceService balances,
-    HistoryService history) : PageModel
+    TransactionService transactions) : PageModel
 {
-    private const int PreviewSize = 5;
+    private const int TransactionsPageSize = 10;
+
+    private const int SparklineSampleSize = 12;
+
+    public const string TabTransactions = "transaktionen";
+
+    public const string TabMembers = "mitglieder";
+
+    public const string TypeAll = "alle";
+
+    public const string TypeExpenses = "ausgaben";
+
+    public const string TypePayments = "zahlungen";
 
     [BindProperty(SupportsGet = true)]
     public long GroupId { get; set; }
+
+    /// <summary>Active tab: <c>transaktionen</c> (default) or <c>mitglieder</c>.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? Tab { get; set; }
+
+    /// <summary>Type filter of the transaction list: <c>alle</c>, <c>ausgaben</c> or <c>zahlungen</c>.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? Type { get; set; }
+
+    [BindProperty(SupportsGet = true, Name = "page")]
+    public int PageNumber { get; set; } = 1;
 
     public Group Group { get; private set; } = null!;
 
@@ -33,22 +57,18 @@ public class DetailsModel(
     /// <summary>Balance row of the signed in user, null for administrators outside the group.</summary>
     public MemberBalance? MyBalance { get; private set; }
 
-    public IReadOnlyList<Expense> RecentExpenses { get; private set; } = [];
-
-    public IReadOnlyList<HistoryEntry> RecentHistory { get; private set; } = [];
+    /// <summary>Combined, chronological transactions of the active tab / type filter.</summary>
+    public PagedResult<TransactionRow> Transactions { get; private set; } = PagedResult<TransactionRow>.Empty();
 
     public bool CanManage { get; private set; }
 
-    public int ExpenseCount { get; private set; }
+    /// <summary>Normalised active tab, always one of the Tab* constants.</summary>
+    public string ActiveTab { get; private set; } = TabTransactions;
 
-    /// <summary>Anonymous invite link for this group (/Join?token=...).</summary>
-    public string InviteUrl => $"{Request.Scheme}://{Request.Host}{Request.PathBase}/Join?token={Group?.InviteToken}";
+    /// <summary>Normalised active type filter, always one of the Type* constants.</summary>
+    public string ActiveType { get; private set; } = TypeAll;
 
-    /// <summary>Prefilled message when sharing the invite link.</summary>
-    public string ShareText => $"Tritt unserer MatSplit-Gruppe »{Group?.Name}« bei:";
-
-    /// <summary>Direct WhatsApp share link – works even without JavaScript.</summary>
-    public string WhatsAppUrl => "https://wa.me/?text=" + Uri.EscapeDataString($"{ShareText} {InviteUrl}");
+    private IReadOnlyList<Expense> sparklineExpenses = [];
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -78,16 +98,24 @@ public class DetailsModel(
         Balance = await balances.CalculateBalancesAsync(GroupId, cancellationToken);
         MyBalance = Balance.Balances.FirstOrDefault(x => x.UserId == userId);
 
-        var expensePage = await expenses.ListExpensesAsync(
-            GroupId, page: 1, pageSize: PreviewSize, cancellationToken: cancellationToken);
+        ActiveTab = NormalizeTab(Tab);
+        ActiveType = NormalizeType(Type);
 
-        RecentExpenses = expensePage.Items;
-        ExpenseCount = expensePage.TotalCount;
+        // The hero sparkline is driven by the newest expenses regardless of the
+        // active tab, so the trend line stays stable while browsing.
+        var sparklinePage = await expenses.ListExpensesAsync(
+            GroupId, page: 1, pageSize: SparklineSampleSize, cancellationToken: cancellationToken);
+        sparklineExpenses = sparklinePage.Items;
 
-        var historyPage = await history.ListHistoryAsync(
-            GroupId, page: 1, pageSize: PreviewSize, cancellationToken: cancellationToken);
-
-        RecentHistory = historyPage.Items;
+        if (ActiveTab == TabTransactions)
+        {
+            Transactions = await transactions.ListTransactionsAsync(
+                GroupId,
+                kind: TypeToKind(ActiveType),
+                page: PageNumber,
+                pageSize: TransactionsPageSize,
+                cancellationToken: cancellationToken);
+        }
 
         var menu = await GroupMenu.BuildAsync(groups, currentUser, userId, cancellationToken);
         this.SetMenuGroups(menu, GroupId);
@@ -99,12 +127,45 @@ public class DetailsModel(
         return Page();
     }
 
-    /// <summary>Formats an audit timestamp (stored as UTC) in local time.</summary>
-    public static string FormatMoment(DateTime utc) => IndexModel.FormatMoment(utc);
+    /// <summary>Builds a tab/type-preserving url for the transaction pagination.</summary>
+    public string TransactionsPageUrl()
+        => $"/Groups/Details?groupId={GroupId}&tab={TabTransactions}&type={ActiveType}";
+
+    /// <summary>Url of a tab link, keeping the current type filter for the transaction tab.</summary>
+    public string TabUrl(string tab)
+        => tab == TabTransactions
+            ? $"/Groups/Details?groupId={GroupId}&tab={TabTransactions}&type={ActiveType}"
+            : $"/Groups/Details?groupId={GroupId}&tab={tab}";
+
+    /// <summary>Url of a type filter pill inside the transaction tab.</summary>
+    public string TypeUrl(string type)
+        => $"/Groups/Details?groupId={GroupId}&tab={TabTransactions}&type={type}";
+
+    private static string NormalizeTab(string? tab)
+        => string.Equals(tab, TabMembers, StringComparison.OrdinalIgnoreCase)
+            ? TabMembers
+            : TabTransactions;
+
+    private static string NormalizeType(string? type) => type?.ToLowerInvariant() switch
+    {
+        // German values are used by the hub's own filter pills; the English
+        // "expenses"/"payments" aliases keep the redirects from the old
+        // standalone list pages preselecting the right filter.
+        TypeExpenses or "expenses" => TypeExpenses,
+        TypePayments or "payments" => TypePayments,
+        _ => TypeAll
+    };
+
+    private static TransactionKind? TypeToKind(string type) => type switch
+    {
+        TypeExpenses => TransactionKind.Expense,
+        TypePayments => TransactionKind.Payment,
+        _ => null
+    };
 
     /// <summary>
-    /// Formats an expense date relative to today: "Heute", "Gestern" or the
-    /// German short date. Used for the mobile "Letzte Ausgaben" list rows.
+    /// Formats a transaction date relative to today: "Heute", "Gestern" or the
+    /// German short date. Used for the transaction list rows.
     /// </summary>
     public static string RelativeDay(DateTime date)
     {
@@ -134,7 +195,7 @@ public class DetailsModel(
     {
         const string placeholder = "M2 34 20 28 38 32 56 18 74 22 92 8 106 12";
 
-        var amounts = RecentExpenses
+        var amounts = sparklineExpenses
             .OrderBy(expense => expense.ExpenseDate)
             .ThenBy(expense => expense.Id)
             .Select(expense => expense.AmountCents)

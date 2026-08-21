@@ -58,7 +58,12 @@ public class EditModel(
 
     public string Currency => string.IsNullOrWhiteSpace(Group.Currency) ? "EUR" : Group.Currency;
 
-    public string ListUrl => "/Groups/Payments?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture);
+    /// <summary>
+    /// Back target: the group hub with the transactions panel open. The hub
+    /// replaces the former standalone payment list.
+    /// </summary>
+    public string ListUrl =>
+        "/Groups/Details?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture) + "&tab=transaktionen";
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -168,7 +173,7 @@ public class EditModel(
         }
 
         this.Flash(existing is null ? "Die Zahlung wurde erfasst." : "Die Zahlung wurde gespeichert.");
-        return RedirectToPage("./Index", new { groupId = GroupId });
+        return RedirectToPage("/Groups/Details", new { groupId = GroupId, tab = "transaktionen" });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(CancellationToken cancellationToken)
@@ -205,7 +210,7 @@ public class EditModel(
         }
 
         this.Flash("Die Zahlung wurde gelöscht.");
-        return RedirectToPage("./Index", new { groupId = GroupId });
+        return RedirectToPage("/Groups/Details", new { groupId = GroupId, tab = "transaktionen" });
     }
 
     /// <summary>Cent value as an invariant decimal for the money input.</summary>
