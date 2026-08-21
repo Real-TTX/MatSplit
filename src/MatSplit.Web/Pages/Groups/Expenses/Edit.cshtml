@@ -168,13 +168,13 @@ else
         background: var(--ms-primary-soft);
     }
 
-    /* Per-member share rows: name grows, the (single, mode-dependent) value
-       input stays compact on the right. Tight vertical rhythm so many members
-       stay scannable. */
+    /* Per-member share rows: ONE clean line per member — name (checkbox) on the
+       left, the single mode-dependent value input on the right, both vertically
+       centered so nothing looks crooked. */
     #expense-form .ef-share-row {
-        align-items: flex-end;
+        align-items: center;
         gap: var(--ms-space-3);
-        padding: 4px 0;
+        padding: var(--ms-space-2) 0;
     }
 
     #expense-form .ef-share-row + .ef-share-row {
@@ -182,26 +182,48 @@ else
     }
 
     #expense-form .ef-share-row > .ms-field {
-        gap: 2px;
+        gap: 0;
     }
 
+    /* member name grows and fills the left */
     #expense-form .ef-share-row > .ms-field--checkbox {
         flex: 1 1 auto;
-        min-width: 130px;
+        min-width: 0;
     }
 
     #expense-form .ef-share-row .ms-check {
         min-height: 0;
     }
 
+    /* single value input, compact and right-aligned */
     #expense-form .ef-share-row > .ms-field--number {
         flex: 0 0 auto;
-        width: 96px;
+        width: 92px;
     }
 
     #expense-form .ef-share-row > .ms-field--money {
         flex: 0 0 auto;
-        width: 150px;
+        width: 132px;
+    }
+
+    /* The per-row "Faktor" / "Fester Betrag" label is redundant — the split mode
+       is already chosen above. Hide it visually but keep it for screen readers. */
+    #expense-form .ef-share-row > .ms-field--number > .ms-field__label,
+    #expense-form .ef-share-row > .ms-field--money > .ms-field__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        border: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    /* No empty validation slots stretching the row height. */
+    #expense-form .ef-share-row .ms-field__error:empty {
+        display: none;
     }
 
     #expense-form > hr {
