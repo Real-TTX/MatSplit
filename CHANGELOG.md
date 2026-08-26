@@ -7,15 +7,49 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 
 ## [Unreleased]
 
+### Geplant
+
+- Bestehende Benutzer per E-Mail in Gruppen einladen (aktuell: Einladungslink).
+- Export der Gruppenhistorie (CSV/PDF).
+- EF-Core-Migrations als Ersatz fuer `EnsureCreated()`.
+
+## [0.2.0] - 2026-08-26
+
+Grosses UI-Redesign nach Mockup: hub-zentrierte Navigation, mobil-first, dazu
+Beleg-Komprimierung und geschaerfte Gaeste-Rechte.
+
+### Hinzugefuegt
+
+- **Gruppen-Hub** (`/Groups/Details`) als zentraler Einstieg: grosser Kontostand-Hero,
+  Pill-Tabs "Transaktionen" und "Mitglieder", kombinierte Transaktionsliste (Ausgaben +
+  Zahlungen chronologisch) und Icon-Zugaenge zu Historie, Teilen und Verwaltung.
+- **Gruppe teilen** (`/Groups/Share`): eigener Bildschirm mit Einladungslink, Kopieren,
+  WhatsApp-/Telegram-Verknuepfungen und der Link-Verwaltung (aktivieren, neu erzeugen).
+- **Mitglieder-Filter** im Hub: Alle / Admins / Benutzer / Anonyme.
+- **Ausgaben-Editor**: Live-Vorschau des Anteils je Person im Modus "Individuelle Anteile".
+- **Beleg-Komprimierung**: Fotos werden im Browser vor dem Upload verkleinert; per
+  Einstellung schaltbar mit Zielgroesse in KB (Standard 500 KB).
+- Neue Controls: `<ms-avatar>` (deterministische Initialen), Icon-Sprite u. a. mit
+  `ausgleich` (Zahlung) und `cog` (Verwaltung), sowie ein `TransactionService`.
+
 ### Geaendert
 
-- **Mitglieder ohne Inline-Edits**: `/Groups/Members` ist jetzt eine reine Liste,
-  Anlegen/Bearbeiten/Entfernen einer Mitgliedschaft laeuft ueber die neue Unterseite
-  `/Groups/MemberEdit` (UI-Guideline "CRUD immer Liste + separate Unterseite").
-- **Historie** hat eine Sortierung in der Toolbar (Zeitpunkt, Aktion, Person),
-  umgesetzt in `HistoryService.ListHistoryAsync`.
-- Pflichtfeld-Meldungen der Client-Validierung sind auch bei nicht-nullbaren
-  Werttypen deutsch (Rolle, Sitzungsdauer, Beleggroesse, Anteilsfaktor).
+- **Startseite** ist die Gruppen-Uebersicht ("Meine Gruppen"); das Seitenmenue zeigt die
+  Gruppen flach ohne Untermenue, jede verlinkt direkt auf ihren Hub.
+- Separate Seite `/Groups/Members` entfernt — Mitgliederverwaltung laeuft ueber den
+  Mitglieder-Tab des Hubs und die Unterseite `/Groups/MemberEdit`.
+- Kontostand und Historie im neuen Listen-/Tabellenstil, Breadcrumbs verschlankt.
+- **"Anteilsfaktor" heisst jetzt "Personen"** (Anzahl Personen) in der gesamten Oberflaeche.
+- Mobiles + Desktop-Redesign (Orange/Sommer-Optik, weiche Karten, PWA); Tab- und
+  Button-Beschriftungen werden auf schmalen Screens auf Icons reduziert.
+- Admin-Bereich breiter, Uebersicht auf maximal 3 Kacheln; interne Pfad-/Volume-Infos aus
+  der Oberflaeche entfernt.
+- Historie mit Sortierung (Zeitpunkt, Aktion, Person).
+
+### Sicherheit
+
+- **Gaeste (anonyme Link-Mitglieder)** koennen keine Gruppen erstellen und keinen
+  Einladungslink weitergeben — im UI ausgeblendet und serverseitig abgesichert.
 
 ### Behoben
 
@@ -26,12 +60,8 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
   fremde Gruppen ueber eine untergeschobene Id).
 - `MatSplitPaths.ResolveReceiptPath`: Prefix-Pruefung inklusive Verzeichnistrenner,
   damit ein Nachbarverzeichnis wie `/data/receipts-x` nicht als gueltig gilt.
-
-### Geplant
-
-- Bestehende Benutzer per E-Mail in Gruppen einladen (aktuell: Einladungslink).
-- Export der Gruppenhistorie (CSV/PDF).
-- EF-Core-Migrations als Ersatz fuer `EnsureCreated()`.
+- Pflichtfeld-Meldungen der Client-Validierung sind auch bei nicht-nullbaren
+  Werttypen deutsch.
 
 ## [0.1.0] - 2026-08-20
 
@@ -89,5 +119,6 @@ lauffaehig als einzelner Docker-Container.
 - Kein Multi-Arch-Image: der CI-Build erzeugt nur `linux/amd64`.
 - Kein integriertes TLS — HTTPS bitte ueber einen Reverse Proxy davor.
 
-[Unreleased]: https://github.com/Real-TTX/MatSplit/compare/main...dev
+[Unreleased]: https://github.com/Real-TTX/MatSplit/compare/v0.2.0...dev
+[0.2.0]: https://github.com/Real-TTX/MatSplit/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Real-TTX/MatSplit/releases/tag/v0.1.0

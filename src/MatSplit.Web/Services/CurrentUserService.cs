@@ -43,6 +43,20 @@ public sealed class CurrentUserService(
     public bool IsAnonymousUser => CurrentUser?.IsAnonymous
         ?? Context?.User.FindFirst(MatSplitClaims.IsAnonymousClaim)?.Value == "1";
 
+    /// <summary>
+    /// True when the user may create groups and hand invite links on. Link
+    /// guests (anonymous users) join a single group by invite; they cannot open
+    /// groups of their own or invite further people. Global admins and regular
+    /// users may.
+    /// </summary>
+    public bool CanCreateGroup => IsAuthenticated && !IsAnonymousUser;
+
+    /// <summary>
+    /// True when the user may share this group's invite link. Same rule as
+    /// <see cref="CanCreateGroup"/>: guests join, they do not invite.
+    /// </summary>
+    public bool CanInvite => IsAuthenticated && !IsAnonymousUser;
+
     public ThemeMode Theme
     {
         get

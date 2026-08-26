@@ -79,7 +79,7 @@ public static class DbInitializer
         {
             Token = Guid.NewGuid().ToString(),
             Name = DemoGroupName,
-            Description = "Beispielgruppe mit Ausgaben, Anteils-Faktoren und einer Zahlung.",
+            Description = "Beispielgruppe mit Ausgaben, unterschiedlichen Personenzahlen und einer Zahlung.",
             Currency = "EUR",
             InviteToken = Guid.NewGuid().ToString(),
             InviteEnabled = true,

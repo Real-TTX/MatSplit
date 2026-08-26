@@ -34,6 +34,14 @@ public class DetailsModel(
 
     public const string TypePayments = "zahlungen";
 
+    public const string MemberAll = "alle";
+
+    public const string MemberAdmins = "admins";
+
+    public const string MemberUsers = "benutzer";
+
+    public const string MemberAnon = "anonyme";
+
     [BindProperty(SupportsGet = true)]
     public long GroupId { get; set; }
 
@@ -45,12 +53,19 @@ public class DetailsModel(
     [BindProperty(SupportsGet = true)]
     public string? Type { get; set; }
 
+    /// <summary>Member filter of the members tab: <c>alle</c>, <c>admins</c>, <c>benutzer</c> or <c>anonyme</c>.</summary>
+    [BindProperty(SupportsGet = true, Name = "mtype")]
+    public string? MemberType { get; set; }
+
     [BindProperty(SupportsGet = true, Name = "page")]
     public int PageNumber { get; set; } = 1;
 
     public Group Group { get; private set; } = null!;
 
     public IReadOnlyList<GroupMember> Members { get; private set; } = [];
+
+    /// <summary>Members after applying the active members-tab filter.</summary>
+    public IReadOnlyList<GroupMember> FilteredMembers { get; private set; } = [];
 
     public BalanceResult Balance { get; private set; } = new();
 
@@ -62,11 +77,17 @@ public class DetailsModel(
 
     public bool CanManage { get; private set; }
 
+    /// <summary>False for link guests, who may not hand the invite link on.</summary>
+    public bool CanInvite => currentUser.CanInvite;
+
     /// <summary>Normalised active tab, always one of the Tab* constants.</summary>
     public string ActiveTab { get; private set; } = TabTransactions;
 
     /// <summary>Normalised active type filter, always one of the Type* constants.</summary>
     public string ActiveType { get; private set; } = TypeAll;
+
+    /// <summary>Normalised active member filter, always one of the Member* constants.</summary>
+    public string ActiveMemberType { get; private set; } = MemberAll;
 
     private IReadOnlyList<Expense> sparklineExpenses = [];
 
@@ -100,6 +121,8 @@ public class DetailsModel(
 
         ActiveTab = NormalizeTab(Tab);
         ActiveType = NormalizeType(Type);
+        ActiveMemberType = NormalizeMemberType(MemberType);
+        FilteredMembers = FilterMembers(Members, ActiveMemberType);
 
         // The hero sparkline is driven by the newest expenses regardless of the
         // active tab, so the trend line stays stable while browsing.
@@ -121,7 +144,6 @@ public class DetailsModel(
         this.SetMenuGroups(menu, GroupId);
         this.SetTitle(group.Name, string.IsNullOrWhiteSpace(group.Description) ? "Gruppenübersicht" : group.Description, "group");
         this.SetBreadcrumb(
-            new BreadcrumbItem("Gruppen", "/Groups"),
             new BreadcrumbItem(group.Name));
 
         return Page();
@@ -140,6 +162,10 @@ public class DetailsModel(
     /// <summary>Url of a type filter pill inside the transaction tab.</summary>
     public string TypeUrl(string type)
         => $"/Groups/Details?groupId={GroupId}&tab={TabTransactions}&type={type}";
+
+    /// <summary>Url of a member filter pill inside the members tab.</summary>
+    public string MemberTypeUrl(string memberType)
+        => $"/Groups/Details?groupId={GroupId}&tab={TabMembers}&mtype={memberType}";
 
     private static string NormalizeTab(string? tab)
         => string.Equals(tab, TabMembers, StringComparison.OrdinalIgnoreCase)
@@ -161,6 +187,27 @@ public class DetailsModel(
         TypeExpenses => TransactionKind.Expense,
         TypePayments => TransactionKind.Payment,
         _ => null
+    };
+
+    private static string NormalizeMemberType(string? memberType) => memberType?.ToLowerInvariant() switch
+    {
+        MemberAdmins => MemberAdmins,
+        MemberUsers => MemberUsers,
+        MemberAnon => MemberAnon,
+        _ => MemberAll
+    };
+
+    /// <summary>
+    /// Filters the members by category. "Benutzer" are all registered
+    /// (non-anonymous) members; "Admins" are the group administrators among them
+    /// (a subset, not a separate group); "Anonyme" are link guests.
+    /// </summary>
+    private static IReadOnlyList<GroupMember> FilterMembers(IReadOnlyList<GroupMember> members, string memberType) => memberType switch
+    {
+        MemberAdmins => [.. members.Where(m => m.IsGroupAdmin)],
+        MemberUsers => [.. members.Where(m => !(m.User?.IsAnonymous ?? false))],
+        MemberAnon => [.. members.Where(m => m.User?.IsAnonymous ?? false)],
+        _ => members
     };
 
     /// <summary>

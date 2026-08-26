@@ -52,7 +52,7 @@
                data-depends-on="Input.ShareMode" data-depends-value="Equal" hidden>
                 Beteiligt sind alle Mitglieder:
                 @string.Join(", ", Model.Input.Shares.Select(x => x.ShareFactor > 1
-                    ? $"{x.DisplayName} (Faktor {x.ShareFactor})"
+                    ? $"{x.DisplayName} ({x.ShareFactor} Personen)"
                     : x.DisplayName))
             </p>
         }
@@ -72,6 +72,9 @@
                 <ms-field id="@($"{rowId}-factor")" for="Input.Shares[index].ShareFactor" type="number"
                           min="1" max="100" step="1"
                           depends-on="Input.ShareMode" depends-value="Factors"></ms-field>
+                @* Live preview of this member's share in "Individuelle Anteile" mode,
+                   filled by the inline script below (Betrag × Anteil / Summe). *@
+                <span class="ef-share-preview" data-currency="@Model.Input.Currency" hidden aria-live="polite"></span>
                 <ms-field id="@($"{rowId}-amount")" for="Input.Shares[index].Amount" type="money"
                           currency="@Model.Input.Currency"
                           depends-on="Input.ShareMode" depends-value="Amounts"></ms-field>
@@ -84,7 +87,9 @@
             <ms-field id="ef-receipt" name="Receipt" type="file" label="Belegfoto" full-width="true"
                       accept="image/*,application/pdf" capture="environment" data-ms-receipt="true"
                       data-ms-max-mb="@Model.MaxReceiptSizeMb"
-                      hint="@($"Optional: Foto direkt mit der Kamera aufnehmen. Maximal {Model.MaxReceiptSizeMb} MB, Bilder werden vor dem Upload automatisch verkleinert.")"></ms-field>
+                      data-ms-compress="@(Model.CompressReceipts ? "true" : "false")"
+                      data-ms-target-kb="@Model.ReceiptTargetKb"
+                      hint="@($"Optional: Foto direkt mit der Kamera aufnehmen. Maximal {Model.MaxReceiptSizeMb} MB." + (Model.CompressReceipts ? $" Bilder werden vor dem Upload auf ca. {Model.ReceiptTargetKb} KB verkleinert." : string.Empty))"></ms-field>
         }
 
         <ms-field id="ef-id" for="Input.Id" type="hidden"></ms-field>
@@ -116,6 +121,77 @@ else
 
 @section Scripts {
     <script src="~/js/receipt-capture.js" asp-append-version="true" defer></script>
+    <script>
+        // Live preview of each member's share in "Individuelle Anteile" mode:
+        // Betrag × Anteil / Summe(Anteile der Beteiligten). Display only – the
+        // server does the exact cent split on save.
+        (function () {
+            var form = document.getElementById('expense-form');
+            if (!form) { return; }
+
+            var amountInput = form.querySelector('[name="Input.Amount"]');
+            var rows = Array.prototype.slice.call(form.querySelectorAll('.ef-share-row'));
+            if (!rows.length) { return; }
+
+            function mode() {
+                var checked = form.querySelector('input[name="Input.ShareMode"]:checked');
+                return checked ? checked.value : '';
+            }
+
+            function num(value) {
+                var n = parseFloat(String(value == null ? '' : value).replace(',', '.'));
+                return isNaN(n) ? 0 : n;
+            }
+
+            function fmt(value, currency) {
+                try {
+                    return value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + currency;
+                } catch (e) {
+                    return value.toFixed(2).replace('.', ',') + ' ' + currency;
+                }
+            }
+
+            function parts(row) {
+                return {
+                    include: row.querySelector('input[type="checkbox"][name$=".IsIncluded"]'),
+                    factor: row.querySelector('[name$=".ShareFactor"]'),
+                    preview: row.querySelector('.ef-share-preview')
+                };
+            }
+
+            function recalc() {
+                var factorsMode = mode() === 'Factors';
+                var total = num(amountInput ? amountInput.value : 0);
+
+                var sum = 0;
+                rows.forEach(function (row) {
+                    var p = parts(row);
+                    if (factorsMode && p.include && p.include.checked && p.factor) {
+                        sum += Math.max(0, parseInt(p.factor.value, 10) || 0);
+                    }
+                });
+
+                rows.forEach(function (row) {
+                    var p = parts(row);
+                    if (!p.preview) { return; }
+
+                    if (factorsMode && p.include && p.include.checked && p.factor && sum > 0 && total > 0) {
+                        var f = Math.max(0, parseInt(p.factor.value, 10) || 0);
+                        var currency = p.preview.getAttribute('data-currency') || 'EUR';
+                        p.preview.textContent = fmt(total * f / sum, currency);
+                        p.preview.hidden = false;
+                    } else {
+                        p.preview.textContent = '';
+                        p.preview.hidden = true;
+                    }
+                });
+            }
+
+            form.addEventListener('input', recalc);
+            form.addEventListener('change', recalc);
+            recalc();
+        })();
+    </script>
 }
 
 <style>
@@ -230,5 +306,14 @@ else
         margin: var(--ms-space-1) 0;
         border: 0;
         border-top: 1px solid var(--ms-border);
+    }
+
+    /* Live share preview shown next to the factor in "Individuelle Anteile". */
+    #expense-form .ef-share-preview {
+        flex: 0 0 auto;
+        color: var(--ms-text-soft);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
     }
 </style>

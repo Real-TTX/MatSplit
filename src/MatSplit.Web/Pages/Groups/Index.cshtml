@@ -1,24 +1,66 @@
 @page
 @model MatSplit.Web.Pages.Groups.IndexModel
-@{
-    // Mobile app bar context action (top level page => menu toggle on the left,
-    // this "+" on the right). On desktop the app bar is hidden and the bottom
-    // "Neue Gruppe" action / the list head carry creation instead.
-    ViewData["AppBarActionUrl"] = "/Groups/Edit";
-    ViewData["AppBarActionIcon"] = "plus";
-    ViewData["AppBarActionLabel"] = "Neue Gruppe";
-}
+@* Creation is the prominent "Neue Gruppe" button at the bottom (desktop AND
+   mobile), so this page sets no app bar "+" action. *@
 
-<ms-list id="groups" title="Gruppen"
-         subtitle="@(Model.IsAdmin ? "Als Administrator siehst du alle Gruppen." : "Alle Gruppen, in denen du mitrechnest.")"
-         icon="group" count="@Model.Result.TotalCount">
+<ms-list id="groups">
 
-    <ms-toolbar id="groups-filter" action="/Groups" reset-url="/Groups" auto-submit-text="true">
-        <ms-field id="groups-search" name="search" type="search" label="Suche"
-                  value="@Model.Search" placeholder="Name oder Beschreibung"></ms-field>
-        <ms-field id="groups-sort" name="sort" type="select" label="Sortierung"
-                  items="Model.SortOptions"></ms-field>
-    </ms-toolbar>
+    @* Heading row: title left, a filter disclosure button right. The toolbar is
+       no longer always visible; it opens from the "Filter" button. Active filters
+       are shown as removable tags below. Pure CSS/HTML, no script needed. *@
+    <div class="groups-head">
+        <div class="groups-head__title">
+            <ms-icon name="group" size="20"></ms-icon>
+            <h2 id="groups-title">Meine Gruppen</h2>
+            <span class="ms-badge">@Model.Result.TotalCount</span>
+        </div>
+
+        <details class="groups-filter">
+            <summary class="ms-btn ms-btn--secondary ms-btn--sm groups-filter__toggle">
+                <ms-icon name="filter" size="18"></ms-icon>
+                <span>Filter</span>
+            </summary>
+            <form class="groups-filter__panel" method="get" action="/Groups">
+                <ms-field id="groups-search" name="search" type="search" label="Suche"
+                          value="@Model.Search" placeholder="Name oder Beschreibung"></ms-field>
+                <ms-field id="groups-sort" name="sort" type="select" label="Sortierung"
+                          items="Model.SortOptions"></ms-field>
+                <div class="ms-row">
+                    <ms-button id="groups-filter-apply" kind="primary" icon="filter" label="Filtern"></ms-button>
+                    <ms-button id="groups-filter-reset" kind="ghost" icon="close" label="Zurücksetzen"
+                               type="button" href="/Groups"></ms-button>
+                </div>
+            </form>
+        </details>
+    </div>
+
+    @{
+        var hasSearch = !string.IsNullOrWhiteSpace(Model.Search);
+        var sortActive = !string.IsNullOrWhiteSpace(Model.Sort) && Model.Sort != "name";
+        var sortLabel = Model.SortOptions.FirstOrDefault(o => o.Selected)?.Text;
+        var searchRemoveUrl = "/Groups" + (sortActive ? "?sort=" + Uri.EscapeDataString(Model.Sort!) : string.Empty);
+        var sortRemoveUrl = "/Groups" + (hasSearch ? "?search=" + Uri.EscapeDataString(Model.Search!) : string.Empty);
+    }
+    @if (hasSearch || sortActive)
+    {
+        <div class="groups-tags" aria-label="Aktive Filter">
+            @if (hasSearch)
+            {
+                <a class="ms-chip groups-tag" href="@searchRemoveUrl" title="Suchfilter entfernen">
+                    <span>Suche: @Model.Search</span>
+                    <ms-icon name="close" size="14"></ms-icon>
+                </a>
+            }
+            @if (sortActive)
+            {
+                <a class="ms-chip groups-tag" href="@sortRemoveUrl" title="Sortierung zurücksetzen">
+                    <span>@sortLabel</span>
+                    <ms-icon name="close" size="14"></ms-icon>
+                </a>
+            }
+            <a class="groups-tags__clear" href="/Groups">Alle zurücksetzen</a>
+        </div>
+    }
 
     @* Mobile card rendering. Same data as the table below; CSS shows only one
        of them per breakpoint. Card = name (+ emoji), own saldo, member count,
@@ -91,7 +133,7 @@
                                        href="@($"/Groups/Details?groupId={group.Id}")"></ms-button>
                             <ms-button id="@($"group-{group.Id}-members")" kind="ghost" size="sm"
                                        icon="users" icon-only="true" label="Mitglieder"
-                                       href="@($"/Groups/Members?groupId={group.Id}")"></ms-button>
+                                       href="@($"/Groups/Details?groupId={group.Id}&tab=mitglieder")"></ms-button>
                             @if (group.CanManage)
                             {
                                 <ms-button id="@($"group-{group.Id}-edit")" kind="ghost" size="sm"
@@ -111,7 +153,7 @@
                         title="@(string.IsNullOrWhiteSpace(Model.Search) ? "Noch keine Gruppe" : "Keine Treffer")"
                         text="@(string.IsNullOrWhiteSpace(Model.Search) ? "Lege eine Gruppe an, lade deine Leute ein und tracke die erste Ausgabe." : "Zu deiner Suche passt keine Gruppe. Setze den Filter zurück.")"
                         icon="group"
-                        action-url="/Groups/Edit"
+                        action-url="@(Model.CanCreateGroup && string.IsNullOrWhiteSpace(Model.Search) ? "/Groups/Edit" : null)"
                         action-label="Neue Gruppe"></ms-empty-state>
     }
 
@@ -121,9 +163,12 @@
                    total-count="@Model.Result.TotalCount"
                    page-url="@Model.PageUrl"></ms-pagination>
 
-    <ms-actions id="groups-actions">
-        <ms-button id="groups-new" kind="primary" icon="plus" label="Neue Gruppe" href="/Groups/Edit"></ms-button>
-    </ms-actions>
+    @if (Model.CanCreateGroup)
+    {
+        <ms-actions id="groups-actions">
+            <ms-button id="groups-new" kind="primary" icon="plus" label="Neue Gruppe" href="/Groups/Edit"></ms-button>
+        </ms-actions>
+    }
 </ms-list>
 
 <style>
@@ -136,10 +181,101 @@
     }
 
     @@media (max-width: 900px) {
-        /* Creation lives in the app bar "+" on mobile, so the bottom action is
-           redundant there. */
-        #groups #groups-actions {
+        /* The app bar already shows the "Gruppen" title on mobile, so the
+           in-content heading would only duplicate it. Keep the filter button. */
+        .groups-head__title {
             display: none;
         }
+
+        .groups-head {
+            justify-content: flex-end;
+        }
+
+        /* Same prominent bottom "Neue Gruppe" button as on desktop, full width. */
+        #groups #groups-actions .ms-btn {
+            width: 100%;
+        }
+    }
+
+    /* Heading row with the filter disclosure on the right. */
+    .groups-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--ms-space-3);
+        flex-wrap: wrap;
+    }
+
+    .groups-head__title {
+        display: flex;
+        align-items: center;
+        gap: var(--ms-space-2);
+    }
+
+    .groups-head__title h2 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+    }
+
+    .groups-head__title .ms-icon {
+        color: var(--ms-primary);
+    }
+
+    /* Filter button + pop-over panel (native <details>, no JS). */
+    .groups-filter {
+        position: relative;
+    }
+
+    .groups-filter__toggle {
+        list-style: none;
+        cursor: pointer;
+    }
+
+    .groups-filter__toggle::-webkit-details-marker {
+        display: none;
+    }
+
+    .groups-filter__panel {
+        position: absolute;
+        right: 0;
+        z-index: 20;
+        min-width: min(320px, 90vw);
+        margin-top: 8px;
+        padding: var(--ms-space-4);
+        border: 1px solid var(--ms-border);
+        border-radius: var(--ms-radius);
+        background: var(--ms-surface);
+        box-shadow: var(--ms-shadow-2);
+        display: flex;
+        flex-direction: column;
+        gap: var(--ms-space-3);
+    }
+
+    /* Active filter tags. */
+    .groups-tags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--ms-space-2);
+    }
+
+    .groups-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .groups-tag:hover {
+        background: var(--ms-primary-soft);
+        color: var(--ms-primary);
+    }
+
+    .groups-tags__clear {
+        font-size: var(--ms-text-sm);
+        color: var(--ms-text-soft);
     }
 </style>

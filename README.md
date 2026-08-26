@@ -1,365 +1,227 @@
+<div align="center">
+
+<img src="src/MatSplit.Web/wwwroot/img/icon-192.png" width="96" alt="MatSplit" />
+
 # MatSplit
 
-**Gemeinsame Finanzen fuer Urlaub und WG — selfhosted, in einem Docker-Container.**
+**Shared expenses for holidays and shared flats – in the browser.**
 
-MatSplit ist eine selbst gehostete Alternative zu Splid: Gruppen anlegen, Ausgaben erfassen,
-Belege per Handy-Kamera fotografieren, Zahlungen dokumentieren und am Ende sehen, wer wem
-wie viel schuldet — inklusive PayPal-Link fuer den Ausgleich.
+Create a group, add expenses, snap receipts with your phone, record who paid and see
+who owes whom at the end – with a PayPal link to settle up.
+One container, no cloud, no third-party services.
 
----
+</div>
 
-## Inhalt
-
-- [Features](#features)
-- [Technik](#technik)
-- [Quickstart (Release)](#quickstart-release)
-- [Entwicklung (Dev-Stack)](#entwicklung-dev-stack)
-- [Erste Anmeldung](#erste-anmeldung)
-- [Ports](#ports)
-- [Volume-Layout](#volume-layout)
-- [Konfiguration](#konfiguration)
-- [Build-Skripte](#build-skripte)
-- [Versionierungsschema](#versionierungsschema)
-- [Branch-Strategie](#branch-strategie)
-- [CI/CD](#cicd)
-- [Repo-Struktur](#repo-struktur)
-- [Abweichungen von der Spezifikation](#abweichungen-von-der-spezifikation)
+![The group overview with the left menu and the "Meine Gruppen" start screen](docs/images/groups.png)
 
 ---
 
-## Features
+## What this is about
 
-- **Gruppen** fuer Urlaub, WG oder Projekt — mit Waehrung, Beschreibung und Historie.
-- **Mitglieder** einladen: per Einladungslink (anonyme Teilnehmer, kein Konto notwendig)
-  oder als bestehender Benutzer.
-- **Ausgaben** mit Betrag, Zahler, Datum, Kategorie und **Belegfotos**
-  (Kamera-Zugriff direkt aus der PWA).
-- **Anteils-Faktoren**: eine Familie zaehlt z. B. als Faktor 3, Einzelpersonen als 1.
-  Faktoren gelten pro Gruppe und sind pro Ausgabe uebersteuerbar.
-- **Zahlungen** erfassen (wer hat wem wie viel gegeben).
-- **Kontostand und Ausgleich**: minimale Anzahl Ausgleichszahlungen, optional mit
-  `paypal.me`-Link zum Empfaenger.
-- **Anonyme Benutzer zusammenfuehren** ("Horst" und "Horsti" sind dieselbe Person).
-- **PWA**: installierbar, offlinefaehig mit Sync, optimiert fuer iOS und Android
-  (Safe-Area/Notch, Standalone-Modus).
-- **Dark / Light / System** Theme, Menue links, mobil als Drawer.
+Splitting a holiday bill or the shared-flat groceries usually means a spreadsheet or handing
+your data to yet another app. MatSplit is a self-hosted alternative to Splid: you run it in a
+single Docker container, create a group, and everyone adds what they paid. It keeps track of
+factors (a family counts as three people), fixed shares, receipts and payments, and works out
+the **fewest transfers** that bring everyone back to zero.
 
-## Technik
+Nobody needs an account: a group is shared through an **invite link**, and guests join with
+just a name. When the trip is over, the balance shows who owes whom – with a `paypal.me` link
+straight to the recipient.
 
-| Baustein     | Auswahl                                                      |
-|--------------|--------------------------------------------------------------|
-| Runtime      | .NET 10 (`net10.0`), ASP.NET Core **Razor Pages**            |
-| Datenbank    | SQLite via EF Core, Schema per `EnsureCreated()` beim Start   |
-| Auth         | Cookie-Authentication + eigene Tabelle `UserSessions`         |
-| Geldbetraege | immer `long` in Cent (`...Cents`) — nie Fliesskomma           |
-| Container    | Multi-Stage Image, non-root User `app`, Healthcheck `/health` |
-| Persistenz   | ein einziges Volume: `/data`                                  |
+## At a glance
 
-## Quickstart (Release)
+**Groups & members**
+- Groups for a holiday, a flat or a project – with currency, description and a full history
+- Join through an **invite link** as an anonymous guest (no account) or as an existing user
+- **Person count per member** (a family = 3), overridable per expense
+- Merge duplicate guests ("Horst" and "Horsti" are the same person)
 
-Voraussetzungen: Docker mit Compose-Plugin.
+**Expenses & receipts**
+- Amount, payer, date and category, split equally, by person count or by fixed amounts
+- A **live preview** of each person's share while you type
+- **Receipt photos** straight from the phone camera, shrunk in the browser before upload
+- The combined **transaction list** merges expenses and payments into one timeline
+
+**Balance & settling up**
+- Per-member balance and the **minimal set of settlement transfers**
+- Optional **`paypal.me` link** to the person who should receive the money
+- Record a payment and book a suggested settlement as paid in one click
+
+**Access & privacy**
+- Cookie sign-in with its own session table; roles Admin / User / Anonymous, plus a
+  per-group admin flag
+- **Guests stay guests**: link members can neither open groups of their own nor pass the
+  invite link on
+- Everything runs on your machine – no telemetry, no external calls
+
+**Interface**
+- A **hub per group**: balance hero, a transaction tab and a members tab with filters
+  (all / admins / users / guests)
+- Installable **PWA**, offline-capable with background sync, tuned for iOS and Android
+- **Light / dark / system** theme, a left menu on the desktop and a drawer on the phone
+
+## Screenshots
+
+### The group hub
+
+![The group hub with the balance hero, transaction tab and quick actions](docs/images/group-hub.png)
+
+The balance hero links to the detailed statement, the pill tabs switch between transactions
+and members, and the icons on the right reach the history, the share screen and the group
+settings. Every expense and payment lands in one chronological list.
+
+### Balance and settling up
+
+![The balance page with per-member balances and the suggested settlements](docs/images/balance.png)
+
+Who paid, what their share is and where they stand – followed by the fewest transfers that
+even everyone out, each with a PayPal shortcut and a "book as paid" button.
+
+### Members with filters
+
+![The members tab filtered by all, admins, users and guests](docs/images/members.png)
+
+Filter the members by everyone, group admins, registered users or link guests. Group admins
+add and edit memberships from here; the invite link lives on its own share screen.
+
+### A new expense with a live share preview
+
+![The expense editor with the individual-shares mode and a live amount preview](docs/images/new-expense.png)
+
+Choose an even split, individual person counts or fixed amounts. In the individual mode every
+participant shows their computed share right away – the exact cent split happens on save.
+
+### Sharing and administration
+
+| Share a group | Administration |
+|---|---|
+| ![The share screen with the invite link and messenger shortcuts](docs/images/share.png) | ![The admin overview with tiles for users, groups and configuration](docs/images/admin.png) |
+
+An invite link with copy, WhatsApp and Telegram shortcuts; and an admin area with users,
+groups, settings and per-installation statistics.
+
+### On the phone
+
+| Groups | Group hub |
+|---|---|
+| ![The group list on a phone](docs/images/mobile-groups.png) | ![The group hub on a phone](docs/images/mobile-hub.png) |
+
+## Quick start
+
+Ready-made images are published to the GitHub Container Registry:
+
+| Tag | Built from | Use it for |
+|---|---|---|
+| `ghcr.io/real-ttx/matsplit:latest` | `main` | releases |
+| `ghcr.io/real-ttx/matsplit:nightly-*` | `dev` | the newest features |
+
+### 1. Just run it
+
+Copy this into `docker-compose.yml` and start it – nothing else needed:
+
+```yaml
+services:
+  matsplit:
+    image: ghcr.io/real-ttx/matsplit:latest
+    container_name: matsplit
+    restart: unless-stopped
+    ports:
+      - "4774:8080"
+    volumes:
+      - matsplit-data:/data
+
+volumes:
+  matsplit-data:
+```
 
 ```bash
-git clone https://github.com/Real-TTX/MatSplit.git
-cd MatSplit
 docker compose up -d
 ```
 
-App aufrufen: **http://localhost:4774**
+Open **http://localhost:4774** and sign in with **`admin` / `admin`** (health check:
+`/health`). The first start also seeds a small demo group so the app is not empty. The
+`matsplit-data` volume keeps the database, the configuration, the receipts and the session
+keys, so an update is just `docker compose pull && docker compose up -d`.
 
-Das Compose-File verwendet standardmaessig das Image `ghcr.io/real-ttx/matsplit:latest`.
-Soll stattdessen lokal aus den Quellen gebaut werden:
+> **Change the admin password** right after the first sign-in under *Konto*. Sign-in accepts
+> the display name or the e-mail address, case-insensitively.
 
-```bash
-docker compose up -d --build
-```
-
-Aktualisieren:
-
-```bash
-docker compose pull
-docker compose up -d
-```
-
-Stoppen (Daten bleiben im Volume `matsplit-data`):
+Without Compose:
 
 ```bash
-docker compose down
+docker run -d --name matsplit -p 4774:8080 -v matsplit-data:/data \
+  ghcr.io/real-ttx/matsplit:latest
 ```
 
-## Entwicklung (Dev-Stack)
+### 2. From source
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d --build
+docker compose up -d --build                              # release build
+docker compose -f docker-compose.dev.yml up -d --build    # development stack (+ SQLite browser)
 ```
 
-Damit laufen zwei Container:
-
-| Container                | Zweck                                          | URL                   |
-|--------------------------|------------------------------------------------|-----------------------|
-| `matsplit-dev`           | die App (`ASPNETCORE_ENVIRONMENT=Development`) | http://localhost:4774 |
-| `matsplit-dev-sqliteweb` | SQLite-Browser auf `/data/db/matsplit.db`      | http://localhost:4775 |
-
-Beide Container haengen am selben Volume `matsplit-dev-data`, der Browser sieht also genau
-die Datenbank der App.
-
-> Hinweis zum SQLite-Browser: Er laeuft absichtlich mit `user: "1654:1654"` — der UID des
-> `app`-Users im Runtime-Image. Ohne das arbeitet der Container als `root` und alles, was er
-> auf dem gemeinsamen Volume anlegt, gehoert `root`; die App (UID 1654) stirbt dann beim
-> Start mit `SQLite Error 8: attempt to write a readonly database`. Zusaetzlich wartet der
-> Browser via `depends_on: condition: service_healthy` und einer Warteschleife auf eine
-> nicht-leere Datenbankdatei, denn `sqlite_web` erzeugt die Datei sonst selbst — leer.
-
-Logs:
-
-```bash
-docker compose -f docker-compose.dev.yml logs -f msbi
-```
-
-Ohne Container entwickeln (Windows-Host):
+Locally without Docker (Windows host):
 
 ```powershell
 dotnet run --project src/MatSplit.Web/MatSplit.Web.csproj
 ```
 
-## Erste Anmeldung
+### Settings that matter
 
-Beim ersten Start wird ein Administratorkonto angelegt:
+| Variable | Default | Meaning |
+|---|---|---|
+| `ASPNETCORE_ENVIRONMENT` | `Production` | `Development` turns on detailed error pages |
+| `ASPNETCORE_URLS` | `http://+:8080` | Internal listener |
+| `MATSPLIT_DATA_DIR` | `/data` | Root for db, config, receipts, keys and logs |
+| `TZ` | `Europe/Berlin` | Container time zone |
 
-| Feld       | Wert                    |
-|------------|-------------------------|
-| Anmeldung  | `admin` **oder** `admin@matsplit.local` |
-| Passwort   | `admin`                 |
+TLS and the domain belong to a reverse proxy in front (nginx, Traefik, Caddy): forward to
+`http://<host>:4774` and set `X-Forwarded-Proto` / `X-Forwarded-For` for correct redirects.
+The service worker (and thus offline support) only activates over HTTPS or on `localhost`.
 
-> **Das Passwort direkt nach der ersten Anmeldung unter *Konto* aendern.**
-> Die Anmeldung akzeptiert Anzeigename und E-Mail-Adresse, jeweils ohne
-> Beachtung der Gross-/Kleinschreibung.
+### After the first sign-in
 
-## Ports
+The fields under *Administration → Einstellungen* apply to everyone and live in
+`/data/config/appconfig.json`: application name, default currency, whether invite links are
+allowed, the session lifetime, the maximum receipt size and the **receipt compression**
+(on/off and a target size in KB, shrunk in the browser before upload).
 
-| Port (Host) | Port (Container) | Dienst                                 |
-|-------------|------------------|----------------------------------------|
-| **4774**    | 8080             | MatSplit Web-App (Release **und** Dev) |
-| **4775**    | 8080             | SQLite-Browser (nur Dev-Stack)         |
-
-Der Container lauscht intern immer auf `8080` (`ASPNETCORE_URLS=http://+:8080`) und laeuft
-als non-root — deshalb kein privilegierter Port.
-
-## Volume-Layout
-
-Alles Veraenderliche liegt unter `/data` (Release: Volume `matsplit-data`,
-Dev: `matsplit-dev-data`):
+### The `/data` volume
 
 ```
 /data
-  db/         SQLite-Datenbank        -> /data/db/matsplit.db
-  config/     App-Konfiguration       -> /data/config/appconfig.json
-  receipts/   Belegfotos (Uploads)
-  keys/       ASP.NET DataProtection-Keys (Cookies/Sessions ueberleben Restarts)
-  logs/       Logdateien
+├─ db/         SQLite database        → /data/db/matsplit.db
+├─ config/     app configuration      → /data/config/appconfig.json
+├─ receipts/   uploaded receipt files
+├─ keys/       DataProtection keys (sessions survive restarts)
+└─ logs/       log files
 ```
 
-Die Verzeichnisse werden im Image angelegt und dem User `app` (uid/gid `1654`) uebergeben;
-ein neu erzeugtes Docker-Volume erbt diese Rechte automatisch.
+The directories are created inside the image and owned by the `app` user (uid/gid `1654`); a
+fresh Docker volume inherits those permissions. For a **bind mount** the host directory must
+belong to that user: `sudo chown -R 1654:1654 /srv/matsplit`.
 
-> Wird statt eines Volumes ein **Bind-Mount** verwendet (`-v /srv/matsplit:/data`), muss das
-> Hostverzeichnis dem Container-User gehoeren, sonst kann die App nicht schreiben:
-> `sudo mkdir -p /srv/matsplit && sudo chown -R 1654:1654 /srv/matsplit`.
+## How it is built
 
-**Backup** = Volume sichern, z. B.:
+- **ASP.NET Core 10** (Razor Pages), **EF Core** with SQLite; the schema is created on start
+  via `EnsureCreated()` (no migrations yet)
+- Cookie authentication with its own `UserSessions` table; sessions survive restarts because
+  the DataProtection keys live on the `/data` volume
+- **Money is always a `long` in cents** (`…Cents`) – never floating point
+- The interface is server-rendered with a small `ms-*` tag-helper control library and **plain
+  JavaScript** – no framework, no build step, no CDN, works offline
+- Non-root container (`app`, uid `1654`) with a `HEALTHCHECK` on `/health`
+- The interface is German; the code and its comments are English
 
-```bash
-docker run --rm -v matsplit-data:/data -v "$PWD":/backup alpine \
-  tar czf /backup/matsplit-data-$(date +%Y%m%d).tar.gz -C / data
-```
+## Branches & versioning
 
-**Restore**:
+| Branch | Purpose | Version / tags |
+|---|---|---|
+| `main` | Release | `<major>.<minor>.<run>-<yyyyMMdd>` **and** `latest` |
+| `dev` | Development | `nightly-<run>-<yyyyMMdd>` |
+| local | – | `local-<yyyyMMdd>` |
 
-```bash
-docker compose down
-docker run --rm -v matsplit-data:/data -v "$PWD":/backup alpine \
-  sh -c "rm -rf /data/* && tar xzf /backup/matsplit-data-20260820.tar.gz -C /"
-docker compose up -d
-```
-
-## Konfiguration
-
-Fachliche Einstellungen stehen in `/data/config/appconfig.json` und werden beim ersten Start
-mit Defaults erzeugt (`AppName`, `DefaultCurrency`, `AllowAnonymousJoin`,
-`SessionLifetimeDays`, `MaxReceiptSizeMb`). Sie sind zusaetzlich unter
-*Administration -> Einstellungen* pflegbar.
-
-Umgebungsvariablen des Containers:
-
-| Variable                 | Default         | Bedeutung                                    |
-|--------------------------|-----------------|----------------------------------------------|
-| `ASPNETCORE_ENVIRONMENT` | `Production`    | `Development` aktiviert Detailfehlerseiten   |
-| `ASPNETCORE_URLS`        | `http://+:8080` | interner Listener                            |
-| `MATSPLIT_DATA_DIR`      | `/data`         | Wurzel fuer db/config/receipts/keys/logs     |
-| `TZ`                     | `Europe/Berlin` | Zeitzone des Containers                      |
-| `MATSPLIT_VERSION`       | `local`         | nur Build-Arg fuer Compose (`APP_VERSION`)   |
-
-Der Container-Healthcheck ruft `GET http://127.0.0.1:8080/health` auf und erwartet
-HTTP 200 — dieser Endpunkt muss ohne Anmeldung erreichbar sein, sonst gilt der Container
-als `unhealthy`.
-
-TLS und Domain uebernimmt ein Reverse Proxy davor (nginx, Traefik, Caddy): Weiterleitung auf
-`http://<host>:4774`, fuer korrekte Redirects `X-Forwarded-Proto` und `X-Forwarded-For`
-setzen.
-
-## Build-Skripte
-
-Beide Skripte bauen das Image mit Version `local-<yyyyMMdd>` und deployen anschliessend den
-Dev-Stack neu (`docker compose -f docker-compose.dev.yml up -d --build`):
-
-```powershell
-# Windows / PowerShell
-./scripts/build.ps1                    # Debug-Build + Redeploy
-./scripts/build.ps1 -NoCache -Follow   # ohne Layer-Cache, danach Logs folgen
-./scripts/build.ps1 -BuildOnly         # nur Image bauen, Stack unangetastet
-```
-
-```bash
-# Linux / macOS / Git Bash
-scripts/build.sh                       # Debug-Build + Redeploy
-scripts/build.sh --no-cache --follow
-scripts/build.sh --build-only --release
-```
-
-Ergebnis-Tags: `matsplit:local-<yyyyMMdd>` und `matsplit:local`; im Dev-Stack laeuft das Tag
-`matsplit:dev`.
-
-## Versionierungsschema
-
-Basis sind `VersionMajor` und `VersionMinor` aus `Directory.Build.props`.
-
-| Ausloeser                | Image-Tags                                                 |
-|--------------------------|------------------------------------------------------------|
-| Push auf `main`          | `<major>.<minor>.<run_number>-<yyyyMMdd>` **und** `latest`  |
-| Push auf `dev`           | `nightly-<run_number>-<yyyyMMdd>`                          |
-| anderer Branch (manuell) | `<branch>-<run_number>-<yyyyMMdd>`                         |
-| lokaler Build            | `local-<yyyyMMdd>` (Fallback ohne Datum: `local`)          |
-
-Beispiel: `ghcr.io/real-ttx/matsplit:0.1.42-20260820`.
-`run_number` ist die fortlaufende Nummer des GitHub-Actions-Workflows und damit monoton
-steigend — es gibt keine manuelle Patch-Pflege.
-
-## Branch-Strategie
-
-```
-dev   -> Feature-Arbeit, baut "nightly-*"-Images
-main  -> stabiler Stand, baut "<major>.<minor>.<run>-<datum>" + "latest"
-```
-
-- Entwicklung passiert auf `dev` bzw. auf Feature-Branches, die per PR nach `dev` gehen.
-- Ein Release ist ein Merge/PR `dev -> main`; danach genuegt auf dem Server
-  `docker compose pull && docker compose up -d`.
-- Pull Requests laufen nur durch den Job `build-test` (Kompilieren, kein Image-Push).
-
-## CI/CD
-
-Workflow: `.github/workflows/docker-build.yml`
-
-1. **`build-test`** — `dotnet restore` / `build` / `publish` (Smoke-Test) auf
-   `ubuntu-latest` mit .NET 10. Laeuft bei Push auf `main`/`dev` und bei jedem Pull Request.
-2. **`docker`** — Buildx-Build des Images mit GitHub-Actions-Layer-Cache, Tags nach obigem
-   Schema, Push nach GHCR. Laeuft nur bei Push oder manuellem Start, nicht bei Pull Requests.
-
-Der Registry-Login ist bewusst optional: existiert das Secret `GHCR_TOKEN`, wird damit
-angemeldet; andernfalls wird bei Repositories des Owners `Real-TTX` der `GITHUB_TOKEN`
-verwendet. In Forks ohne Zugangsdaten wird das Image nur gebaut und **nicht** gepusht — der
-Workflow schlaegt also nicht fehl (kein Hard-Fail).
-
-Optionale Secrets:
-
-| Secret       | Zweck                                                   |
-|--------------|---------------------------------------------------------|
-| `GHCR_TOKEN` | Personal Access Token (`write:packages`) fuer GHCR-Push |
-| `GHCR_USER`  | abweichender Benutzername zum Token (Default: `actor`)  |
-
-## Repo-Struktur
-
-```
-MatSplit/
-  MatSplit.sln
-  Directory.Build.props            Version (VersionMajor / VersionMinor)
-  Dockerfile                       Multi-Stage: sdk:10.0 -> aspnet:10.0, non-root
-  .dockerignore / .gitignore
-  docker-compose.yml               Release-Stack (Port 4774)
-  docker-compose.dev.yml           Dev-Stack     (Port 4774 + SQLite-Browser 4775)
-  scripts/
-    build.ps1                      Build + Redeploy (Windows)
-    build.sh                       Build + Redeploy (bash)
-  .github/workflows/docker-build.yml
-  CHANGELOG.md
-  src/
-    MatSplit.Web/                  Razor Pages App: Data/, Services/, Ui/, Pages/, wwwroot/
-```
-
-## Abweichungen von der Spezifikation
-
-**DB-Browser im Dev-Stack: `coleifer/sqlite-web` statt `mssql-server` / `pgadmin`.**
-
-Urspruenglich waren fuer den Entwicklungs-Stack ein `mssql-server`-Container und `pgadmin`
-als Datenbank-Oberflaeche vorgesehen. Das passt nicht zur getroffenen Technik-Entscheidung
-"SQLite via EF Core":
-
-- `mssql-server` ist ein **eigener Datenbankserver** (Microsoft SQL Server) — er wuerde eine
-  zweite, ungenutzte Datenbank betreiben und die SQLite-Datei nicht anfassen.
-- `pgadmin` ist ein Client **ausschliesslich fuer PostgreSQL** und kann sich nicht mit einer
-  SQLite-Datei verbinden.
-
-Als funktional aequivalenter Ersatz laeuft daher `coleifer/sqlite-web` auf Port **4775** am
-selben Volume wie die App und oeffnet direkt `/data/db/matsplit.db` (Tabellen browsen,
-Abfragen ausfuehren, Schema ansehen).
-
-**Weitere Punkte**
-
-- Keine EF-Core-Migrations in v1: Das Schema entsteht beim Start via
-  `Database.EnsureCreated()` (so festgelegt) — Schemaaenderungen erfordern damit vorerst ein
-  Neuanlegen bzw. manuelles Nachziehen der Datenbank.
-- Das Runtime-Image installiert zusaetzlich `curl`, weil `mcr.microsoft.com/dotnet/aspnet`
-  kein HTTP-Client-Tool mitbringt, der `HEALTHCHECK` auf `/health` aber eines benoetigt.
-- Das Image wird ohne AppHost gebaut (`UseAppHost=false`), Start erfolgt via
-  `dotnet MatSplit.Web.dll` — dadurch bleibt der Build architekturneutral und
-  buildx-freundlich.
-- Der Dev-Stack nutzt ein eigenes Volume (`matsplit-dev-data`), damit Testdaten die
-  Release-Daten (`matsplit-data`) nicht ueberschreiben.
-- Der Dev-Stack-Container `sqliteweb` laeuft mit `user: "1654:1654"` und wartet auf einen
-  gesunden App-Container. Grund: Er wuerde sonst als `root` eine leere, root-eigene
-  `matsplit.db` auf dem gemeinsamen Volume anlegen und die App (UID 1654) mit
-  `SQLite Error 8: attempt to write a readonly database` in eine Restart-Schleife schicken.
-- `DataVolumeGuard` prueft beim Start, ob `/data/db` und die Datenbankdatei beschreibbar
-  sind. Eine vorhandene, leere und nicht beschreibbare Datei wird geloescht (Schema wird neu
-  erzeugt), bei einer Datei **mit** Inhalt bricht der Start mit einer klaren Meldung inkl.
-  `chown`-Hinweis ab statt mit einem SQLite-Stacktrace.
-- Das Runtime-Image setzt `HTTP_PORTS=""`. Das Basis-Image `mcr.microsoft.com/dotnet/aspnet`
-  setzt `HTTP_PORTS=8080`, wodurch Kestrel bei jedem Start
-  `Overriding HTTP_PORTS ... Binding to values defined by URLS` warnt. `ASPNETCORE_URLS`
-  bleibt die einzige Quelle der Port-Konfiguration.
-- Das PWA-Manifest heisst `wwwroot/manifest.webmanifest` (nicht `manifest.json`),
-  weil das die offizielle Dateiendung mit dem korrekten MIME-Typ
-  `application/manifest+json` ist.
-- Kein QR-Code fuer den Einladungslink: ohne externe Bibliothek/CDN gibt es
-  keinen Generator. Die Mitglieder-Seite zeigt den Link stattdessen gross,
-  markierbar und mit Kopier-Button.
-- Kein jQuery / `jquery-validation-unobtrusive`. Die clientseitige Validierung
-  laeuft ueber `wwwroot/js/site.js` (`MatSplit.initValidation()`), damit die App
-  ohne externe CDN und offline funktioniert.
-- Belegfotos werden offline **nicht** in die Outbox gelegt (ein `File` in
-  `FormData` laesst sich nicht zuverlaessig persistieren). Offline gespeicherte
-  Ausgaben weisen darauf hin, das Foto spaeter nachzureichen.
-- Der Service Worker registriert sich nur unter `https://` oder
-  `http://localhost`. Beim Zugriff ueber die LAN-IP (`http://192.168.x.x:4774`)
-  gibt es keine Offline-Faehigkeit — dafuer braucht es einen Reverse Proxy mit
-  TLS.
-- Zusaetzliche Seite `Pages/Groups/MemberEdit.cshtml` (Route
-  `/Groups/MemberEdit?groupId=..&userId=..`), die in der Seitenliste der
-  Spezifikation nicht aufgefuehrt ist. Sie ist noetig, damit die Regel
-  "CRUD immer Liste + separate Unterseite, keine Inline-Edits" auch fuer
-  Mitgliedschaften gilt: `/Groups/Members` ist eine reine Liste, Anteilsfaktor,
-  Gruppen-Admin-Flag, Hinzufuegen und Entfernen laufen ueber diese Unterseite.
-- Es gibt keine automatisierten Tests. Der Build (`dotnet build`, 0 Warnungen)
-  und ein manueller Durchlauf sind die Verifikation von v1.
-- Kein `LICENSE`-File, deshalb auch kein Lizenz-Label in den OCI-Labels des
-  Images.
+`Major`/`Minor` live in [`Directory.Build.props`](Directory.Build.props); the build number is
+the GitHub Actions run number, so there is no manual patch bookkeeping. Images are published
+to the GitHub Container Registry. See the [CHANGELOG](CHANGELOG.md) for what changed between
+versions and [docs/](docs/) for the architecture, the UI controls and the PWA notes.

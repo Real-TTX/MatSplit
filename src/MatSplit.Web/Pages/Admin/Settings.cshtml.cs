@@ -37,7 +37,9 @@ public sealed class SettingsModel(
             DefaultCurrency = config.DefaultCurrency,
             AllowAnonymousJoin = config.AllowAnonymousJoin,
             SessionLifetimeDays = config.SessionLifetimeDays,
-            MaxReceiptSizeMb = config.MaxReceiptSizeMb
+            MaxReceiptSizeMb = config.MaxReceiptSizeMb,
+            CompressReceipts = config.CompressReceipts,
+            ReceiptTargetKb = config.ReceiptTargetKb
         };
 
         await PrepareLayoutAsync(cancellationToken);
@@ -59,7 +61,9 @@ public sealed class SettingsModel(
             DefaultCurrency = Input.DefaultCurrency,
             AllowAnonymousJoin = Input.AllowAnonymousJoin,
             SessionLifetimeDays = Input.SessionLifetimeDays,
-            MaxReceiptSizeMb = Input.MaxReceiptSizeMb
+            MaxReceiptSizeMb = Input.MaxReceiptSizeMb,
+            CompressReceipts = Input.CompressReceipts,
+            ReceiptTargetKb = Input.ReceiptTargetKb
         };
 
         var result = await appConfig.SaveAsync(config, cancellationToken);
@@ -126,5 +130,13 @@ public sealed class SettingsModel(
         [Range(1, 100, ErrorMessage = "Bitte einen Wert zwischen 1 und 100 MB angeben.")]
         [Display(Name = "Maximale Beleggröße in MB")]
         public int MaxReceiptSizeMb { get; set; } = 10;
+
+        [Display(Name = "Belegfotos im Browser verkleinern")]
+        public bool CompressReceipts { get; set; } = true;
+
+        [Required(ErrorMessage = "Bitte die Ziel-Beleggröße angeben.")]
+        [Range(50, 5000, ErrorMessage = "Bitte einen Wert zwischen 50 und 5000 KB angeben.")]
+        [Display(Name = "Ziel-Beleggröße in KB")]
+        public int ReceiptTargetKb { get; set; } = 500;
     }
 }

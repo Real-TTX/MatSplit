@@ -23,6 +23,9 @@
     var MAX_EDGE = 1600;
     var JPEG_QUALITY = 0.8;
     var DEFAULT_MAX_MB = 10;
+    var DEFAULT_TARGET_KB = 500;
+    // Progressively lower JPEG quality until the target size is met.
+    var QUALITY_STEPS = [0.85, 0.7, 0.55, 0.45, 0.35];
     var FIELD_SELECTOR = '[data-ms-receipt]';
 
     function qsa(selector, scope) {
@@ -41,6 +44,16 @@
         var raw = parseInt(field.getAttribute('data-ms-max-mb'), 10);
         var megabytes = isNaN(raw) || raw <= 0 ? DEFAULT_MAX_MB : raw;
         return megabytes * 1024 * 1024;
+    }
+
+    function targetBytes(field) {
+        var raw = parseInt(field.getAttribute('data-ms-target-kb'), 10);
+        var kilobytes = isNaN(raw) || raw <= 0 ? DEFAULT_TARGET_KB : raw;
+        return kilobytes * 1024;
+    }
+
+    function compressEnabled(field) {
+        return field.getAttribute('data-ms-compress') !== 'false';
     }
 
     function formatSize(bytes) {
@@ -162,7 +175,7 @@
 
     /* ---------------------------- compression ---------------------------- */
 
-    function compressImage(file, done) {
+    function compressImage(file, target, done) {
         if (!isImage(file) || !canReplaceFiles() || !window.URL || !URL.createObjectURL) {
             done(null);
             return;
@@ -197,23 +210,41 @@
             context.drawImage(image, 0, 0, width, height);
             URL.revokeObjectURL(url);
 
-            canvas.toBlob(function (blob) {
-                if (!blob) {
-                    done(null);
-                    return;
-                }
+            // Encode at falling quality until the target size is met (or we run
+            // out of steps). The smallest acceptable result wins; if even that is
+            // no better than the original the caller keeps the original file.
+            var step = 0;
 
-                // Keep the original when re-encoding brought nothing.
-                if (scale === 1 && blob.size >= file.size) {
-                    done(null);
-                    return;
-                }
+            function encode() {
+                canvas.toBlob(function (blob) {
+                    if (!blob) {
+                        done(null);
+                        return;
+                    }
 
-                done(new File([blob], jpegName(file.name), {
-                    type: 'image/jpeg',
-                    lastModified: Date.now()
-                }));
-            }, 'image/jpeg', JPEG_QUALITY);
+                    var underTarget = blob.size <= target;
+                    var lastStep = step >= QUALITY_STEPS.length - 1;
+
+                    if (underTarget || lastStep) {
+                        if (blob.size >= file.size) {
+                            // Re-encoding did not shrink anything worthwhile.
+                            done(null);
+                            return;
+                        }
+
+                        done(new File([blob], jpegName(file.name), {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        }));
+                        return;
+                    }
+
+                    step++;
+                    encode();
+                }, 'image/jpeg', QUALITY_STEPS[step]);
+            }
+
+            encode();
         };
 
         image.onerror = function () {
@@ -259,12 +290,12 @@
             return;
         }
 
-        if (!isImage(file)) {
+        if (!isImage(file) || !compressEnabled(state.field)) {
             accept(state, file);
             return;
         }
 
-        compressImage(file, function (compressed) {
+        compressImage(file, targetBytes(state.field), function (compressed) {
             if (compressed && assignFile(state.input, compressed)) {
                 accept(state, compressed);
                 return;

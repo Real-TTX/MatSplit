@@ -17,6 +17,12 @@ public sealed class AppConfig
 
     public int MaxReceiptSizeMb { get; set; } = 10;
 
+    /// <summary>Shrink/re-encode receipt photos in the browser before upload.</summary>
+    public bool CompressReceipts { get; set; } = true;
+
+    /// <summary>Target size in KB the client compression aims for (best effort).</summary>
+    public int ReceiptTargetKb { get; set; } = 500;
+
     /// <summary>Clamps every value into a sane range.</summary>
     public AppConfig Normalized()
     {
@@ -28,7 +34,9 @@ public sealed class AppConfig
                 : DefaultCurrency.Trim().ToUpperInvariant(),
             AllowAnonymousJoin = AllowAnonymousJoin,
             SessionLifetimeDays = Math.Clamp(SessionLifetimeDays, 1, 365),
-            MaxReceiptSizeMb = Math.Clamp(MaxReceiptSizeMb, 1, 100)
+            MaxReceiptSizeMb = Math.Clamp(MaxReceiptSizeMb, 1, 100),
+            CompressReceipts = CompressReceipts,
+            ReceiptTargetKb = Math.Clamp(ReceiptTargetKb, 50, 5000)
         };
     }
 }

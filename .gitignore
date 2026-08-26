@@ -79,3 +79,6 @@ docker-compose.override.yml
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local design reference (third-party mockup), not for the public repo
+docs/mockup-reference.png

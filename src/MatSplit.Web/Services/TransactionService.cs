@@ -114,7 +114,7 @@ public sealed class TransactionService(AppDbContext db)
                         AmountCents = payment.AmountCents,
                         Date = payment.PaymentDate,
                         EditUrl = $"/Groups/Payments/Edit?groupId={groupId}&id={payment.Id}",
-                        Icon = "paypal",
+                        Icon = "ausgleich",
                         TypeLabel = "Zahlung"
                     }));
             }

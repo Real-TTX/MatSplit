@@ -7,6 +7,8 @@
     var activeGroupId = ViewData.ReadActiveGroupId();
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var isAdmin = ViewData.ReadFlag(LayoutKeys.IsAdmin) || User.IsInRole(nameof(UserRole.Admin));
+    // Link guests (Anonymous role) join by invite and may not create groups.
+    var canCreateGroup = isAuthenticated && !User.IsInRole(nameof(UserRole.Anonymous));
     var displayName = ViewData.ReadString(LayoutKeys.CurrentUserName) ?? User.Identity?.Name ?? "Gast";
 
     bool IsPath(string target)
@@ -19,12 +21,6 @@
             ? path.Equals(target, StringComparison.OrdinalIgnoreCase)
             : IsPath(target);
         return active ? "ms-nav__link is-active" : "ms-nav__link";
-    }
-
-    string SubClass(string target, long groupId)
-    {
-        var active = path.Equals(target, StringComparison.OrdinalIgnoreCase) && activeGroupId == groupId;
-        return active ? "ms-nav__sub is-active" : "ms-nav__sub";
     }
 }
 <nav class="ms-shell__nav" id="ms-menu" aria-label="Hauptnavigation">
@@ -40,67 +36,34 @@
         </div>
 
         <div class="ms-menu__scroll" data-ms-scroll="true">
+            @* Flat group list: every group links straight to its hub
+               (/Groups/Details); no "Start"/"Gruppen" hierarchy, the brand logo
+               already leads to the group overview. *@
             <ul class="ms-nav">
-                <li>
-                    <a class="@LinkClass("/", exact: true)" href="/">
-                        <ms-icon name="home" size="18"></ms-icon>
-                        <span>Start</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="@LinkClass("/Groups")" href="/Groups">
-                        <ms-icon name="group" size="18"></ms-icon>
-                        <span>Gruppen</span>
-                    </a>
-                    @if (groups.Count > 0)
-                    {
-                        <ul class="ms-nav__groups">
-                            @foreach (var group in groups)
+                @foreach (var group in groups)
+                {
+                    var isActiveGroup = activeGroupId == group.Id;
+                    <li>
+                        <a class="ms-nav__link@(isActiveGroup ? " is-active" : string.Empty)"
+                           href="/Groups/Details?groupId=@group.Id">
+                            <span class="ms-nav__dot" aria-hidden="true"></span>
+                            <span class="ms-nav__summary-text">@group.Name</span>
+                            @if (group.IsGroupAdmin)
                             {
-                                var isActiveGroup = activeGroupId == group.Id;
-                                <li>
-                                    <details class="ms-nav__details" open="@(isActiveGroup ? "open" : null)">
-                                        <summary class="ms-nav__summary">
-                                            <span class="ms-nav__dot" aria-hidden="true"></span>
-                                            <span class="ms-nav__summary-text">@group.Name</span>
-                                            @if (group.IsGroupAdmin)
-                                            {
-                                                <ms-icon name="admin" size="14" class="ms-nav__badge-icon"></ms-icon>
-                                            }
-                                            <ms-icon name="chevron-down" size="16" class="ms-nav__chevron"></ms-icon>
-                                        </summary>
-                                        <ul class="ms-nav__sublist">
-                                            <li>
-                                                <a class="@SubClass("/Groups/Details", group.Id)" href="/Groups/Details?groupId=@group.Id">
-                                                    <ms-icon name="info" size="15"></ms-icon><span>&#220;bersicht</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="@SubClass("/Groups/Balance", group.Id)" href="/Groups/Balance?groupId=@group.Id">
-                                                    <ms-icon name="balance" size="15"></ms-icon><span>Kontostand</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="@SubClass("/Groups/Members", group.Id)" href="/Groups/Members?groupId=@group.Id">
-                                                    <ms-icon name="user" size="15"></ms-icon><span>Mitglieder</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="@SubClass("/Groups/History", group.Id)" href="/Groups/History?groupId=@group.Id">
-                                                    <ms-icon name="history" size="15"></ms-icon><span>Historie</span>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </details>
-                                </li>
+                                <ms-icon name="admin" size="14" class="ms-nav__badge-icon"></ms-icon>
                             }
-                        </ul>
-                    }
-                    <a class="ms-nav__sub ms-nav__sub--add" href="/Groups/Edit">
-                        <ms-icon name="plus" size="15"></ms-icon>
-                        <span>Neue Gruppe</span>
-                    </a>
-                </li>
+                        </a>
+                    </li>
+                }
+                @if (canCreateGroup)
+                {
+                    <li>
+                        <a class="ms-nav__link ms-nav__sub--add" href="/Groups/Edit">
+                            <ms-icon name="plus" size="18"></ms-icon>
+                            <span>Neue Gruppe</span>
+                        </a>
+                    </li>
+                }
             </ul>
 
             @if (isAdmin)

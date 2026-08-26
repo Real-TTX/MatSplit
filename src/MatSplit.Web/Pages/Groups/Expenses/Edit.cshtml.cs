@@ -48,6 +48,12 @@ public sealed class EditModel(
 
     public int MaxReceiptSizeMb { get; private set; } = 10;
 
+    /// <summary>Whether the browser should shrink receipt photos before upload.</summary>
+    public bool CompressReceipts { get; private set; } = true;
+
+    /// <summary>Client-side compression target in KB.</summary>
+    public int ReceiptTargetKb { get; private set; } = 500;
+
     /// <summary>Categories already used in this group, shown as a hint.</summary>
     public string? CategoryHint { get; private set; }
 
@@ -64,9 +70,9 @@ public sealed class EditModel(
     public IReadOnlyList<ShareModeOption> ShareModeOptions { get; } =
     [
         new(ExpenseShareModes.Equal, "Gleichmäßig nach Anteilen",
-            "Alle Mitglieder nach Gruppen-Faktor."),
+            "Alle Mitglieder nach Personenzahl der Gruppe."),
         new(ExpenseShareModes.Factors, "Individuelle Anteile",
-            "Beteiligte wählen, je Person ein Faktor."),
+            "Beteiligte wählen, je Anteil die Anzahl Personen."),
         new(ExpenseShareModes.Amounts, "Feste Beträge",
             "Fester Betrag je Person; Summe = Gesamtbetrag.")
     ];
@@ -354,6 +360,8 @@ public sealed class EditModel(
 
         var config = await appConfig.GetAsync(cancellationToken);
         MaxReceiptSizeMb = config.MaxReceiptSizeMb;
+        CompressReceipts = config.CompressReceipts;
+        ReceiptTargetKb = config.ReceiptTargetKb;
 
         MenuGroups = await GroupMenu.BuildAsync(groups, currentUser, currentUser.RequireUserId(), cancellationToken);
 
@@ -371,7 +379,6 @@ public sealed class EditModel(
 
         this.SetTitle(title, Group.Name, "expense");
         this.SetBreadcrumb(
-            new BreadcrumbItem("Gruppen", "/Groups"),
             new BreadcrumbItem(Group.Name, $"/Groups/Details?groupId={GroupId}"),
             new BreadcrumbItem("Ausgaben", ListUrl),
             new BreadcrumbItem(title));
@@ -787,9 +794,9 @@ public sealed class ShareInputModel
     [Display(Name = "Beteiligt")]
     public bool IsIncluded { get; set; }
 
-    [Required(ErrorMessage = "Bitte einen Faktor angeben.")]
-    [Range(1, 100, ErrorMessage = "Der Faktor muss zwischen 1 und 100 liegen.")]
-    [Display(Name = "Faktor")]
+    [Required(ErrorMessage = "Bitte die Anzahl Personen angeben.")]
+    [Range(1, 100, ErrorMessage = "Die Personenzahl muss zwischen 1 und 100 liegen.")]
+    [Display(Name = "Personen")]
     public int? ShareFactor { get; set; } = 1;
 
     [Range(0, 1_000_000, ErrorMessage = "Bitte einen Betrag zwischen 0 und 1.000.000 angeben.")]

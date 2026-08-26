@@ -49,7 +49,8 @@ public class MemberEditModel(
     /// <summary>True when the membership may be removed.</summary>
     public bool CanRemove { get; private set; }
 
-    public string ListUrl => "/Groups/Members?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture);
+    public string ListUrl =>
+        "/Groups/Details?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture) + "&tab=mitglieder";
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -188,7 +189,7 @@ public class MemberEditModel(
                 HistoryService.EntityTypes.GroupMember,
                 member.UserId,
                 HistoryService.Actions.Updated,
-                $"Anteilsfaktor von \"{MemberName}\" wurde auf {Math.Clamp(Input.ShareFactor, 1, 100)} gesetzt.",
+                $"Personenzahl von \"{MemberName}\" wurde auf {Math.Clamp(Input.ShareFactor, 1, 100)} gesetzt.",
                 cancellationToken: cancellationToken);
         }
 
@@ -284,7 +285,6 @@ public class MemberEditModel(
 
         this.SetTitle(title, Group.Name, "users");
         this.SetBreadcrumb(
-            new BreadcrumbItem("Gruppen", "/Groups"),
             new BreadcrumbItem(Group.Name, "/Groups/Details?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture)),
             new BreadcrumbItem("Mitglieder", ListUrl),
             new BreadcrumbItem(title));
@@ -309,9 +309,9 @@ public class MemberEditModel(
         [Display(Name = "Benutzer")]
         public long UserId { get; set; }
 
-        [Required(ErrorMessage = "Bitte einen Anteilsfaktor angeben.")]
-        [Range(1, 100, ErrorMessage = "Der Anteilsfaktor liegt zwischen 1 und 100.")]
-        [Display(Name = "Anteilsfaktor")]
+        [Required(ErrorMessage = "Bitte die Anzahl Personen angeben.")]
+        [Range(1, 100, ErrorMessage = "Die Personenzahl liegt zwischen 1 und 100.")]
+        [Display(Name = "Personen")]
         public int ShareFactor { get; set; } = 1;
 
         [Display(Name = "Darf die Gruppe verwalten")]

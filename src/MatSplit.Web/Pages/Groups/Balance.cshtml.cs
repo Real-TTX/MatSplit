@@ -41,12 +41,6 @@ public class BalanceModel(
     /// <summary>Sum of all open settlement transfers.</summary>
     public long OpenSettlementCents => Result.Settlements.Sum(x => x.AmountCents);
 
-    public string PaymentsUrl => "/Groups/Payments?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture);
-
-    public string ExpensesUrl => "/Groups/Expenses?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture);
-
-    public string HistoryUrl => "/Groups/History?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture);
-
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         var guard = await LoadAsync(cancellationToken);
@@ -200,7 +194,6 @@ public class BalanceModel(
 
         this.SetTitle("Kontostand", Group.Name, "balance");
         this.SetBreadcrumb(
-            new BreadcrumbItem("Gruppen", "/Groups"),
             new BreadcrumbItem(Group.Name, "/Groups/Details?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture)),
             new BreadcrumbItem("Kontostand"));
         this.SetMenuGroups(menu, GroupId);

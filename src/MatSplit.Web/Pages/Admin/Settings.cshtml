@@ -19,6 +19,13 @@
                       min="1" max="100" step="1"
                       hint="Obergrenze für Belegfotos und PDF-Belege."></ms-field>
 
+            <ms-field id="asf-compress" for="Input.CompressReceipts" type="checkbox" full-width="true"
+                      hint="Fotos werden im Browser vor dem Upload verkleinert und neu als JPEG kodiert."></ms-field>
+
+            <ms-field id="asf-targetkb" for="Input.ReceiptTargetKb" type="number"
+                      min="50" max="5000" step="50"
+                      hint="Zielgröße, auf die ein Foto heruntergerechnet wird (z. B. 500 KB)."></ms-field>
+
             <ms-field id="asf-join" for="Input.AllowAnonymousJoin" type="checkbox" full-width="true"
                       hint="Globaler Schalter: ist er aus, funktioniert kein Einladungslink mehr."></ms-field>
 
@@ -28,16 +35,6 @@
                            type="button" href="/Admin"></ms-button>
             </ms-button-row>
         </ms-form>
-    </ms-card>
-
-    <ms-card id="admin-settings-info" title="Ablage" icon="info"
-             subtitle="Wo die Konfiguration gespeichert wird">
-        <dl class="ms-kv">
-            <dt>Konfigurationsdatei</dt>
-            <dd>@Model.ConfigFile</dd>
-            <dt>Datenverzeichnis</dt>
-            <dd>@Model.DataRoot</dd>
-        </dl>
     </ms-card>
 
     <ms-alert id="admin-settings-hint" tone="info" title="Hinweis zur Sitzungsdauer"

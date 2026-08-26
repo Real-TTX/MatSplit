@@ -8,52 +8,81 @@
             <ms-icon name="link" size="44"></ms-icon>
         </div>
 
-        <p class="ms-share__lead">
-            Teile den Link mit deiner Gruppe – jeder kann anonym beitreten und mitarbeiten.
-        </p>
-
-        @if (!Model.AllowAnonymousJoin)
+        @* Link guests joined via an invite themselves and may not pass the link
+           on. They see an explanation instead of the link and share actions. *@
+        @if (Model.CanInvite)
         {
-            <ms-alert id="share-off" tone="warning"
-                      text="Der anonyme Beitritt ist installationsweit deaktiviert. Der Link funktioniert erst wieder, wenn ein Administrator ihn in den Einstellungen erlaubt."></ms-alert>
-        }
-        else if (!Model.Group.InviteEnabled)
-        {
-            <ms-alert id="share-disabled" tone="warning"
-                      text="Die Einladung ist für diese Gruppe deaktiviert. Aktiviere den Link in der Mitgliederverwaltung, damit neue Leute beitreten können."></ms-alert>
-        }
+            <p class="ms-share__lead">
+                Teile den Link mit deiner Gruppe – jeder kann anonym beitreten und mitarbeiten.
+            </p>
 
-        <ms-field id="share-url" type="static" label="Dein Einladungslink"
-                  value="@Model.InviteUrl"></ms-field>
+            @if (!Model.AllowAnonymousJoin)
+            {
+                <ms-alert id="share-off" tone="warning"
+                          text="Der anonyme Beitritt ist installationsweit deaktiviert. Der Link funktioniert erst wieder, wenn ein Administrator ihn in den Einstellungen erlaubt."></ms-alert>
+            }
+            else if (!Model.Group.InviteEnabled)
+            {
+                <ms-alert id="share-disabled" tone="warning"
+                          text="@(Model.CanManage ? "Die Einladung ist für diese Gruppe deaktiviert. Aktiviere den Link unten, damit neue Leute beitreten können." : "Die Einladung ist für diese Gruppe deaktiviert. Ein Gruppen-Administrator kann den Link wieder aktivieren.")"></ms-alert>
+            }
 
-        @if (Model.CanShare)
-        {
-            <ms-button id="share-copy" kind="primary" full-width="true" type="button"
-                       label="Link kopieren" data-ms-copy="#share-url"></ms-button>
+            <ms-field id="share-url" type="static" label="Dein Einladungslink"
+                      value="@Model.InviteUrl"></ms-field>
 
-            <div class="ms-social">
-                <a class="ms-social__btn ms-social__btn--whatsapp" href="@Model.WhatsAppUrl"
-                   target="_blank" rel="noopener">
-                    <ms-icon name="whatsapp" size="24"></ms-icon>
-                    <span>WhatsApp</span>
-                </a>
-                <a class="ms-social__btn ms-social__btn--telegram" href="@Model.TelegramUrl"
-                   target="_blank" rel="noopener">
-                    <ms-icon name="telegram" size="24"></ms-icon>
-                    <span>Telegram</span>
-                </a>
-                <button type="button" class="ms-social__btn ms-social__btn--more"
-                        data-ms-share="true" data-ms-share-url="@Model.InviteUrl"
-                        data-ms-share-title="MatSplit-Einladung" data-ms-share-text="@Model.ShareText">
-                    <ms-icon name="dots" size="24"></ms-icon>
-                    <span>Mehr</span>
-                </button>
-            </div>
+            @if (Model.CanShare)
+            {
+                <ms-button id="share-copy" kind="primary" full-width="true" type="button"
+                           label="Link kopieren" data-ms-copy="#share-url"></ms-button>
+
+                <div class="ms-social">
+                    <a class="ms-social__btn ms-social__btn--whatsapp" href="@Model.WhatsAppUrl"
+                       target="_blank" rel="noopener">
+                        <ms-icon name="whatsapp" size="24"></ms-icon>
+                        <span>WhatsApp</span>
+                    </a>
+                    <a class="ms-social__btn ms-social__btn--telegram" href="@Model.TelegramUrl"
+                       target="_blank" rel="noopener">
+                        <ms-icon name="telegram" size="24"></ms-icon>
+                        <span>Telegram</span>
+                    </a>
+                    <button type="button" class="ms-social__btn ms-social__btn--more"
+                            data-ms-share="true" data-ms-share-url="@Model.InviteUrl"
+                            data-ms-share-title="MatSplit-Einladung" data-ms-share-text="@Model.ShareText">
+                        <ms-icon name="dots" size="24"></ms-icon>
+                        <span>Mehr</span>
+                    </button>
+                </div>
+            }
         }
         else
         {
-            <ms-button id="share-members" kind="secondary" icon="users" full-width="true"
-                       label="Zur Mitgliederverwaltung" href="@Model.MembersUrl"></ms-button>
+            <p class="ms-share__lead">
+                Neue Leute einladen kann nur ein registriertes Gruppenmitglied.
+            </p>
+            <ms-alert id="share-guest" tone="info"
+                      text="Als Gast bist du selbst über einen Einladungslink beigetreten. Weitere Personen einladen darf nur ein registriertes Mitglied der Gruppe."></ms-alert>
+        }
+
+        @* Invite management lives here (moved off the member list): only group
+           administrators may switch the link off/on or regenerate it. *@
+        @if (Model.CanManage)
+        {
+            <ms-form id="inv-toggle-form" action="@Model.SelfUrl" handler="ToggleInvite"
+                     validation-summary="none" no-validate="true">
+                <ms-field id="inv-toggle-group" name="groupId" type="hidden" value="@Model.GroupId"></ms-field>
+                <ms-button id="inv-toggle" kind="secondary" full-width="true"
+                           icon="@(Model.Group.InviteEnabled ? "close" : "check")"
+                           label="@(Model.Group.InviteEnabled ? "Einladung deaktivieren" : "Einladung aktivieren")"
+                           name="enabled" value="@(Model.Group.InviteEnabled ? "false" : "true")"></ms-button>
+            </ms-form>
+
+            <ms-form id="inv-new-form" action="@Model.SelfUrl" handler="RegenerateInvite"
+                     validation-summary="none" no-validate="true">
+                <ms-field id="inv-new-group" name="groupId" type="hidden" value="@Model.GroupId"></ms-field>
+                <ms-button id="inv-new" kind="danger" full-width="true" icon="link" label="Neuen Link erzeugen"
+                           confirm="Neuen Einladungslink erzeugen? Der bisherige Link wird sofort ungültig."></ms-button>
+            </ms-form>
         }
     </div>
 </ms-card>

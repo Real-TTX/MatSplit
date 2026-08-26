@@ -45,6 +45,13 @@ public class EditModel(
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         var userId = currentUser.RequireUserId();
+
+        // Link guests join by invite and may not open groups of their own.
+        if (IsNew && !currentUser.CanCreateGroup)
+        {
+            return Forbid();
+        }
+
         await PrepareAsync(userId, cancellationToken);
 
         if (IsNew)
@@ -94,6 +101,12 @@ public class EditModel(
     {
         var userId = currentUser.RequireUserId();
         var groupId = Id ?? 0;
+
+        // Link guests join by invite and may not open groups of their own.
+        if (groupId <= 0 && !currentUser.CanCreateGroup)
+        {
+            return Forbid();
+        }
 
         await PrepareAsync(userId, cancellationToken);
         CurrencyOptions = BuildCurrencyOptions(Input.Currency);
@@ -241,7 +254,6 @@ public class EditModel(
         this.SetTitle(title, group?.Name ?? "Gemeinsame Kasse anlegen", "group");
 
         this.SetBreadcrumb(
-            new BreadcrumbItem("Gruppen", "/Groups"),
             group is null
                 ? new BreadcrumbItem("Neue Gruppe")
                 : new BreadcrumbItem(group.Name, $"/Groups/Details?groupId={group.Id}"),

@@ -340,7 +340,6 @@ public class EditModel(
 
         this.SetTitle(title, Group.Name, "paypal");
         this.SetBreadcrumb(
-            new BreadcrumbItem("Gruppen", "/Groups"),
             new BreadcrumbItem(Group.Name, "/Groups/Details?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture)),
             new BreadcrumbItem("Zahlungen", ListUrl),
             new BreadcrumbItem(title));

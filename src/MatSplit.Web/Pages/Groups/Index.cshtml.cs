@@ -39,6 +39,9 @@ public class IndexModel(
 
     public bool IsAdmin => currentUser.IsAdmin;
 
+    /// <summary>False for link guests, who may not open groups of their own.</summary>
+    public bool CanCreateGroup => currentUser.CanCreateGroup;
+
     /// <summary>
     /// Highest total-expenses value among the groups on the current page.
     /// Used purely visually to scale the progress bar of the mobile group
@@ -57,7 +60,9 @@ public class IndexModel(
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         var userId = currentUser.RequireUserId();
-        var all = await groups.ListGroupsForUserAsync(userId, currentUser.IsAdmin, cancellationToken);
+        // Administrators are not automatically members of every group; the
+        // overview shows only the groups the user actually belongs to.
+        var all = await groups.ListGroupsForUserAsync(userId, includeAll: false, cancellationToken);
 
         var manageFlags = new Dictionary<long, bool>(all.Count);
 
@@ -68,11 +73,8 @@ public class IndexModel(
         }
 
         this.SetMenuGroups(all.Select(g => new MenuGroupEntry(g.Id, g.Name, manageFlags[g.Id])).ToList());
-        this.SetTitle(
-            "Gruppen",
-            currentUser.IsAdmin ? "Alle Gruppen dieser Installation" : "Deine Gruppen",
-            "group");
-        this.SetBreadcrumb(new BreadcrumbItem("Gruppen"));
+        this.SetTitle("Meine Gruppen", "Deine Gruppen", "group");
+        // Start page: no breadcrumb (a single "Gruppen" crumb would only echo the title).
 
         SortOptions = BuildSortOptions(Sort);
 

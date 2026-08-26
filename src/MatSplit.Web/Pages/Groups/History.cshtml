@@ -39,42 +39,48 @@
 
     @if (Model.Entries.Count > 0)
     {
-        <div class="ms-feed">
-            @foreach (var entry in Model.Entries)
-            {
-                var actor = MatSplit.Web.Pages.Groups.HistoryModel.ActorName(entry);
-                var icon = MatSplit.Web.Pages.Groups.HistoryModel.FeedIcon(entry);
-                var title = MatSplit.Web.Pages.Groups.HistoryModel.FeedTitle(entry);
-                var money = MatSplit.Web.Pages.Groups.HistoryModel.FeedAmount(entry);
-
-                <div class="ms-feed__item">
-                    <span class="ms-feed__avatar">
-                        @if (icon is not null)
-                        {
-                            <ms-icon name="@icon" size="22"></ms-icon>
-                        }
-                        else
-                        {
-                            <ms-avatar name="@actor" size="md"></ms-avatar>
-                        }
-                    </span>
-                    <span class="ms-feed__text">
-                        <strong>@actor</strong> @MatSplit.Web.Pages.Groups.HistoryModel.FeedSentence(entry)
-                        @if (title is not null)
-                        {
-                            <span class="ms-feed__title">@title</span>
-                        }
-                        <span class="ms-feed__time">@MatSplit.Web.Pages.Groups.HistoryModel.RelativeTime(entry.CreateDate)</span>
-                    </span>
-                    @if (money is not null)
-                    {
-                        <span class="ms-feed__amount">
-                            <ms-money cents="@money.Cents" currency="@money.Currency"></ms-money>
-                        </span>
-                    }
-                </div>
-            }
-        </div>
+        <ms-table id="history-table" caption="Aktivitätsprotokoll der Gruppe">
+            <thead>
+                <tr>
+                    <th scope="col">Zeitpunkt</th>
+                    <th scope="col">Person</th>
+                    <th scope="col">Aktion</th>
+                    <th scope="col">Details</th>
+                    <th scope="col" class="ms-num">Betrag</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in Model.Entries)
+                {
+                    var title = MatSplit.Web.Pages.Groups.HistoryModel.FeedTitle(entry);
+                    var money = MatSplit.Web.Pages.Groups.HistoryModel.FeedAmount(entry);
+                    <tr>
+                        <td data-label="Zeitpunkt">
+                            @MatSplit.Web.Pages.Groups.HistoryModel.RelativeTime(entry.CreateDate)
+                        </td>
+                        <td data-label="Person">
+                            @MatSplit.Web.Pages.Groups.HistoryModel.ActorName(entry)
+                        </td>
+                        <td data-label="Aktion">
+                            <span class="ms-chip">@MatSplit.Web.Pages.Groups.HistoryModel.ActionLabel(entry.Action)</span>
+                        </td>
+                        <td data-label="Details">
+                            @MatSplit.Web.Pages.Groups.HistoryModel.FeedSentence(entry)
+                            @if (title is not null)
+                            {
+                                <strong>„@title“</strong>
+                            }
+                        </td>
+                        <td data-label="Betrag" class="ms-num">
+                            @if (money is not null)
+                            {
+                                <ms-money cents="@money.Cents" currency="@money.Currency"></ms-money>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </ms-table>
     }
 
     @if (Model.Result.TotalCount == 0)
@@ -92,14 +98,6 @@
                    total-count="@Model.Result.TotalCount"
                    page-url="@Model.BuildPageUrl()"></ms-pagination>
 
-    <ms-actions id="history-actions">
-        <ms-button id="history-balance" kind="secondary" icon="balance" label="Kontostand"
-                   href="@($"/Groups/Balance?groupId={Model.GroupId}")"></ms-button>
-        <ms-button id="history-payments" kind="secondary" icon="paypal" label="Zahlungen"
-                   href="@($"/Groups/Payments?groupId={Model.GroupId}")"></ms-button>
-        <ms-button id="history-expenses" kind="secondary" icon="expense" label="Ausgaben"
-                   href="@($"/Groups/Expenses?groupId={Model.GroupId}")"></ms-button>
-    </ms-actions>
 </ms-list>
 
 @* The desktop toolbar (search, date range, sort) is a desktop only addition;

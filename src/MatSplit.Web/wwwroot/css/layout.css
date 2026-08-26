@@ -455,6 +455,11 @@
     gap: var(--ms-space-6);
 }
 
+/* Admin pages carry wide data tables and get a roomier column. */
+.ms-content--wide {
+    max-width: 1280px;
+}
+
 .ms-footer {
     display: flex;
     flex-wrap: wrap;

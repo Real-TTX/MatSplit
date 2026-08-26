@@ -481,7 +481,6 @@ public class HistoryModel(
     {
         this.SetTitle("Historie", Group.Name, "history");
         this.SetBreadcrumb(
-            new BreadcrumbItem("Gruppen", "/Groups"),
             new BreadcrumbItem(Group.Name, "/Groups/Details?groupId=" + GroupId.ToString(CultureInfo.InvariantCulture)),
             new BreadcrumbItem("Historie"));
 

@@ -64,7 +64,7 @@
                                        href="@($"/Groups/Details?groupId={row.Id}")"></ms-button>
                             <ms-button id="@($"admin-group-{row.Id}-members")" kind="ghost" size="sm"
                                        icon="users" icon-only="true" label="Mitglieder"
-                                       href="@($"/Groups/Members?groupId={row.Id}")"></ms-button>
+                                       href="@($"/Groups/Details?groupId={row.Id}&tab=mitglieder")"></ms-button>
                             <ms-button id="@($"admin-group-{row.Id}-edit")" kind="ghost" size="sm"
                                        icon="edit" icon-only="true" label="Bearbeiten"
                                        href="@($"/Groups/Edit?id={row.Id}")"></ms-button>

@@ -8,6 +8,10 @@
     var hideMenu = ViewData.ReadFlag(LayoutKeys.HideMenu);
     var flash = TempData[LayoutKeys.Flash] as string;
     var flashError = TempData[LayoutKeys.FlashError] as string;
+    // The admin area holds wide data tables, so it gets a roomier content column
+    // than the app default. Mobile keeps the full-width behaviour either way.
+    var wideContent = (ViewContext.HttpContext.Request.Path.Value ?? "/")
+        .StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
 <html lang="de" class="ms-no-js" data-theme="@initialTheme" data-theme-preference="@themePreference">
@@ -71,7 +75,7 @@
         }
         <main class="ms-main" id="ms-main">
             <partial name="_Header" />
-            <div class="ms-content">
+            <div class="ms-content @(wideContent ? "ms-content--wide" : string.Empty)">
                 @if (!string.IsNullOrWhiteSpace(flash))
                 {
                     <ms-alert id="ms-flash" tone="success" text="@flash" dismissible="true"></ms-alert>

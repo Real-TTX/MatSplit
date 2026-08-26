@@ -8,9 +8,9 @@
     var myUserId = Model.MyBalance?.UserId ?? 0;
     var balanceUrl = $"/Groups/Balance?groupId={Model.GroupId}";
     var expenseEditUrl = $"/Groups/Expenses/Edit?groupId={Model.GroupId}";
-    var paymentEditUrl = $"/Groups/Payments/Edit?groupId={Model.GroupId}";
     var shareUrl = $"/Groups/Share?groupId={Model.GroupId}";
-    var membersUrl = $"/Groups/Members?groupId={Model.GroupId}";
+    var historyUrl = $"/Groups/History?groupId={Model.GroupId}";
+    var memberEditUrl = $"/Groups/MemberEdit?groupId={Model.GroupId}";
     var editUrl = $"/Groups/Edit?id={Model.GroupId}";
     var transactionsActive = Model.ActiveTab == MatSplit.Web.Pages.Groups.DetailsModel.TabTransactions;
     var membersActive = Model.ActiveTab == MatSplit.Web.Pages.Groups.DetailsModel.TabMembers;
@@ -51,13 +51,26 @@
         <ms-icon name="users" size="18"></ms-icon>
         <span>Mitglieder (@Model.Members.Count)</span>
     </a>
-    @if (Model.CanManage)
-    {
-        <a id="group-tab-settings" class="group-tabs__gear" href="@editUrl"
-           aria-label="Gruppe verwalten" title="Gruppe verwalten">
-            <ms-icon name="settings" size="20"></ms-icon>
+    <span class="group-tabs__tools">
+        <a id="group-tab-history" class="group-tabs__gear" href="@historyUrl"
+           aria-label="Historie" title="Historie">
+            <ms-icon name="history" size="20"></ms-icon>
         </a>
-    }
+        @if (Model.CanInvite)
+        {
+            <a id="group-tab-share" class="group-tabs__gear" href="@shareUrl"
+               aria-label="Einladung teilen" title="Einladung teilen">
+                <ms-icon name="share" size="20"></ms-icon>
+            </a>
+        }
+        @if (Model.CanManage)
+        {
+            <a id="group-tab-settings" class="group-tabs__gear" href="@editUrl"
+               aria-label="Gruppe verwalten" title="Gruppe verwalten">
+                <ms-icon name="cog" size="20"></ms-icon>
+            </a>
+        }
+    </span>
 </nav>
 
 @if (transactionsActive)
@@ -78,23 +91,10 @@
                    href="@Model.TypeUrl(typePayments)">Zahlungen</a>
             </div>
 
-            @* No-JS disclosure menu: choose expense or payment for a new entry. *@
-            <details class="txn-new">
-                <summary class="ms-btn ms-btn--primary txn-new__toggle">
-                    <ms-icon name="plus" size="18"></ms-icon>
-                    <span class="ms-btn__label">Neu</span>
-                </summary>
-                <div class="txn-new__menu" role="menu">
-                    <a role="menuitem" href="@expenseEditUrl">
-                        <ms-icon name="expense" size="18"></ms-icon>
-                        <span>Ausgabe</span>
-                    </a>
-                    <a role="menuitem" href="@paymentEditUrl">
-                        <ms-icon name="paypal" size="18"></ms-icon>
-                        <span>Zahlung</span>
-                    </a>
-                </div>
-            </details>
+            @* Primary action goes straight to a new expense (the common case);
+               payments are recorded from the Kontostand page. *@
+            <ms-button id="txn-new" kind="primary" icon="plus" label="Neue Ausgabe"
+                       href="@expenseEditUrl"></ms-button>
         </div>
 
         @if (Model.Transactions.IsEmpty)
@@ -110,12 +110,10 @@
             <div class="txn-list">
                 @foreach (var row in Model.Transactions.Items)
                 {
-                    var isExpense = row.Kind == TransactionKind.Expense;
                     <a class="ms-listrow txn-row" href="@row.EditUrl">
                         <span class="ms-listrow__icon"><ms-icon name="@row.Icon" size="20"></ms-icon></span>
                         <span class="ms-listrow__main">
                             <span class="txn-line">
-                                <span class="ms-chip txn-badge txn-badge--@(isExpense ? "expense" : "payment")">@row.TypeLabel</span>
                                 <span class="txn-title">@row.Title</span>
                             </span>
                             <span class="ms-listrow__sub">@row.Subtitle</span>
@@ -139,18 +137,46 @@
 else
 {
     <ms-card id="group-members-panel">
+        @{
+            var mAll = MatSplit.Web.Pages.Groups.DetailsModel.MemberAll;
+            var mAdmins = MatSplit.Web.Pages.Groups.DetailsModel.MemberAdmins;
+            var mUsers = MatSplit.Web.Pages.Groups.DetailsModel.MemberUsers;
+            var mAnon = MatSplit.Web.Pages.Groups.DetailsModel.MemberAnon;
+        }
+        <div class="txn-toolbar">
+            <div class="txn-filter" role="tablist" aria-label="Mitglieder filtern">
+                <a class="txn-filter__pill@(Model.ActiveMemberType == mAll ? " is-active" : string.Empty)"
+                   href="@Model.MemberTypeUrl(mAll)">Alle</a>
+                <a class="txn-filter__pill@(Model.ActiveMemberType == mAdmins ? " is-active" : string.Empty)"
+                   href="@Model.MemberTypeUrl(mAdmins)">Admins</a>
+                <a class="txn-filter__pill@(Model.ActiveMemberType == mUsers ? " is-active" : string.Empty)"
+                   href="@Model.MemberTypeUrl(mUsers)">Benutzer</a>
+                <a class="txn-filter__pill@(Model.ActiveMemberType == mAnon ? " is-active" : string.Empty)"
+                   href="@Model.MemberTypeUrl(mAnon)">Anonyme</a>
+            </div>
+            @if (Model.CanManage)
+            {
+                <ms-button id="members-add" kind="primary" icon="plus" label="Mitglied hinzufügen"
+                           href="@memberEditUrl"></ms-button>
+            }
+        </div>
+
         @if (Model.Members.Count == 0)
         {
             <ms-empty-state id="group-members-empty" title="Noch keine Mitglieder"
-                            text="Lade Leute per Link ein, dann kann abgerechnet werden."
+                            text="@(Model.CanManage ? "Nimm ein bestehendes Mitglied auf oder teile den Einladungslink." : "Lade Leute per Link ein, dann kann abgerechnet werden.")"
                             icon="users"
-                            action-url="@shareUrl"
-                            action-label="Einladung teilen"></ms-empty-state>
+                            action-url="@(Model.CanManage ? memberEditUrl : (Model.CanInvite ? shareUrl : null))"
+                            action-label="@(Model.CanManage ? "Mitglied hinzufügen" : "Einladung teilen")"></ms-empty-state>
+        }
+        else if (Model.FilteredMembers.Count == 0)
+        {
+            <p class="ms-muted" style="margin: var(--ms-space-3) 0;">Keine Mitglieder in dieser Kategorie.</p>
         }
         else
         {
             <div class="txn-list">
-                @foreach (var member in Model.Members)
+                @foreach (var member in Model.FilteredMembers)
                 {
                     var name = member.User?.DisplayName ?? "Unbekannt";
                     var isYou = myUserId != 0 && member.UserId == myUserId;
@@ -162,7 +188,7 @@ else
                                 <span class="txn-title">@name @(isYou ? "(du)" : string.Empty)</span>
                                 @if (member.ShareFactor != 1)
                                 {
-                                    <span class="ms-chip">Faktor @member.ShareFactor</span>
+                                    <span class="ms-chip">@member.ShareFactor Personen</span>
                                 }
                                 @if (member.IsGroupAdmin)
                                 {
@@ -174,17 +200,24 @@ else
                             <ms-money cents="@(memberBalance?.BalanceCents ?? 0)" currency="@currency"
                                       show-sign="true" strong="true"></ms-money>
                         </span>
+                        @if (Model.CanManage)
+                        {
+                            <ms-button id="@($"member-{member.UserId}-edit")" kind="ghost" size="sm"
+                                       icon="edit" icon-only="true" label="Mitglied bearbeiten"
+                                       href="@($"{memberEditUrl}&userId={member.UserId}")"></ms-button>
+                        }
                     </div>
                 }
             </div>
         }
 
-        <div class="ms-row group-members-actions">
-            <ms-button id="group-members-share" kind="primary" icon="share" label="Einladung teilen"
-                       href="@shareUrl"></ms-button>
-            <ms-button id="group-members-manage" kind="secondary" icon="users" label="Mitglieder verwalten"
-                       href="@membersUrl"></ms-button>
-        </div>
+        @if (Model.CanInvite)
+        {
+            <div class="ms-row group-members-actions">
+                <ms-button id="group-members-share" kind="secondary" icon="share" label="Einladung teilen"
+                           href="@shareUrl"></ms-button>
+            </div>
+        }
     </ms-card>
 }
 
@@ -227,11 +260,17 @@ else
         background: var(--ms-primary-hover);
     }
 
+    .group-tabs__tools {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--ms-space-2);
+        margin-left: auto;
+    }
+
     .group-tabs__gear {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        margin-left: auto;
         width: 42px;
         height: 42px;
         border-radius: 50%;
@@ -280,49 +319,6 @@ else
         color: var(--ms-primary-contrast);
     }
 
-    /* "+ Neu" disclosure menu, works without JavaScript via <details>. */
-    .txn-new {
-        position: relative;
-    }
-
-    .txn-new__toggle {
-        list-style: none;
-        cursor: pointer;
-    }
-
-    .txn-new__toggle::-webkit-details-marker {
-        display: none;
-    }
-
-    .txn-new__menu {
-        position: absolute;
-        right: 0;
-        z-index: 20;
-        min-width: 180px;
-        margin-top: 6px;
-        padding: 6px;
-        border: 1px solid var(--ms-border);
-        border-radius: var(--ms-radius);
-        background: var(--ms-surface);
-        box-shadow: var(--ms-shadow-2);
-    }
-
-    .txn-new__menu a {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-radius: var(--ms-radius-sm, 8px);
-        color: var(--ms-text);
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    .txn-new__menu a:hover {
-        background: var(--ms-primary-soft);
-        color: var(--ms-primary);
-    }
-
     .txn-row {
         color: inherit;
         text-decoration: none;
@@ -347,23 +343,29 @@ else
         font-weight: 650;
     }
 
-    .txn-badge {
-        flex: 0 0 auto;
-    }
-
-    .txn-badge--expense {
-        border-color: var(--ms-primary);
-        background: var(--ms-primary-soft);
-        color: var(--ms-primary);
-    }
-
-    .txn-badge--payment {
-        border-color: var(--ms-border-strong);
-        background: var(--ms-surface-3);
-        color: var(--ms-text-soft);
-    }
-
     .group-members-actions {
         margin-top: var(--ms-space-4);
+    }
+
+    /* On phones the tab labels ("Transaktionen", "Mitglieder") make the row too
+       wide next to the action icons, so the tabs collapse to icon-only. */
+    @@media (max-width: 640px) {
+        .group-tab span {
+            display: none;
+        }
+
+        .group-tab {
+            padding: 10px 16px;
+        }
+
+        /* Toolbar actions ("Neue Ausgabe" / "Mitglied hinzufügen") shrink to the
+           bare "+" icon on phones. */
+        .txn-toolbar .ms-btn__label {
+            display: none;
+        }
+
+        .txn-toolbar .ms-btn {
+            padding: 10px 12px;
+        }
     }
 </style>
