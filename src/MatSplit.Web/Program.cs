@@ -87,6 +87,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AllowAnonymousToPage("/Account/Login");
     options.Conventions.AllowAnonymousToPage("/Account/Logout");
     options.Conventions.AllowAnonymousToPage("/Join");
+    options.Conventions.AllowAnonymousToPage("/View");
     options.Conventions.AllowAnonymousToPage("/Error");
 
     // The 403 page has to render for signed out users too, otherwise the

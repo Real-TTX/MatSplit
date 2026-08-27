@@ -51,6 +51,12 @@ public class ShareModel(
     /// <summary>PRG target for the invite management forms on this page.</summary>
     public string SelfUrl => $"/Groups/Share?groupId={GroupId}";
 
+    /// <summary>Whether the public read-only link currently resolves.</summary>
+    public bool ReadOnlyEnabled { get; private set; }
+
+    /// <summary>Absolute read-only view link (/View?token=...).</summary>
+    public string ReadOnlyUrl { get; private set; } = string.Empty;
+
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         var userId = currentUser.RequireUserId();
@@ -85,6 +91,8 @@ public class ShareModel(
         CanManage = await currentUser.CanManageGroupAsync(GroupId, cancellationToken);
         AllowAnonymousJoin = (await appConfig.GetAsync(cancellationToken)).AllowAnonymousJoin;
         InviteUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/Join?token={group.InviteToken}";
+        ReadOnlyEnabled = group.ReadOnlyEnabled;
+        ReadOnlyUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/View?token={group.ReadOnlyToken}";
 
         var menu = await GroupMenu.BuildAsync(groups, currentUser, userId, cancellationToken);
         this.SetMenuGroups(menu, GroupId);
@@ -142,6 +150,46 @@ public class ShareModel(
         }
 
         this.Flash("Der Einladungslink wurde neu erzeugt, der alte Link ist ungültig.");
+        return RedirectToSelf();
+    }
+
+    public async Task<IActionResult> OnPostToggleReadOnlyAsync(bool enabled, CancellationToken cancellationToken)
+    {
+        var guard = await GuardManageAsync(cancellationToken);
+        if (guard is not null)
+        {
+            return guard;
+        }
+
+        var result = await groups.SetReadOnlyEnabledAsync(GroupId, enabled, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            this.FlashError(result.Error!);
+            return RedirectToSelf();
+        }
+
+        this.Flash(enabled ? "Der Nur-Lese-Link ist aktiv." : "Der Nur-Lese-Link ist deaktiviert.");
+        return RedirectToSelf();
+    }
+
+    public async Task<IActionResult> OnPostRegenerateReadOnlyAsync(CancellationToken cancellationToken)
+    {
+        var guard = await GuardManageAsync(cancellationToken);
+        if (guard is not null)
+        {
+            return guard;
+        }
+
+        var result = await groups.RegenerateReadOnlyTokenAsync(GroupId, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            this.FlashError(result.Error!);
+            return RedirectToSelf();
+        }
+
+        this.Flash("Der Nur-Lese-Link wurde neu erzeugt, der alte Link ist ungültig.");
         return RedirectToSelf();
     }
 

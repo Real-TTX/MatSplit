@@ -52,6 +52,8 @@ straight to the recipient.
   per-group admin flag
 - **Guests stay guests**: link members can neither open groups of their own nor pass the
   invite link on
+- Share a **read-only link**: a public, view-only page of the balance and transactions –
+  no login, no editing, off by default and revocable
 - Everything runs on your machine – no telemetry, no external calls
 
 **Interface**
@@ -99,6 +101,14 @@ participant shows their computed share right away – the exact cent split happe
 
 An invite link with copy, WhatsApp and Telegram shortcuts; and an admin area with users,
 groups, settings and per-installation statistics.
+
+### A public read-only link
+
+![The public read-only view of a group with balance, settlements and transactions](docs/images/readonly-view.png)
+
+Turn on a **read-only link** to show the current state of a group to anyone – balance,
+settlements, transactions and members – without a login and without the ability to change
+anything. It has its own token, is off by default and can be revoked at any time.
 
 ### On the phone
 

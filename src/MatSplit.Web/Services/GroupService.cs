@@ -509,6 +509,65 @@ public sealed class GroupService(
         return Result.Ok();
     }
 
+    /// <summary>Resolves a group from its read-only token, only when the link is enabled.</summary>
+    public async Task<Group?> GetGroupByReadOnlyTokenAsync(string? readOnlyToken, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(readOnlyToken))
+        {
+            return null;
+        }
+
+        return await db.Groups
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.ReadOnlyToken == readOnlyToken && x.ReadOnlyEnabled && x.UpdateState != UpdateState.Deleted,
+                cancellationToken);
+    }
+
+    public async Task<Result<string>> RegenerateReadOnlyTokenAsync(long groupId, CancellationToken cancellationToken = default)
+    {
+        var group = await db.Groups.FirstOrDefaultAsync(
+            x => x.Id == groupId && x.UpdateState != UpdateState.Deleted, cancellationToken);
+
+        if (group is null)
+        {
+            return Result.Fail<string>("Die Gruppe wurde nicht gefunden.");
+        }
+
+        group.ReadOnlyToken = Guid.NewGuid().ToString();
+        group.UpdateState = UpdateState.Updated;
+
+        await history.LogAsync(
+            groupId,
+            null,
+            HistoryService.EntityTypes.Group,
+            groupId,
+            HistoryService.Actions.Updated,
+            "Der Nur-Lese-Link wurde neu erzeugt.",
+            saveChanges: false,
+            cancellationToken: cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+        return Result.Ok(group.ReadOnlyToken);
+    }
+
+    public async Task<Result> SetReadOnlyEnabledAsync(long groupId, bool enabled, CancellationToken cancellationToken = default)
+    {
+        var group = await db.Groups.FirstOrDefaultAsync(
+            x => x.Id == groupId && x.UpdateState != UpdateState.Deleted, cancellationToken);
+
+        if (group is null)
+        {
+            return Result.Fail("Die Gruppe wurde nicht gefunden.");
+        }
+
+        group.ReadOnlyEnabled = enabled;
+        group.UpdateState = UpdateState.Updated;
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Result.Ok();
+    }
+
     /// <summary>
     /// Invite-link entry point: creates an anonymous user with the given display
     /// name and adds it to the group. The Join page then signs that user in.

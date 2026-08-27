@@ -1,0 +1,91 @@
+@page
+@model MatSplit.Web.Pages.ViewModel
+
+@if (!Model.Found)
+{
+    <ms-card id="ro-missing" title="Nicht verfügbar" icon="link" tone="warning">
+        <p class="ms-muted">Dieser Nur-Lese-Link ist ungültig oder wurde deaktiviert.</p>
+    </ms-card>
+}
+else
+{
+    <div class="ms-stack">
+        <ms-card id="ro-head" title="@Model.Group!.Name" icon="group" tone="accent"
+                 subtitle="@(string.IsNullOrWhiteSpace(Model.Group.Description) ? "Geteilte Gruppe" : Model.Group.Description)">
+            <ms-alert id="ro-note" tone="info"
+                      text="Nur-Lese-Ansicht: Diese Seite zeigt den aktuellen Stand der Gruppe. Ändern kann hier niemand etwas."></ms-alert>
+        </ms-card>
+
+        <div class="ms-grid ms-grid--3">
+            <ms-card id="ro-expenses" title="Ausgaben" icon="expense">
+                <ms-money cents="@Model.Balance.TotalExpensesCents" currency="@Model.Currency" strong="true"></ms-money>
+            </ms-card>
+            <ms-card id="ro-payments" title="Zahlungen" icon="ausgleich">
+                <ms-money cents="@Model.Balance.TotalPaymentsCents" currency="@Model.Currency" strong="true"></ms-money>
+            </ms-card>
+            <ms-card id="ro-open" title="Offener Ausgleich" icon="balance" tone="accent">
+                <ms-money cents="@Model.OpenSettlementCents" currency="@Model.Currency" strong="true"></ms-money>
+            </ms-card>
+        </div>
+
+        <ms-card id="ro-members" title="Kontostand pro Mitglied" icon="users"
+                 subtitle="Positiv bedeutet: bekommt Geld zurück.">
+            @foreach (var b in Model.Balance.Balances)
+            {
+                <div class="ms-listrow">
+                    <ms-avatar name="@b.DisplayName" size="md"></ms-avatar>
+                    <span class="ms-listrow__main"><strong>@b.DisplayName</strong></span>
+                    <span class="ms-listrow__amount">
+                        <ms-money cents="@b.BalanceCents" currency="@Model.Currency" show-sign="true" strong="true"></ms-money>
+                    </span>
+                </div>
+            }
+        </ms-card>
+
+        <ms-card id="ro-settlements" title="Ausgleichszahlungen" icon="balance"
+                 subtitle="Minimale Überweisungen, damit alle bei null stehen.">
+            @if (Model.Balance.Settlements.Count == 0)
+            {
+                <ms-alert id="ro-settled" tone="success" title="Alles ausgeglichen"
+                          text="Zurzeit schuldet niemand jemandem Geld."></ms-alert>
+            }
+            else
+            {
+                @foreach (var s in Model.Balance.Settlements)
+                {
+                    <div class="ms-listrow">
+                        <span class="ms-listrow__icon"><ms-icon name="ausgleich" size="20"></ms-icon></span>
+                        <span class="ms-listrow__main"><strong>@s.FromDisplayName → @s.ToDisplayName</strong></span>
+                        <span class="ms-listrow__amount">
+                            <ms-money cents="@s.AmountCents" currency="@Model.Currency" strong="true"></ms-money>
+                        </span>
+                    </div>
+                }
+            }
+        </ms-card>
+
+        <ms-card id="ro-transactions" title="Transaktionen" icon="expense">
+            @if (Model.Transactions.Count == 0)
+            {
+                <p class="ms-muted">Noch keine Transaktionen.</p>
+            }
+            else
+            {
+                @foreach (var row in Model.Transactions)
+                {
+                    <div class="ms-listrow">
+                        <span class="ms-listrow__icon"><ms-icon name="@row.Icon" size="20"></ms-icon></span>
+                        <span class="ms-listrow__main">
+                            <strong>@row.Title</strong>
+                            <span class="ms-listrow__sub">@row.Subtitle</span>
+                        </span>
+                        <span class="ms-listrow__amount">
+                            <ms-money cents="@row.AmountCents" currency="@Model.Currency"></ms-money>
+                            <span class="ms-listrow__sub">@MatSplit.Web.Pages.Groups.DetailsModel.RelativeDay(row.Date)</span>
+                        </span>
+                    </div>
+                }
+            }
+        </ms-card>
+    </div>
+}

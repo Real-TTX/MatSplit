@@ -18,6 +18,12 @@ public class Group : AuditableEntity
 
     public bool InviteEnabled { get; set; } = true;
 
+    /// <summary>Secret used by the public, read-only view page (/View?token=...).</summary>
+    public string ReadOnlyToken { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>When off, the read-only link does not resolve. Off by default.</summary>
+    public bool ReadOnlyEnabled { get; set; }
+
     public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
 
     public ICollection<Expense> Expenses { get; set; } = new List<Expense>();

@@ -83,6 +83,42 @@
                 <ms-button id="inv-new" kind="danger" full-width="true" icon="link" label="Neuen Link erzeugen"
                            confirm="Neuen Einladungslink erzeugen? Der bisherige Link wird sofort ungültig."></ms-button>
             </ms-form>
+
+            @* Read-only link: a public, view-only page of the group. Separate token,
+               off by default, managed only by group administrators. *@
+            <hr class="ms-share__sep" />
+
+            <p class="ms-share__lead">
+                Nur-Lese-Link: eine öffentliche, schreibgeschützte Ansicht der Gruppe –
+                zum Zeigen, ohne Beitritt und ohne Bearbeiten.
+            </p>
+
+            @if (Model.ReadOnlyEnabled)
+            {
+                <ms-field id="ro-url" type="static" label="Nur-Lese-Link" value="@Model.ReadOnlyUrl"></ms-field>
+                <ms-button id="ro-copy" kind="primary" full-width="true" type="button"
+                           label="Nur-Lese-Link kopieren" data-ms-copy="#ro-url"></ms-button>
+            }
+
+            <ms-form id="ro-toggle-form" action="@Model.SelfUrl" handler="ToggleReadOnly"
+                     validation-summary="none" no-validate="true">
+                <ms-field id="ro-toggle-group" name="groupId" type="hidden" value="@Model.GroupId"></ms-field>
+                <ms-button id="ro-toggle" kind="secondary" full-width="true"
+                           icon="@(Model.ReadOnlyEnabled ? "close" : "check")"
+                           label="@(Model.ReadOnlyEnabled ? "Nur-Lese-Link deaktivieren" : "Nur-Lese-Link aktivieren")"
+                           name="enabled" value="@(Model.ReadOnlyEnabled ? "false" : "true")"></ms-button>
+            </ms-form>
+
+            @if (Model.ReadOnlyEnabled)
+            {
+                <ms-form id="ro-new-form" action="@Model.SelfUrl" handler="RegenerateReadOnly"
+                         validation-summary="none" no-validate="true">
+                    <ms-field id="ro-new-group" name="groupId" type="hidden" value="@Model.GroupId"></ms-field>
+                    <ms-button id="ro-new" kind="danger" full-width="true" icon="link"
+                               label="Neuen Nur-Lese-Link erzeugen"
+                               confirm="Neuen Nur-Lese-Link erzeugen? Der bisherige Link wird sofort ungültig."></ms-button>
+                </ms-form>
+            }
         }
     </div>
 </ms-card>
@@ -105,6 +141,13 @@
             color: var(--ms-text-soft);
             font-size: var(--ms-text-lg);
             line-height: 1.5;
+        }
+
+        .ms-share__sep {
+            width: 100%;
+            border: 0;
+            border-top: 1px solid var(--ms-border);
+            margin: var(--ms-space-2) 0;
         }
 
         .ms-share > .ms-field,

@@ -105,9 +105,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         entity.Property(x => x.Currency).HasColumnName("Currency").HasMaxLength(3).HasDefaultValue("EUR").IsRequired();
         entity.Property(x => x.InviteToken).HasColumnName("InviteToken").HasMaxLength(64).IsRequired();
         entity.Property(x => x.InviteEnabled).HasColumnName("InviteEnabled").IsRequired();
+        entity.Property(x => x.ReadOnlyToken).HasColumnName("ReadOnlyToken").HasMaxLength(64).IsRequired();
+        entity.Property(x => x.ReadOnlyEnabled).HasColumnName("ReadOnlyEnabled").IsRequired();
 
         entity.HasIndex(x => x.Token).IsUnique().HasDatabaseName("IX_Groups_Token");
         entity.HasIndex(x => x.InviteToken).IsUnique().HasDatabaseName("IX_Groups_InviteToken");
+        entity.HasIndex(x => x.ReadOnlyToken).IsUnique().HasDatabaseName("IX_Groups_ReadOnlyToken");
     }
 
     private static void ConfigureGroupMembers(ModelBuilder modelBuilder)

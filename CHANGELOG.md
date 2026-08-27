@@ -7,6 +7,13 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **Nur-Lese-Link** je Gruppe: eine oeffentliche, schreibgeschuetzte Ansicht
+  (`/View?token=...`) mit Kontostand, Ausgleich, Transaktionen und Mitgliedern — ohne
+  Login, ohne Beitritt, ohne Bearbeiten. Eigener Token, standardmaessig aus, jederzeit
+  deaktivier- und neu erzeugbar; Verwaltung auf `/Groups/Share`.
+
 ### Geplant
 
 - Bestehende Benutzer per E-Mail in Gruppen einladen (aktuell: Einladungslink).
