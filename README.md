@@ -33,6 +33,7 @@ straight to the recipient.
 **Groups & members**
 - Groups for a holiday, a flat or a project – with currency, description and a full history
 - Join through an **invite link** as an anonymous guest (no account) or as an existing user
+- Add **managed members** by name only – people without a login that one person books for
 - **Person count per member** (a family = 3), overridable per expense
 - Merge duplicate guests ("Horst" and "Horsti" are the same person)
 

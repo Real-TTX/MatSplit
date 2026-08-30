@@ -13,6 +13,15 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 - Export der Gruppenhistorie (CSV/PDF).
 - EF-Core-Migrations als Ersatz fuer `EnsureCreated()`.
 
+## [0.4.0] - 2026-08-30
+
+### Hinzugefuegt
+
+- **Verwaltete Mitglieder ohne eigenen Zugang**: Ein Gruppen-Admin kann beim „Mitglied
+  hinzufuegen" eine Person direkt per **Name** anlegen (kein Login, kein Konto, nur in
+  dieser Gruppe) und alle Ausgaben/Anteile auf ihren Namen buchen. Zusammen mit dem
+  Nur-Lese-Link laesst sich eine Gruppe so zentral verwalten und transparent teilen.
+
 ## [0.3.0] - 2026-08-27
 
 ### Hinzugefuegt
@@ -134,7 +143,8 @@ lauffaehig als einzelner Docker-Container.
 - Kein Multi-Arch-Image: der CI-Build erzeugt nur `linux/amd64`.
 - Kein integriertes TLS — HTTPS bitte ueber einen Reverse Proxy davor.
 
-[Unreleased]: https://github.com/Real-TTX/MatSplit/compare/v0.3.0...dev
+[Unreleased]: https://github.com/Real-TTX/MatSplit/compare/v0.4.0...dev
+[0.4.0]: https://github.com/Real-TTX/MatSplit/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Real-TTX/MatSplit/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Real-TTX/MatSplit/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Real-TTX/MatSplit/releases/tag/v0.1.0

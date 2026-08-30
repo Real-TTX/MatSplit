@@ -101,10 +101,47 @@ public class MemberEditModel(
             return await SaveExistingAsync(cancellationToken);
         }
 
+        var newName = Input.NewName?.Trim();
+        var hasNewName = !string.IsNullOrWhiteSpace(newName);
+
+        // "Add by name" and "add existing user" are alternatives, so only one of
+        // the two inputs has to validate; drop the other one's model error.
+        if (hasNewName)
+        {
+            ModelState.Remove("Input.UserId");
+        }
+        else if (Input.UserId <= 0)
+        {
+            ModelState.Remove("Input.UserId");
+            ModelState.AddModelError("Input.NewName",
+                "Bitte einen Namen eingeben oder einen bestehenden Benutzer auswählen.");
+        }
+
         if (!ModelState.IsValid)
         {
             ApplyLayout();
             return Page();
+        }
+
+        if (hasNewName)
+        {
+            // A managed member has no own login: create an anonymous user (name
+            // only, no password) and add it straight to this group. One person
+            // then books everything on their behalf.
+            var managed = await users.CreateAnonymousUserAsync(newName!, cancellationToken);
+
+            var addedManaged = await groups.AddMemberAsync(
+                GroupId, managed.Id, Input.ShareFactor, Input.IsGroupAdmin, cancellationToken);
+
+            if (addedManaged.IsFailure)
+            {
+                ModelState.AddModelError(string.Empty, addedManaged.Error!);
+                ApplyLayout();
+                return Page();
+            }
+
+            this.Flash($"\"{managed.DisplayName}\" wurde als verwaltetes Mitglied hinzugefügt.");
+            return LocalRedirect(ListUrl);
         }
 
         var added = await groups.AddMemberAsync(
@@ -305,6 +342,14 @@ public class MemberEditModel(
     /// <summary>Form model of the membership editor.</summary>
     public sealed class InputModel
     {
+        /// <summary>
+        /// Name of a new managed member without an own login. When set it takes
+        /// precedence over <see cref="UserId"/>.
+        /// </summary>
+        [StringLength(200, ErrorMessage = "Maximal 200 Zeichen.")]
+        [Display(Name = "Name")]
+        public string? NewName { get; set; }
+
         [Range(1, long.MaxValue, ErrorMessage = "Bitte einen Benutzer auswählen.")]
         [Display(Name = "Benutzer")]
         public long UserId { get; set; }
