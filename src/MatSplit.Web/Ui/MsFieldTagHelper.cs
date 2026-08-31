@@ -448,8 +448,11 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
 
         if (string.Equals(type, "money", StringComparison.Ordinal))
         {
-            attributes["step"] = string.IsNullOrWhiteSpace(Step) ? "0.01" : Step!;
+            // Text input with a decimal keypad; the value is kept invariant
+            // (dot) by site.js so model binding and validation stay correct.
             attributes["inputmode"] = "decimal";
+            attributes["autocomplete"] = "off";
+            attributes["data-ms-money"] = "true";
         }
         else if (!string.IsNullOrWhiteSpace(Step))
         {
@@ -748,7 +751,10 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
 
     private static string HtmlInputType(string type) => type switch
     {
-        "money" or "number" => "number",
+        // Money renders as text (not number) so a comma decimal separator can be
+        // typed on any locale/keyboard; site.js normalises it to an invariant dot.
+        "money" => "text",
+        "number" => "number",
         "datetime" or "datetime-local" => "datetime-local",
         "date" => "date",
         "time" => "time",

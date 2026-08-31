@@ -5,6 +5,9 @@
 
 .ms-app {
     min-height: 100dvh;
+    /* Disable the double-tap-to-zoom gesture (keeps scrolling and pinch-zoom),
+       so the app does not zoom by accident on a phone. */
+    touch-action: manipulation;
 }
 
 .ms-shell {

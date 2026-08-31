@@ -902,6 +902,33 @@
         });
     }
 
+    /* ------------------------------- money ------------------------------- */
+
+    /*
+        Money fields render as text with inputmode="decimal" so a comma decimal
+        separator can be typed on any locale/keyboard. Keep the value invariant
+        (dot) live, so client validation, the server model binding and the share
+        preview all read a valid number.
+    */
+    function initMoney() {
+        document.addEventListener('input', function (event) {
+            var el = event.target;
+            if (!el || !el.hasAttribute || !el.hasAttribute('data-ms-money')) {
+                return;
+            }
+            if (el.value.indexOf(',') === -1) {
+                return;
+            }
+            var start = el.selectionStart;
+            el.value = el.value.replace(/,/g, '.');
+            try {
+                el.setSelectionRange(start, start);
+            } catch (e) {
+                /* setSelectionRange is not supported on every input type */
+            }
+        });
+    }
+
     /* -------------------------------- boot ------------------------------- */
 
     function init() {
@@ -917,6 +944,7 @@
         initClipboard();
         initShare();
         initCamera();
+        initMoney();
         initValidation(document);
     }
 

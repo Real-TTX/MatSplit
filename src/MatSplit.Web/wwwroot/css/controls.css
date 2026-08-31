@@ -761,6 +761,16 @@
     opacity: 0.8;
 }
 
+/* iOS auto-zooms when a focused field is smaller than 16px. Keep form controls
+   at 16px on small screens so tapping a field never zooms the page. */
+@media (max-width: 900px) {
+    .ms-input,
+    .ms-select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
 .ms-input:disabled,
 .ms-select:disabled {
     background: var(--ms-surface-3);

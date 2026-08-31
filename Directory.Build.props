@@ -7,7 +7,7 @@
   -->
   <PropertyGroup>
     <VersionMajor>0</VersionMajor>
-    <VersionMinor>4</VersionMinor>
+    <VersionMinor>5</VersionMinor>
   </PropertyGroup>
 
   <!-- Local/dev fallback version when no CI build number is supplied. -->

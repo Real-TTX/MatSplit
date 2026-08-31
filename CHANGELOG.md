@@ -13,6 +13,22 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 - Export der Gruppenhistorie (CSV/PDF).
 - EF-Core-Migrations als Ersatz fuer `EnsureCreated()`.
 
+## [0.5.0] - 2026-08-31
+
+### Geaendert
+
+- **Nur-Lese-Ansicht** (`/View`) neu gestaltet: Zusammenfassung mit Kennzahlen, Pill-Tabs
+  „Transaktionen"/„Mitglieder" und Typ-Filter (Alle/Ausgaben/Zahlungen) — Ausgaben im Fokus.
+
+### Behoben
+
+- **Betraege mit Komma**: Geld-Eingabefelder akzeptieren jetzt Komma **und** Punkt als
+  Dezimaltrenner (Text-Feld mit `inputmode=decimal`, Normalisierung auf den invarianten Punkt).
+- **Auto-Zoom auf dem Handy**: Formularfelder sind auf kleinen Screens mindestens 16px gross,
+  dazu `touch-action: manipulation` — kein Zoom mehr beim Antippen eines Feldes oder per Doppeltipp.
+- Service-Worker-Cache-Version erhoeht (v7), damit installierte PWAs CSS/JS nach einem Update
+  frisch laden.
+
 ## [0.4.0] - 2026-08-30
 
 ### Hinzugefuegt
@@ -143,7 +159,8 @@ lauffaehig als einzelner Docker-Container.
 - Kein Multi-Arch-Image: der CI-Build erzeugt nur `linux/amd64`.
 - Kein integriertes TLS — HTTPS bitte ueber einen Reverse Proxy davor.
 
-[Unreleased]: https://github.com/Real-TTX/MatSplit/compare/v0.4.0...dev
+[Unreleased]: https://github.com/Real-TTX/MatSplit/compare/v0.5.0...dev
+[0.5.0]: https://github.com/Real-TTX/MatSplit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Real-TTX/MatSplit/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Real-TTX/MatSplit/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Real-TTX/MatSplit/compare/v0.1.0...v0.2.0
