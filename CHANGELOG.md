@@ -7,6 +7,14 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 
 ## [Unreleased]
 
+### Geplant
+
+- Bestehende Benutzer per E-Mail in Gruppen einladen (aktuell: Einladungslink).
+- Export der Gruppenhistorie (CSV/PDF).
+- EF-Core-Migrations als Ersatz fuer `EnsureCreated()`.
+
+## [0.6.0] - 2026-10-14
+
 ### Geaendert
 
 - **Design: MatDesign uebernommen** (MatUi 0.1.0, Kopie unter `wwwroot/matui/`). Die eigene Oberflaeche
@@ -45,12 +53,6 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 ### Behoben
 
 - Felder sind auf Touch-Geraeten mindestens 16 px gross (MatUi setzt 15 px, iOS zoomte dann beim Fokus).
-
-### Geplant
-
-- Bestehende Benutzer per E-Mail in Gruppen einladen (aktuell: Einladungslink).
-- Export der Gruppenhistorie (CSV/PDF).
-- EF-Core-Migrations als Ersatz fuer `EnsureCreated()`.
 
 ## [0.5.0] - 2026-08-31
 
@@ -198,7 +200,8 @@ lauffaehig als einzelner Docker-Container.
 - Kein Multi-Arch-Image: der CI-Build erzeugt nur `linux/amd64`.
 - Kein integriertes TLS — HTTPS bitte ueber einen Reverse Proxy davor.
 
-[Unreleased]: https://github.com/Real-TTX/MatSplit/compare/v0.5.0...dev
+[Unreleased]: https://github.com/Real-TTX/MatSplit/compare/v0.6.0...dev
+[0.6.0]: https://github.com/Real-TTX/MatSplit/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Real-TTX/MatSplit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Real-TTX/MatSplit/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Real-TTX/MatSplit/compare/v0.2.0...v0.3.0
