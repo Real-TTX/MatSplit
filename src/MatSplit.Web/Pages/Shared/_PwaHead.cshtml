@@ -1,0 +1,32 @@
+@*
+    Everything the head needs to make MatSplit an installed app, on iOS and on Android: the manifest, the
+    colour of the system bars, the icons and the iOS home screen metadata.
+
+    theme-color: the colour of the top bar of the shell (--mat-glass of MatUi), so the system bar and the bar
+    of the app are one surface. The two media-query tags follow the system theme until the script runs;
+    site.js then writes the colour of the theme that is really shown (the user can choose Light or Dark
+    against the system) into both and drops the media queries.
+
+    apple-mobile-web-app-status-bar-style = default: an opaque status bar in the colour of the system, with its
+    own text colour. black-translucent would let the page run under the status bar with white text, which is
+    unreadable on the light top bar. The top bar of MatUi pads for the notch (safe-area-inset-top) either way.
+*@
+<link rel="manifest" href="~/manifest.webmanifest" />
+<meta name="theme-color" content="#f5f4f1" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#151514" media="(prefers-color-scheme: dark)" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="MatSplit" />
+<meta name="application-name" content="MatSplit" />
+<meta name="format-detection" content="telephone=no" />
+<link rel="icon" type="image/svg+xml" href="~/img/favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="~/img/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="~/img/icon-192.png" />
+@* iOS ignores svg for apple-touch-icon and would take a screenshot of the page; it also wants an opaque square (it rounds the corners itself). *@
+<link rel="apple-touch-icon" sizes="180x180" href="~/img/apple-touch-icon.png" />
+@* only Apple devices read them (iPadOS reports itself as a Mac) - 56 links are no weight for the rest *@
+@if (System.Text.RegularExpressions.Regex.IsMatch(Context.Request.Headers.UserAgent.ToString(), "iPhone|iPad|iPod|Macintosh"))
+{
+    <partial name="_SplashLinks" />
+}

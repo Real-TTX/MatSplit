@@ -60,7 +60,9 @@ straight to the recipient.
 **Interface**
 - A **hub per group**: balance hero, a transaction tab and a members tab with filters
   (all / admins / users / guests)
-- Installable **PWA**, offline-capable with background sync, tuned for iOS and Android
+- Installable **PWA**, offline-capable with background sync, tuned for iOS and Android: safe areas on all four
+  edges (notch, home indicator, landscape), full-screen shell, on-screen keyboard aware, maskable icons,
+  iOS launch images in light and dark, system bars in the colour of the app
 - **Light / dark / system** theme, a left menu on the desktop and a drawer on the phone
 
 ## Screenshots
@@ -219,8 +221,12 @@ belong to that user: `sudo chown -R 1654:1654 /srv/matsplit`.
 - Cookie authentication with its own `UserSessions` table; sessions survive restarts because
   the DataProtection keys live on the `/data` volume
 - **Money is always a `long` in cents** (`…Cents`) – never floating point
-- The interface is server-rendered with a small `ms-*` tag-helper control library and **plain
-  JavaScript** – no framework, no build step, no CDN, works offline
+- The interface is server-rendered with a small `ms-*` tag-helper control library on top of
+  **MatUi**, the design system of all Mat apps ([MatDesign](https://github.com/real-ttx/matdesign):
+  one accent colour, light/dark, flat look, shell, controls) and **plain JavaScript** – no
+  framework, no build step, no CDN, works offline. The toolkit is a copy under `wwwroot/matui/`
+  (updated from MatDesign, never loaded from elsewhere); what is only MatSplit's lives in
+  `wwwroot/css/app.css`
 - Non-root container (`app`, uid `1654`) with a `HEALTHCHECK` on `/health`
 - The interface is German; the code and its comments are English
 

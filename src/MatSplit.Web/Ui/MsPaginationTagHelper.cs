@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Page links, rendered directly below the table. Renders nothing when the
+/// MatUi pager (<c>mat-pager</c>), rendered directly below the table. Renders nothing when the
 /// result fits on a single page. The url template either contains the
 /// placeholder {0} for the page number or the page parameter is appended to the
 /// given url.
@@ -35,7 +35,7 @@ public sealed class MsPaginationTagHelper : MsTagHelperBase
     /// <summary>Maximum number of numbered links around the current page.</summary>
     public int Window { get; set; } = 2;
 
-    /// <summary>Renders the "Seite x von y" hint inside the navigation.</summary>
+    /// <summary>Renders the "51 bis 75 von 190" hint inside the navigation.</summary>
     public bool ShowInfo { get; set; } = true;
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
@@ -58,12 +58,22 @@ public sealed class MsPaginationTagHelper : MsTagHelperBase
         var nav = new TagBuilder("nav");
         nav.Attributes["id"] = id;
         nav.Attributes["aria-label"] = "Seitennavigation";
-        nav.AddCssClass(MsHtml.Classes("ms-pagination", CssClass));
+        nav.AddCssClass(MsHtml.Classes("mat-pager", CssClass));
+
+        if (ShowInfo)
+        {
+            var first = ((current - 1) * pageSize) + 1;
+            var last = Math.Min(current * pageSize, TotalCount);
+            var info = new TagBuilder("span");
+            info.AddCssClass("mat-pager__info");
+            info.InnerHtml.Append(string.Format(CultureInfo.InvariantCulture, "{0} bis {1} von {2}", first, last, TotalCount));
+            nav.InnerHtml.AppendHtml(info);
+        }
 
         var pages = new TagBuilder("div");
-        pages.AddCssClass("ms-pagination__pages");
+        pages.AddCssClass("mat-pager__pages");
 
-        pages.InnerHtml.AppendHtml(Step(id + "-prev", current - 1, current > 1, "back", "Vorherige Seite"));
+        pages.InnerHtml.AppendHtml(Step(id + "-prev", current - 1, current > 1, "chevron-left", "Vorherige Seite"));
 
         var lastRendered = 0;
 
@@ -77,8 +87,9 @@ public sealed class MsPaginationTagHelper : MsTagHelperBase
             if (lastRendered > 0 && number - lastRendered > 1)
             {
                 var gap = new TagBuilder("span");
-                gap.AddCssClass("ms-pagination__gap");
-                gap.InnerHtml.Append("\u2026");
+                gap.AddCssClass("mat-pager__gap");
+                gap.Attributes["aria-hidden"] = "true";
+                gap.InnerHtml.Append("…");
                 pages.InnerHtml.AppendHtml(gap);
             }
 
@@ -86,21 +97,8 @@ public sealed class MsPaginationTagHelper : MsTagHelperBase
             lastRendered = number;
         }
 
-        pages.InnerHtml.AppendHtml(Step(id + "-next", current + 1, current < totalPages, "forward", "N\u00e4chste Seite"));
+        pages.InnerHtml.AppendHtml(Step(id + "-next", current + 1, current < totalPages, "chevron-right", "Nächste Seite"));
         nav.InnerHtml.AppendHtml(pages);
-
-        if (ShowInfo)
-        {
-            var info = new TagBuilder("span");
-            info.AddCssClass("ms-pagination__info");
-            info.InnerHtml.Append(string.Format(
-                CultureInfo.InvariantCulture,
-                "Seite {0} von {1} \u00b7 {2} Eintr\u00e4ge",
-                current,
-                totalPages,
-                TotalCount));
-            nav.InnerHtml.AppendHtml(info);
-        }
 
         MsHtml.CopyAttributes(output, nav);
 
@@ -133,7 +131,7 @@ public sealed class MsPaginationTagHelper : MsTagHelperBase
         if (active)
         {
             var marker = new TagBuilder("span");
-            marker.AddCssClass("ms-page-link is-active");
+            marker.AddCssClass("mat-pager__btn is-current");
             marker.Attributes["aria-current"] = "page";
             marker.Attributes["id"] = id + "-page-" + text;
             marker.InnerHtml.Append(text);
@@ -141,7 +139,7 @@ public sealed class MsPaginationTagHelper : MsTagHelperBase
         }
 
         var link = new TagBuilder("a");
-        link.AddCssClass("ms-page-link");
+        link.AddCssClass("mat-pager__btn");
         link.Attributes["href"] = BuildUrl(number);
         link.Attributes["id"] = id + "-page-" + text;
         link.Attributes["aria-label"] = "Seite " + text;
@@ -154,20 +152,20 @@ public sealed class MsPaginationTagHelper : MsTagHelperBase
         if (!enabled)
         {
             var disabled = new TagBuilder("span");
-            disabled.AddCssClass("ms-page-link ms-page-link--step is-disabled");
+            disabled.AddCssClass("mat-pager__btn is-disabled");
             disabled.Attributes["aria-hidden"] = "true";
             disabled.Attributes["id"] = id;
-            disabled.InnerHtml.AppendHtml(MsHtml.Icon(icon, 18));
+            disabled.InnerHtml.AppendHtml(MsHtml.Icon(icon));
             return disabled;
         }
 
         var link = new TagBuilder("a");
-        link.AddCssClass("ms-page-link ms-page-link--step");
+        link.AddCssClass("mat-pager__btn");
         link.Attributes["href"] = BuildUrl(target);
         link.Attributes["id"] = id;
         link.Attributes["aria-label"] = label;
-        link.Attributes["rel"] = string.Equals(icon, "back", StringComparison.Ordinal) ? "prev" : "next";
-        link.InnerHtml.AppendHtml(MsHtml.Icon(icon, 18));
+        link.Attributes["rel"] = string.Equals(icon, "chevron-left", StringComparison.Ordinal) ? "prev" : "next";
+        link.InnerHtml.AppendHtml(MsHtml.Icon(icon));
         return link;
     }
 

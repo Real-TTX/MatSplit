@@ -650,15 +650,10 @@ public sealed class EditModel(
                 continue;
             }
 
-            var cents = ToCents(line.Amount ?? 0m);
-
-            if (cents <= 0)
-            {
-                ModelState.AddModelError(
-                    $"Input.Shares[{index}].Amount",
-                    "Bitte einen Betrag größer als 0 angeben.");
-                continue;
-            }
+            // An empty field counts as 0: an included person may pay nothing.
+            // Only the total of all fixed amounts has to match the expense (the
+            // check below), so no per-field "> 0" requirement here.
+            var cents = Math.Max(0, ToCents(line.Amount ?? 0m));
 
             sum += cents;
             shares.Add(new ExpenseShareInput

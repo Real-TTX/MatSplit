@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Surface with optional heading. Used for detail blocks, forms and dashboard
+/// MatUi card (<c>mat-card</c>) with optional heading. Used for detail blocks, forms and dashboard
 /// tiles.
 /// </summary>
 [HtmlTargetElement("ms-card")]
@@ -21,7 +21,7 @@ public sealed class MsCardTagHelper : MsTagHelperBase
     /// <summary>Icon name from the sprite.</summary>
     public string? Icon { get; set; }
 
-    /// <summary>default, accent, success, warning or danger.</summary>
+    /// <summary>default or accent: one accent card per page, for the thing to look at first.</summary>
     public string? Tone { get; set; }
 
     /// <summary>Makes the whole card a link.</summary>
@@ -58,10 +58,9 @@ public sealed class MsCardTagHelper : MsTagHelperBase
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("id", id);
         MsHtml.AddClass(output, MsHtml.Classes(
-            "ms-card",
-            string.IsNullOrWhiteSpace(Tone) ? null : "ms-card--" + Tone!.Trim().ToLowerInvariant(),
-            Flush ? "ms-card--flush" : null,
-            isLink ? "ms-card--link" : null,
+            "mat-card",
+            string.Equals(Tone?.Trim(), "accent", StringComparison.OrdinalIgnoreCase) ? "mat-card--accent" : null,
+            Flush ? "mat-card--flush" : null,
             CssClass));
 
         if (isLink)
@@ -74,39 +73,36 @@ public sealed class MsCardTagHelper : MsTagHelperBase
 
         if (hasTitle || hasHeaderAction)
         {
-            var head = new TagBuilder("header");
-            head.AddCssClass("ms-card__head");
-
-            var headText = new TagBuilder("div");
-            headText.AddCssClass("ms-card__headtext");
+            var head = new TagBuilder("div");
+            head.AddCssClass("mat-card__head");
 
             if (hasTitle)
             {
-                var level = Level is >= 1 and <= 6 ? Level : 2;
-                var heading = new TagBuilder("h" + level.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                heading.AddCssClass("ms-card__title");
-                heading.Attributes["id"] = id + "-title";
-
                 if (!string.IsNullOrWhiteSpace(Icon))
                 {
-                    heading.InnerHtml.AppendHtml(MsHtml.Icon(Icon, 20));
+                    head.InnerHtml.AppendHtml(MsHtml.Icon(Icon));
                 }
 
-                var text = new TagBuilder("span");
-                text.InnerHtml.Append(Title!);
-                heading.InnerHtml.AppendHtml(text);
-                headText.InnerHtml.AppendHtml(heading);
+                var level = Level is >= 1 and <= 6 ? Level : 2;
+                var text = new TagBuilder("div");
+                text.AddCssClass("ms-card-text");
+
+                var heading = new TagBuilder("h" + level.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                heading.AddCssClass("mat-card__title");
+                heading.Attributes["id"] = id + "-title";
+                heading.InnerHtml.Append(Title!);
+                text.InnerHtml.AppendHtml(heading);
 
                 if (!string.IsNullOrWhiteSpace(Subtitle))
                 {
                     var subtitle = new TagBuilder("p");
-                    subtitle.AddCssClass("ms-card__subtitle");
+                    subtitle.AddCssClass("mat-card__sub");
                     subtitle.InnerHtml.Append(Subtitle!);
-                    headText.InnerHtml.AppendHtml(subtitle);
+                    text.InnerHtml.AppendHtml(subtitle);
                 }
-            }
 
-            head.InnerHtml.AppendHtml(headText);
+                head.InnerHtml.AppendHtml(text);
+            }
 
             if (hasHeaderAction)
             {
@@ -114,15 +110,16 @@ public sealed class MsCardTagHelper : MsTagHelperBase
                 var iconName = string.IsNullOrWhiteSpace(HeaderActionIcon) ? "plus" : HeaderActionIcon!.Trim();
 
                 var action = new TagBuilder("a");
-                action.AddCssClass("ms-card__action");
+                action.AddCssClass("mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm ms-card-action");
                 action.Attributes["href"] = HeaderActionUrl!;
                 action.Attributes["aria-label"] = label;
-                action.Attributes["title"] = label;
-                action.InnerHtml.AppendHtml(MsHtml.Icon(iconName, 20));
+                action.Attributes["data-tip"] = label;
+                action.InnerHtml.AppendHtml(MsHtml.Icon(iconName));
                 head.InnerHtml.AppendHtml(action);
             }
 
             output.PreContent.AppendHtml(head);
+
             if (hasTitle)
             {
                 output.Attributes.SetAttribute("aria-labelledby", id + "-title");
@@ -130,7 +127,7 @@ public sealed class MsCardTagHelper : MsTagHelperBase
         }
 
         var body = new TagBuilder("div");
-        body.AddCssClass("ms-card__body");
+        body.AddCssClass("mat-card__body");
         body.InnerHtml.AppendHtml(children);
         output.Content.SetHtmlContent(body);
     }

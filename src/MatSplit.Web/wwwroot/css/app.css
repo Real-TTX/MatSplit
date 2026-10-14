@@ -1,0 +1,350 @@
+/* ==========================================================================
+   MatSplit - what is not MatUi.
+   The shell, the controls, the colours and the dark mode are the toolkit (matui/matui.css, accent of
+   [data-app="matsplit"]). This file holds the few things that only MatSplit has: how the installed app
+   sits on the screen of an iPhone or an Android phone, the offline bar, the install hint, the camera and
+   the blocks of the group pages. Colours are tokens (--mat-*), never literals; the look is flat.
+   ========================================================================== */
+
+/* ---- The app on the screen (iOS home screen app, Android, browser) -----------------------------------------------
+   100vh / 100dvh come out too short in an installed iOS app and leave a dead strip at the bottom (the menu column ends
+   early, the page colour shows below it, the home indicator sits on it). position: fixed with the four edges at 0 always
+   spans the real screen; the root takes the page colour, so that a rounded corner or a safe area blends in instead of
+   showing another colour. The bottom edge moves up by the height of the on-screen keyboard (site.js, --ms-keyboard-inset),
+   so that the field that has the focus is never behind it. touch-action: manipulation stops the double-tap zoom, the
+   16 px fields of MatUi stop the zoom on focus; pinch zoom stays for people who need it. */
+html {
+  background: var(--mat-bg);
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mat-app {
+  position: fixed;
+  inset: var(--ms-offline-banner-height, 0px) 0 var(--ms-keyboard-inset, 0px) 0;
+  height: auto;
+}
+
+/* the keyboard covers the home indicator, so the space for it is not needed any more */
+html.ms-keyboard-open .mat-page { padding-bottom: var(--mat-space-6); }
+html.ms-keyboard-open .mat-nav__foot { padding-bottom: var(--mat-space-3); }
+
+/* The offline bar sits on top of the screen and already covers the notch: the bars under it need not pad for it again. */
+html[data-ms-banner="visible"] .mat-topbar { padding-top: 0; }
+html[data-ms-banner="visible"] .mat-nav { padding-top: 0; }
+
+/* Landscape on a phone with a notch or rounded corners: the content keeps clear of the sides on both edges
+   (the menu and the top bar pad for them themselves). */
+.mat-page,
+.mat-footer {
+  padding-left: max(var(--mat-content-pad), var(--mat-safe-left));
+  padding-right: max(var(--mat-content-pad), var(--mat-safe-right));
+}
+
+.mat-page { padding-bottom: calc(var(--mat-space-12) + var(--mat-safe-bottom)); }
+.mat-footer { padding-bottom: calc(var(--mat-space-4) + var(--mat-safe-bottom)); }
+
+/* iOS zooms into a field whose type is smaller than 16 px when it gets the focus, and does not zoom back. MatUi sets 15 px for
+   its fields; on a touch screen every field is 16 px (the control height of 44 px comes from the toolkit). */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  select,
+  textarea,
+  body .mat-input,
+  body .mat-select,
+  body .mat-textarea { font-size: max(16px, 1em); }
+}
+
+/* ---- Pages without a menu (sign-in, invitation, error, the read-only link) ---------------------------------------
+   The same rule as the shell: the page is pinned to the screen and scrolls on its own; the card is centred in a column. */
+.ms-auth {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding:
+    calc(var(--mat-space-6) + var(--mat-safe-top))
+    max(var(--mat-space-4), var(--mat-safe-right))
+    0
+    max(var(--mat-space-4), var(--mat-safe-left));
+}
+
+.ms-auth__column {
+  flex: 1 0 auto;
+  width: min(460px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mat-space-5);
+  padding-block: var(--mat-space-4);
+}
+
+.ms-auth--public .ms-auth__column { width: min(760px, 100%); }
+.ms-auth > .mat-footer { flex: none; width: 100%; padding-bottom: calc(var(--mat-space-4) + var(--mat-safe-bottom)); }
+
+/* ---- Small helpers of the old controls that MatUi has no class for ------------------------------------------------ */
+.ms-card-text { flex: 1 1 auto; min-width: 0; }
+.ms-card-action { margin-left: auto; flex: none; }
+.ms-list-title { display: flex; align-items: center; gap: var(--mat-space-2); font-size: var(--mat-fs-xl); font-weight: 650; }
+.ms-list-title .mat-icon { color: var(--mat-accent-text); }
+.ms-static { margin: 0; min-height: var(--mat-control-h); display: flex; align-items: center; overflow-wrap: anywhere; }
+.ms-camera-button { align-self: flex-start; }
+
+/* an amount: debts are red, a credit green when the page asks for the sign; plain amounts keep the text colour */
+.ms-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ms-money.is-negative { color: var(--mat-danger-text); }
+.ms-money.is-positive { color: var(--mat-success-text); }
+.ms-money.is-strong { font-size: var(--mat-fs-lg); font-weight: 700; }
+
+.ms-avatar--you { box-shadow: 0 0 0 2px var(--mat-accent); }
+
+/* ---- Offline bar and install hint ----------------------------------------------------------------------------------
+   The bar is fixed to the top edge and covers the notch (safe-area-inset-top); site.js / offline-sync.js write its
+   height into --ms-offline-banner-height, which moves the shell down (above). The install hint floats above the home
+   indicator. Both keep clear of the sides in landscape. */
+.ms-offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--mat-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--mat-space-2);
+  min-height: 34px;
+  padding:
+    calc(var(--mat-safe-top) + var(--mat-space-2))
+    calc(var(--mat-safe-right) + var(--mat-space-4))
+    var(--mat-space-2)
+    calc(var(--mat-safe-left) + var(--mat-space-4));
+  background: var(--mat-surface);
+  border-bottom: 1px solid var(--ms-banner-line, var(--mat-warning));
+  color: var(--ms-banner-text, var(--mat-warning-text));
+  font-size: var(--mat-fs-sm);
+  line-height: 1.35;
+  transform: translateY(-100%);
+  transition: transform var(--mat-dur) var(--mat-ease);
+}
+
+/* the tones are tints: they sit on the solid surface of the bar, so that nothing shows through */
+.ms-offline-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ms-banner-bg, var(--mat-warning-bg));
+}
+
+.ms-offline-banner[hidden] { display: none; }
+html[data-ms-banner="visible"] .ms-offline-banner { transform: none; }
+
+.ms-offline-banner[data-tone="warning"] { --ms-banner-bg: var(--mat-warning-bg); --ms-banner-line: var(--mat-warning); --ms-banner-text: var(--mat-warning-text); }
+.ms-offline-banner[data-tone="info"] { --ms-banner-bg: var(--mat-info-bg); --ms-banner-line: var(--mat-info); --ms-banner-text: var(--mat-info-text); }
+.ms-offline-banner[data-tone="success"] { --ms-banner-bg: var(--mat-success-bg); --ms-banner-line: var(--mat-success); --ms-banner-text: var(--mat-success-text); }
+.ms-offline-banner[data-tone="error"] { --ms-banner-bg: var(--mat-danger-bg); --ms-banner-line: var(--mat-danger); --ms-banner-text: var(--mat-danger-text); }
+
+.ms-offline-banner__dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.ms-offline-banner[data-tone="warning"] .ms-offline-banner__dot,
+.ms-offline-banner[data-tone="error"] .ms-offline-banner__dot { animation: ms-pulse 1.8s ease-in-out infinite; }
+
+.ms-offline-banner__spinner {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: ms-spin 750ms linear infinite;
+}
+
+.ms-offline-banner__spinner[hidden],
+.ms-offline-banner__detail[hidden],
+.ms-offline-banner__action[hidden] { display: none; }
+
+.ms-offline-banner__text { font-weight: 600; }
+.ms-offline-banner__detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85; }
+.ms-offline-banner__action { margin-left: auto; flex: none; }
+
+@keyframes ms-spin { to { transform: rotate(360deg); } }
+@keyframes ms-pulse { 50% { opacity: .35; } }
+
+@media (max-width: 560px) {
+  .ms-offline-banner__detail { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-offline-banner { transition: none; }
+  .ms-offline-banner__dot,
+  .ms-offline-banner__spinner { animation: none; }
+}
+
+.ms-pwa-install {
+  position: fixed;
+  z-index: var(--mat-z-toast);
+  left: calc(var(--mat-safe-left) + var(--mat-space-3));
+  right: calc(var(--mat-safe-right) + var(--mat-space-3));
+  bottom: calc(var(--mat-safe-bottom) + var(--mat-space-3) + var(--ms-keyboard-inset, 0px));
+  margin: 0 auto;
+  max-width: 460px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mat-space-3);
+  padding: var(--mat-space-4);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-radius-lg);
+  box-shadow: var(--mat-shadow-3);
+  color: var(--mat-text);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity var(--mat-dur) var(--mat-ease), transform var(--mat-dur) var(--mat-ease);
+}
+
+.ms-pwa-install[data-visible="true"] { opacity: 1; transform: none; }
+.ms-pwa-install__icon { flex: none; width: 28px; height: 28px; color: var(--mat-accent-text); }
+.ms-pwa-install__body { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--mat-space-1); }
+.ms-pwa-install__title { margin: 0; font-weight: 650; font-size: var(--mat-fs-md); }
+.ms-pwa-install__text { margin: 0; font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.ms-pwa-install__steps { margin: var(--mat-space-1) 0 0; padding-left: var(--mat-space-5); font-size: var(--mat-fs-sm); color: var(--mat-text-muted); display: flex; flex-direction: column; gap: var(--mat-space-1); }
+.ms-pwa-install__steps .mat-icon { vertical-align: -.3em; color: var(--mat-accent-text); }
+.ms-pwa-install__actions { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); align-items: center; margin-top: var(--mat-space-2); }
+.ms-pwa-install__close { flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-pwa-install { transition: none; }
+}
+
+@media print {
+  .ms-offline-banner,
+  .ms-pwa-install { display: none; }
+}
+
+/* ---- Camera for the receipt: full screen, above everything, clear of the notch and the home indicator ---------------- */
+.ms-camera {
+  position: fixed;
+  inset: 0;
+  z-index: var(--mat-z-dialog);
+  display: grid;
+  place-items: center;
+  padding: calc(var(--mat-space-4) + var(--mat-safe-top)) calc(var(--mat-space-4) + var(--mat-safe-right)) calc(var(--mat-space-4) + var(--mat-safe-bottom)) calc(var(--mat-space-4) + var(--mat-safe-left));
+  background: var(--mat-overlay);
+}
+
+.ms-camera__box {
+  width: min(640px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mat-space-3);
+  padding: var(--mat-space-3);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border);
+  border-radius: var(--mat-radius-lg);
+}
+
+.ms-camera__video { width: 100%; min-height: 0; max-height: 70dvh; object-fit: cover; border-radius: var(--mat-radius); background: var(--mat-surface-3); }
+.ms-camera__actions { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); }
+
+/* ---- Group list (Gruppen): a card that is a link per group ------------------------------------------------------- */
+.ms-grouplist { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.mat-card.ms-grouplist__item { display: flex; flex-direction: column; gap: var(--mat-space-2); padding: var(--mat-space-4) var(--mat-space-5); }
+.ms-grouplist__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--mat-space-3); }
+.ms-grouplist__name { min-width: 0; font-size: var(--mat-fs-lg); font-weight: 650; overflow-wrap: anywhere; }
+.ms-grouplist__balance { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
+.ms-grouplist__balance-label { font-size: var(--mat-fs-xs); color: var(--mat-text-muted); }
+.ms-grouplist__description { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ms-grouplist__spent { font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+
+/* ---- Group hub: the balance of the user in one card, the rows of the lists -------------------------------------- */
+.mat-card.ms-balance-hero { position: relative; display: flex; flex-direction: column; gap: var(--mat-space-1); padding: var(--mat-space-5); }
+.ms-balance-hero__label { font-size: var(--mat-fs-sm); font-weight: 600; color: var(--mat-text-muted); }
+.ms-balance-hero__amount { font-size: var(--mat-fs-3xl); font-weight: 750; letter-spacing: -.02em; line-height: 1.1; }
+.ms-balance-hero__amount .ms-money { font-size: inherit; }
+.ms-balance-hero__share { font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.ms-balance-hero__share strong { font-weight: 700; color: var(--mat-text); }
+.ms-balance-hero__chart { position: absolute; top: var(--mat-space-5); right: var(--mat-space-5); width: 108px; height: 46px; color: var(--mat-accent-text); pointer-events: none; }
+.ms-balance-hero__chart svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+.ms-item-amount { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.ms-item-amount small { font-size: var(--mat-fs-xs); }
+
+/* ---- Share a group: a focused column with the link, the share buttons and the switches of the link ---------------- */
+.ms-share { display: flex; flex-direction: column; align-items: center; gap: var(--mat-space-5); max-width: 26rem; margin: 0 auto; text-align: center; }
+.ms-share__lead { margin: 0; color: var(--mat-text-muted); font-size: var(--mat-fs-lg); line-height: 1.5; }
+.ms-share__sep { width: 100%; border: 0; border-top: 1px solid var(--mat-border); margin: var(--mat-space-2) 0; }
+.ms-share > .mat-field,
+.ms-share > .mat-alert,
+.ms-share > .mat-btn,
+.ms-share > .mat-form,
+.ms-share > .ms-social { width: 100%; }
+.ms-share > .mat-alert { text-align: left; }
+.ms-share .mat-label { text-align: center; }
+.ms-share .ms-static { justify-content: center; text-align: center; font-weight: 600; word-break: break-all; }
+.ms-share .mat-form .mat-btn { width: 100%; }
+.ms-social { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: var(--mat-space-3); }
+
+/* a round mark with an icon on top of a focused screen (share, invitation) */
+.ms-hero-icon { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; background: var(--mat-accent-soft); color: var(--mat-accent-text); font-size: 2rem; }
+.ms-hero-icon--soft { background: var(--mat-surface-3); color: var(--mat-text-muted); }
+
+/* ---- Expense form: the split of the amount (who takes part, in which way) ----------------------------------------
+   The choice of the split is a radio group of the toolkit; below it the per-member lines appear when the mode needs
+   them (data-show-if). One line per member: the name (the check) on the left, the one value of the mode on the right. */
+.ef-section { display: flex; align-items: center; gap: var(--mat-space-2); margin: var(--mat-space-1) 0 0; font-size: var(--mat-fs-md); font-weight: 700; }
+.ef-section .mat-icon { color: var(--mat-accent-text); }
+
+.ef-share-row { display: flex; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-2) 0; }
+.ef-share-row + .ef-share-row { border-top: 1px solid var(--mat-border); }
+.ef-share-row > .mat-field { gap: 0; }
+.ef-share-row > .mat-field:has(.mat-check) { flex: 1 1 auto; min-width: 0; }
+.ef-share-row > .mat-field:has([name$=".ShareFactor"]) { flex: none; width: 92px; }
+.ef-share-row > .mat-field:has([name$=".Amount"]) { flex: none; width: 132px; }
+.ef-share-row .mat-check { min-height: 0; align-items: center; }
+.ef-share-row .mat-error:empty { display: none; }
+
+/* the label "Faktor" / "Fester Betrag" says what the split mode above already says: for screen readers only */
+.ef-share-row > .mat-field:not(:has(.mat-check)) > .mat-label {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* "Rest": adopts the open remainder in the field of this member with one tap */
+.ef-share-row > .ef-apply { flex: none; white-space: nowrap; }
+.ef-share-row > .ef-apply[hidden] { display: none; }
+
+/* the share of a member in "Individuelle Anteile", worked out while typing */
+.ef-share-preview { flex: none; color: var(--mat-text-muted); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* "Feste Beträge": what is still to be distributed, with the word (colour is never the only signal) */
+.ef-remaining { padding: var(--mat-space-2) var(--mat-space-3); border-radius: var(--mat-radius); background: var(--mat-surface-3); color: var(--mat-text-muted); font-size: var(--mat-fs-sm); font-weight: 700; }
+.ef-remaining:empty { display: none; }
+.ef-remaining.is-open { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); }
+.ef-remaining.is-ok { background: var(--mat-success-bg); color: var(--mat-success-text); }
+.ef-remaining.is-over { background: var(--mat-danger-bg); color: var(--mat-danger-text); }
+
+/* ---- Account ---------------------------------------------------------------------------------------------------- */
+.ms-profile-head { display: flex; align-items: center; gap: var(--mat-space-3); }
+.ms-profile-head__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ms-profile-head__name { font-size: var(--mat-fs-lg); font-weight: 700; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.ms-profile-head__role { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+
+/* a line between the groups of a form that is laid out in columns */
+.ms-sep { margin: var(--mat-space-1) 0; border: 0; border-top: 1px solid var(--mat-border); }
+
+/* a form around one button that stands in a line of other things (Als bezahlt verbuchen) */
+.ms-inline-form { display: inline-flex; margin: 0; }
+.ms-settle-actions { margin-top: var(--mat-space-2); }
+.ms-join-login { justify-content: center; }
+
+/* facts in a small tile (the overview of the administration): the value stands at the right end and does not break */
+.mat-kv.ms-kv--tile { grid-template-columns: minmax(0, 1fr) auto; gap: var(--mat-space-2) var(--mat-space-4); }
+.mat-kv.ms-kv--tile dd { margin: 0; text-align: right; white-space: nowrap; }
+
+/* the offline page: what works and what does not */
+.ms-offline-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--mat-space-3); }
+.ms-offline-list li { display: flex; align-items: flex-start; gap: var(--mat-space-3); }
+.ms-offline-list .mat-pill { flex: none; }

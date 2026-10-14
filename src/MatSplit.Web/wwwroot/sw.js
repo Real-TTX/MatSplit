@@ -12,7 +12,7 @@
    ========================================================================== */
 'use strict';
 
-var CACHE_VERSION = 'v7';
+var CACHE_VERSION = 'v8';
 var SHELL_CACHE = 'matsplit-shell-' + CACHE_VERSION;
 var ASSET_CACHE = 'matsplit-assets-' + CACHE_VERSION;
 var MEDIA_CACHE = 'matsplit-media-' + CACHE_VERSION;
@@ -27,24 +27,24 @@ var MEDIA_LIMIT = 60;
 var PRECACHE_URLS = [
     OFFLINE_URL,
     '/manifest.webmanifest',
-    '/css/site.css',
-    '/css/theme.css',
-    '/css/layout.css',
-    '/css/controls.css',
-    '/css/scrollbars.css',
+    '/matui/matui.css',
+    '/matui/matui.boot.js',
+    '/matui/matui.js',
+    '/matui/matui-icons.svg',
+    '/css/app.css',
     '/js/site.js',
     '/js/offline-sync.js',
     '/js/pwa-install.js',
-    '/img/logo.svg',
-    '/img/logo-mark.svg',
     '/img/favicon.svg',
+    '/img/favicon-32.png',
     '/img/apple-touch-icon.png',
     '/img/icon-192.png',
     '/img/icon-512.png',
-    '/img/icon-512.svg'
+    '/img/icon-maskable-192.png',
+    '/img/icon-maskable-512.png'
 ];
 
-var STATIC_PREFIXES = ['/css/', '/js/', '/img/', '/lib/'];
+var STATIC_PREFIXES = ['/matui/', '/css/', '/js/', '/img/', '/lib/'];
 
 /* ------------------------------- helpers -------------------------------- */
 

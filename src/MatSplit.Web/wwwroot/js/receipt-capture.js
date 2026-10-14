@@ -81,7 +81,7 @@
     /* ------------------------------ messages ----------------------------- */
 
     function errorTarget(field) {
-        return field.querySelector('.ms-field__error');
+        return field.querySelector('.mat-error');
     }
 
     function setError(field, message) {
@@ -113,7 +113,7 @@
         }
 
         box = document.createElement('div');
-        box.className = 'ms-row';
+        box.className = 'mat-row';
         box.setAttribute('data-ms-receipt-preview', 'true');
         box.hidden = true;
         field.appendChild(box);
@@ -149,19 +149,19 @@
             box.appendChild(image);
         } else {
             var chip = document.createElement('span');
-            chip.className = 'ms-chip';
+            chip.className = 'mat-tag';
             chip.textContent = 'Datei';
             box.appendChild(chip);
         }
 
         var caption = document.createElement('span');
-        caption.className = 'ms-muted';
+        caption.className = 'mat-muted';
         caption.textContent = (file.name || 'Beleg') + ' · ' + formatSize(file.size);
         box.appendChild(caption);
 
         var remove = document.createElement('button');
         remove.type = 'button';
-        remove.className = 'ms-btn ms-btn--ghost ms-btn--sm';
+        remove.className = 'mat-btn mat-btn--ghost mat-btn--sm';
         remove.textContent = 'Entfernen';
         remove.addEventListener('click', function () {
             state.input.value = '';
@@ -310,12 +310,15 @@
     function openCamera(state) {
         var overlay = document.createElement('div');
         overlay.className = 'ms-camera';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'Beleg aufnehmen');
         overlay.innerHTML = '<div class="ms-camera__box">'
             + '<video class="ms-camera__video" autoplay playsinline muted></video>'
             + '<div class="ms-camera__actions">'
-            + '<button type="button" class="ms-btn ms-btn--primary" data-shoot>Aufnehmen</button>'
-            + '<button type="button" class="ms-btn ms-btn--secondary" data-flip>Kamera wechseln</button>'
-            + '<button type="button" class="ms-btn ms-btn--ghost" data-cancel>Abbrechen</button>'
+            + '<button type="button" class="mat-btn mat-btn--primary" data-shoot>Aufnehmen</button>'
+            + '<button type="button" class="mat-btn mat-btn--secondary" data-flip>Kamera wechseln</button>'
+            + '<button type="button" class="mat-btn mat-btn--ghost" data-cancel>Abbrechen</button>'
             + '</div></div>';
 
         document.body.appendChild(overlay);
@@ -410,12 +413,10 @@
     }
 
     function addCameraButton(state) {
-        var control = state.field.querySelector('.ms-field__control') || state.field;
-
         var button = document.createElement('button');
         button.type = 'button';
         button.id = state.input.id + '-capture';
-        button.className = 'ms-btn ms-btn--ghost ms-btn--sm ms-field__camera';
+        button.className = 'mat-btn mat-btn--secondary mat-btn--sm ms-camera-button';
         button.textContent = 'Foto aufnehmen';
         button.addEventListener('click', function () {
             if (!canCapture()) {
@@ -425,7 +426,7 @@
             openCamera(state);
         });
 
-        control.appendChild(button);
+        state.input.insertAdjacentElement('afterend', button);
     }
 
     /* -------------------------------- boot ------------------------------- */

@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Placeholder shown instead of an empty table. Inside a ms-list it is rendered
-/// between table and pagination.
+/// MatUi empty state (<c>mat-empty</c>): shown instead of an empty table, says why and offers the way
+/// out. Inside a ms-list it is rendered between table and pagination.
 /// </summary>
 [HtmlTargetElement("ms-empty-state")]
 public sealed class MsEmptyStateTagHelper : MsTagHelperBase
@@ -13,7 +13,7 @@ public sealed class MsEmptyStateTagHelper : MsTagHelperBase
     protected override string ControlName => "empty";
 
     /// <summary>Headline of the placeholder.</summary>
-    public string Title { get; set; } = "Noch keine Eintr\u00e4ge";
+    public string Title { get; set; } = "Noch keine Einträge";
 
     /// <summary>Explanation below the headline.</summary>
     public string? Text { get; set; }
@@ -43,52 +43,42 @@ public sealed class MsEmptyStateTagHelper : MsTagHelperBase
 
         var wrap = new TagBuilder("div");
         wrap.Attributes["id"] = id;
-        wrap.AddCssClass(MsHtml.Classes("ms-empty", CssClass));
+        wrap.AddCssClass(MsHtml.Classes("mat-empty", CssClass));
 
-        var iconWrap = new TagBuilder("div");
-        iconWrap.AddCssClass("ms-empty__icon");
-        iconWrap.InnerHtml.AppendHtml(MsHtml.Icon(Icon, 40));
+        var iconWrap = new TagBuilder("span");
+        iconWrap.AddCssClass("mat-empty__icon");
+        iconWrap.InnerHtml.AppendHtml(MsHtml.Icon(Icon));
         wrap.InnerHtml.AppendHtml(iconWrap);
 
-        var title = new TagBuilder("p");
-        title.AddCssClass("ms-empty__title");
+        var title = new TagBuilder("div");
+        title.AddCssClass("mat-empty__title");
         title.InnerHtml.Append(Title);
         wrap.InnerHtml.AppendHtml(title);
 
         if (!string.IsNullOrWhiteSpace(Text))
         {
             var text = new TagBuilder("p");
-            text.AddCssClass("ms-empty__text");
             text.InnerHtml.Append(Text!);
             wrap.InnerHtml.AppendHtml(text);
         }
 
-        if (!string.IsNullOrWhiteSpace(ActionUrl) || MsHtml.HasContent(children))
+        if (!string.IsNullOrWhiteSpace(ActionUrl))
         {
-            var actions = new TagBuilder("div");
-            actions.AddCssClass("ms-empty__actions");
+            var link = new TagBuilder("a");
+            link.AddCssClass("mat-btn mat-btn--primary");
+            link.Attributes["href"] = ActionUrl!;
+            link.Attributes["id"] = id + "-action";
+            link.InnerHtml.AppendHtml(MsHtml.Icon(ActionIcon));
 
-            if (!string.IsNullOrWhiteSpace(ActionUrl))
-            {
-                var link = new TagBuilder("a");
-                link.AddCssClass("ms-btn ms-btn--primary");
-                link.Attributes["href"] = ActionUrl!;
-                link.Attributes["id"] = id + "-action";
-                link.InnerHtml.AppendHtml(MsHtml.Icon(ActionIcon, 18));
+            var label = new TagBuilder("span");
+            label.InnerHtml.Append(ActionLabel ?? "Neu anlegen");
+            link.InnerHtml.AppendHtml(label);
+            wrap.InnerHtml.AppendHtml(link);
+        }
 
-                var label = new TagBuilder("span");
-                label.AddCssClass("ms-btn__label");
-                label.InnerHtml.Append(ActionLabel ?? "Neu anlegen");
-                link.InnerHtml.AppendHtml(label);
-                actions.InnerHtml.AppendHtml(link);
-            }
-
-            if (MsHtml.HasContent(children))
-            {
-                actions.InnerHtml.AppendHtml(children);
-            }
-
-            wrap.InnerHtml.AppendHtml(actions);
+        if (MsHtml.HasContent(children))
+        {
+            wrap.InnerHtml.AppendHtml(children);
         }
 
         MsHtml.CopyAttributes(output, wrap);

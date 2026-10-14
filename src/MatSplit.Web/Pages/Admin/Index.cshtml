@@ -1,10 +1,10 @@
 @page
 @model MatSplit.Web.Pages.Admin.IndexModel
 
-<div class="ms-stack">
-    <div class="ms-grid ms-grid--3">
+<div class="mat-stack">
+    <div class="mat-grid mat-grid--3">
         <ms-card id="tile-users" title="Benutzer" icon="users" tone="accent" href="/Admin/Users">
-            <dl class="ms-kv">
+            <dl class="mat-kv ms-kv--tile">
                 <dt>Aktiv</dt>
                 <dd>@Model.UserCount</dd>
                 <dt>Administratoren</dt>
@@ -17,7 +17,7 @@
         </ms-card>
 
         <ms-card id="tile-groups" title="Gruppen" icon="group" href="/Admin/Groups">
-            <dl class="ms-kv">
+            <dl class="mat-kv ms-kv--tile">
                 <dt>Aktiv</dt>
                 <dd>@Model.GroupCount</dd>
                 <dt>Mitgliedschaften</dt>
@@ -28,7 +28,7 @@
         </ms-card>
 
         <ms-card id="tile-expenses" title="Ausgaben" icon="expense">
-            <dl class="ms-kv">
+            <dl class="mat-kv ms-kv--tile">
                 <dt>Anzahl</dt>
                 <dd>@Model.ExpenseCount</dd>
                 <dt>Summe</dt>
@@ -39,7 +39,7 @@
         </ms-card>
 
         <ms-card id="tile-payments" title="Zahlungen" icon="paypal">
-            <dl class="ms-kv">
+            <dl class="mat-kv ms-kv--tile">
                 <dt>Anzahl</dt>
                 <dd>@Model.PaymentCount</dd>
                 <dt>Summe</dt>
@@ -50,7 +50,7 @@
         </ms-card>
 
         <ms-card id="tile-sessions" title="Sitzungen" icon="user">
-            <dl class="ms-kv">
+            <dl class="mat-kv ms-kv--tile">
                 <dt>Aktiv</dt>
                 <dd>@Model.ActiveSessionCount</dd>
                 <dt>Gesamt</dt>
@@ -61,7 +61,7 @@
         </ms-card>
 
         <ms-card id="tile-config" title="Konfiguration" icon="settings" href="/Admin/Settings">
-            <dl class="ms-kv">
+            <dl class="mat-kv ms-kv--tile">
                 <dt>App-Name</dt>
                 <dd>@Model.Config.AppName</dd>
                 <dt>W&#228;hrung</dt>
@@ -75,7 +75,7 @@
     </div>
 
     <ms-card id="admin-system" title="System" subtitle="Laufzeitumgebung und Datenbestand" icon="info">
-        <dl class="ms-kv">
+        <dl class="mat-kv">
             <dt>Version</dt>
             <dd>@Model.Version</dd>
             <dt>Umgebung</dt>
@@ -87,7 +87,7 @@
         </dl>
     </ms-card>
 
-    <div class="ms-row">
+    <div class="mat-row">
         <ms-button id="admin-go-users" kind="primary" icon="users" label="Benutzer verwalten" href="/Admin/Users"></ms-button>
         <ms-button id="admin-go-merge" kind="secondary" icon="merge" label="Benutzer zusammenführen" href="/Admin/Users/Merge"></ms-button>
         <ms-button id="admin-go-groups" kind="secondary" icon="group" label="Gruppen" href="/Admin/Groups"></ms-button>

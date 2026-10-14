@@ -1,0 +1,19 @@
+@{
+    // The popup of the user button at the foot of the menu (SHELL-05): the account first, Sign out last.
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var displayName = ViewData.ReadString(LayoutKeys.CurrentUserName) ?? User.Identity?.Name ?? "Gast";
+    var isAdmin = ViewData.ReadFlag(LayoutKeys.IsAdmin) || User.IsInRole(nameof(UserRole.Admin));
+    var role = isAdmin ? "Administrator" : User.IsInRole(nameof(UserRole.Anonymous)) ? "Gast" : "Mitglied";
+}
+@if (isAuthenticated)
+{
+    <div class="mat-menu" id="user-menu" role="menu" aria-label="@displayName" hidden>
+        <div class="mat-menu__head">
+            <span class="mat-avatar" aria-hidden="true">@MsAvatar.Initials(displayName)</span>
+            <div><strong>@displayName</strong><small>@role</small></div>
+        </div>
+        <a class="mat-menu__item" role="menuitem" href="/Account/Profile"><ms-icon name="user"></ms-icon><span>Konto</span></a>
+        <div class="mat-menu__sep" role="separator"></div>
+        <a class="mat-menu__item" role="menuitem" href="/Account/Logout"><ms-icon name="logout"></ms-icon><span>Abmelden</span></a>
+    </div>
+}

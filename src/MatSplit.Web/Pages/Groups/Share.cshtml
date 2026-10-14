@@ -5,7 +5,7 @@
 <ms-card id="share-card">
     <div class="ms-share">
         <div class="ms-hero-icon">
-            <ms-icon name="link" size="44"></ms-icon>
+            <ms-icon name="link"></ms-icon>
         </div>
 
         @* Link guests joined via an invite themselves and may not pass the link
@@ -33,23 +33,23 @@
             @if (Model.CanShare)
             {
                 <ms-button id="share-copy" kind="primary" full-width="true" type="button"
-                           label="Link kopieren" data-ms-copy="#share-url"></ms-button>
+                           label="Link kopieren" data-copy="#share-url"></ms-button>
 
                 <div class="ms-social">
-                    <a class="ms-social__btn ms-social__btn--whatsapp" href="@Model.WhatsAppUrl"
+                    <a class="mat-btn mat-btn--secondary" href="@Model.WhatsAppUrl"
                        target="_blank" rel="noopener">
-                        <ms-icon name="whatsapp" size="24"></ms-icon>
+                        <ms-icon name="whatsapp"></ms-icon>
                         <span>WhatsApp</span>
                     </a>
-                    <a class="ms-social__btn ms-social__btn--telegram" href="@Model.TelegramUrl"
+                    <a class="mat-btn mat-btn--secondary" href="@Model.TelegramUrl"
                        target="_blank" rel="noopener">
-                        <ms-icon name="telegram" size="24"></ms-icon>
+                        <ms-icon name="telegram"></ms-icon>
                         <span>Telegram</span>
                     </a>
-                    <button type="button" class="ms-social__btn ms-social__btn--more"
+                    <button type="button" class="mat-btn mat-btn--secondary"
                             data-ms-share="true" data-ms-share-url="@Model.InviteUrl"
                             data-ms-share-title="MatSplit-Einladung" data-ms-share-text="@Model.ShareText">
-                        <ms-icon name="dots" size="24"></ms-icon>
+                        <ms-icon name="dots"></ms-icon>
                         <span>Mehr</span>
                     </button>
                 </div>
@@ -97,7 +97,7 @@
             {
                 <ms-field id="ro-url" type="static" label="Nur-Lese-Link" value="@Model.ReadOnlyUrl"></ms-field>
                 <ms-button id="ro-copy" kind="primary" full-width="true" type="button"
-                           label="Nur-Lese-Link kopieren" data-ms-copy="#ro-url"></ms-button>
+                           label="Nur-Lese-Link kopieren" data-copy="#ro-url"></ms-button>
             }
 
             <ms-form id="ro-toggle-form" action="@Model.SelfUrl" handler="ToggleReadOnly"
@@ -122,55 +122,3 @@
         }
     </div>
 </ms-card>
-
-@section Styles {
-    <style>
-        /* Focused share screen – centred hero column, roomy on desktop too. */
-        .ms-share {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--ms-space-5);
-            max-width: 26rem;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .ms-share__lead {
-            margin: 0;
-            color: var(--ms-text-soft);
-            font-size: var(--ms-text-lg);
-            line-height: 1.5;
-        }
-
-        .ms-share__sep {
-            width: 100%;
-            border: 0;
-            border-top: 1px solid var(--ms-border);
-            margin: var(--ms-space-2) 0;
-        }
-
-        .ms-share > .ms-field,
-        .ms-share > .ms-alert,
-        .ms-share > .ms-btn,
-        .ms-share > .ms-social {
-            width: 100%;
-        }
-
-        .ms-share > .ms-alert {
-            text-align: left;
-        }
-
-        .ms-share .ms-field__label {
-            justify-content: center;
-            text-align: center;
-        }
-
-        .ms-share .ms-static {
-            justify-content: center;
-            text-align: center;
-            font-weight: 600;
-            word-break: break-all;
-        }
-    </style>
-}

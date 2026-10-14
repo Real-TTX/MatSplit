@@ -4,10 +4,9 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Data table. The page supplies thead and tbody, the control supplies the
-/// scroll container, the styling and the mobile card layout. Add
-/// data-label="Spaltenname" to every td so the mobile card layout can render
-/// the column captions.
+/// MatUi data table (<c>mat-table-wrap</c> around <c>mat-table</c>). The page supplies thead and tbody,
+/// the control supplies the scroll container and the styling; below 720 px the rows become cards. Add
+/// data-label="Spaltenname" to every td so the card layout can render the column captions.
 /// </summary>
 [HtmlTargetElement("ms-table")]
 public sealed class MsTableTagHelper : MsTagHelperBase
@@ -23,14 +22,14 @@ public sealed class MsTableTagHelper : MsTagHelperBase
     /// <summary>Tighter row padding.</summary>
     public bool Dense { get; set; }
 
-    /// <summary>Alternating row background.</summary>
-    public bool Zebra { get; set; } = true;
+    /// <summary>Alternating row background; for long reference tables only.</summary>
+    public bool Zebra { get; set; }
 
-    /// <summary>Turns the rows into cards on small screens.</summary>
+    /// <summary>Kept for the pages that name it: the toolkit always turns the rows into cards on a phone.</summary>
     public bool Responsive { get; set; } = true;
 
     /// <summary>Keeps the header row visible while scrolling.</summary>
-    public bool StickyHead { get; set; } = true;
+    public bool StickyHead { get; set; }
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
@@ -43,17 +42,15 @@ public sealed class MsTableTagHelper : MsTagHelperBase
         var table = new TagBuilder("table");
         table.Attributes["id"] = id;
         table.AddCssClass(MsHtml.Classes(
-            "ms-table",
-            Dense ? "ms-table--dense" : null,
-            Zebra ? "ms-table--zebra" : null,
-            Responsive ? "ms-table--cards" : null,
-            StickyHead ? "ms-table--sticky" : null,
+            "mat-table",
+            Dense ? "mat-table--compact" : null,
+            Zebra ? "mat-table--zebra" : null,
             CssClass));
 
         if (!string.IsNullOrWhiteSpace(Caption))
         {
             var caption = new TagBuilder("caption");
-            caption.AddCssClass(ShowCaption ? "ms-table__caption" : "ms-visually-hidden");
+            caption.AddCssClass(ShowCaption ? "mat-card__sub" : "mat-sr-only");
             caption.InnerHtml.Append(Caption!);
             table.InnerHtml.AppendHtml(caption);
         }
@@ -61,9 +58,8 @@ public sealed class MsTableTagHelper : MsTagHelperBase
         table.InnerHtml.AppendHtml(children);
 
         var wrap = new TagBuilder("div");
-        wrap.AddCssClass("ms-table-wrap");
+        wrap.AddCssClass(MsHtml.Classes("mat-table-wrap", StickyHead ? "mat-table-wrap--sticky" : null));
         wrap.Attributes["id"] = id + "-wrap";
-        wrap.Attributes["data-ms-scroll"] = "true";
         wrap.InnerHtml.AppendHtml(table);
 
         MsHtml.CopyAttributes(output, table);

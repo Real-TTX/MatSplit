@@ -14,11 +14,35 @@
     var editUrl = $"/Groups/Edit?id={Model.GroupId}";
     var transactionsActive = Model.ActiveTab == MatSplit.Web.Pages.Groups.DetailsModel.TabTransactions;
     var membersActive = Model.ActiveTab == MatSplit.Web.Pages.Groups.DetailsModel.TabMembers;
+
+    // The icons of the header bar (SHELL-17): history, the invitation and the settings belong to the whole group,
+    // the main action in the accent colour is what the open tab adds: an expense or a member.
+    var headerActions = new List<HeaderAction> { new(historyUrl, "history", "Historie") };
+    if (Model.CanInvite)
+    {
+        headerActions.Add(new HeaderAction(shareUrl, "share", "Einladung teilen"));
+    }
+
+    if (Model.CanManage)
+    {
+        headerActions.Add(new HeaderAction(editUrl, "cog", "Gruppe verwalten"));
+    }
+
+    if (transactionsActive)
+    {
+        headerActions.Add(new HeaderAction(expenseEditUrl, "plus", "Neue Ausgabe", Primary: true));
+    }
+    else if (Model.CanManage)
+    {
+        headerActions.Add(new HeaderAction(memberEditUrl, "plus", "Mitglied hinzufügen", Primary: true));
+    }
+
+    ViewData[LayoutKeys.HeaderActions] = headerActions;
 }
 
-@* Large orange balance hero. Tapping it opens the Kontostand sub-page
-   (/Groups/Balance) with the open settlements and per-member balances. *@
-<a class="ms-balance-hero ms-balance-hero--link" id="group-balance-hero"
+@* The balance of the user in one card; tapping it opens the Kontostand sub-page (/Groups/Balance) with the open
+   settlements and the balance of each member. *@
+<a class="mat-card mat-card--accent ms-balance-hero" id="group-balance-hero"
    href="@balanceUrl" aria-label="Kontostand im Detail ansehen">
     <span class="ms-balance-hero__label">Kontostand</span>
     <span class="ms-balance-hero__amount">
@@ -35,67 +59,33 @@
     </span>
 </a>
 
-@* Pill tab bar: tabs left, "Gruppe verwalten" gear right (server-side tabs via ?tab=). *@
-<nav class="group-tabs" aria-label="Gruppenbereiche">
-    <a id="group-tab-transaktionen"
-       class="group-tab@(transactionsActive ? " is-active" : string.Empty)"
+<nav class="mat-tabs" aria-label="Gruppenbereiche">
+    <a id="group-tab-transaktionen" class="mat-tab@(transactionsActive ? " is-active" : string.Empty)"
        href="@Model.TabUrl(MatSplit.Web.Pages.Groups.DetailsModel.TabTransactions)"
        aria-current="@(transactionsActive ? "page" : null)">
-        <ms-icon name="expense" size="18"></ms-icon>
-        <span>Transaktionen</span>
+        Transaktionen
     </a>
-    <a id="group-tab-mitglieder"
-       class="group-tab@(membersActive ? " is-active" : string.Empty)"
+    <a id="group-tab-mitglieder" class="mat-tab@(membersActive ? " is-active" : string.Empty)"
        href="@Model.TabUrl(MatSplit.Web.Pages.Groups.DetailsModel.TabMembers)"
        aria-current="@(membersActive ? "page" : null)">
-        <ms-icon name="users" size="18"></ms-icon>
-        <span>Mitglieder (@Model.Members.Count)</span>
+        Mitglieder (@Model.Members.Count)
     </a>
-    <span class="group-tabs__tools">
-        <a id="group-tab-history" class="group-tabs__gear" href="@historyUrl"
-           aria-label="Historie" title="Historie">
-            <ms-icon name="history" size="20"></ms-icon>
-        </a>
-        @if (Model.CanInvite)
-        {
-            <a id="group-tab-share" class="group-tabs__gear" href="@shareUrl"
-               aria-label="Einladung teilen" title="Einladung teilen">
-                <ms-icon name="share" size="20"></ms-icon>
-            </a>
-        }
-        @if (Model.CanManage)
-        {
-            <a id="group-tab-settings" class="group-tabs__gear" href="@editUrl"
-               aria-label="Gruppe verwalten" title="Gruppe verwalten">
-                <ms-icon name="cog" size="20"></ms-icon>
-            </a>
-        }
-    </span>
 </nav>
 
 @if (transactionsActive)
 {
-    <ms-card id="group-transactions">
-        @{
-            var typeAll = MatSplit.Web.Pages.Groups.DetailsModel.TypeAll;
-            var typeExpenses = MatSplit.Web.Pages.Groups.DetailsModel.TypeExpenses;
-            var typePayments = MatSplit.Web.Pages.Groups.DetailsModel.TypePayments;
-        }
-        <div class="txn-toolbar">
-            <div class="txn-filter" role="tablist" aria-label="Nach Typ filtern">
-                <a class="txn-filter__pill@(Model.ActiveType == typeAll ? " is-active" : string.Empty)"
-                   href="@Model.TypeUrl(typeAll)">Alle</a>
-                <a class="txn-filter__pill@(Model.ActiveType == typeExpenses ? " is-active" : string.Empty)"
-                   href="@Model.TypeUrl(typeExpenses)">Ausgaben</a>
-                <a class="txn-filter__pill@(Model.ActiveType == typePayments ? " is-active" : string.Empty)"
-                   href="@Model.TypeUrl(typePayments)">Zahlungen</a>
-            </div>
-
-            @* Primary action goes straight to a new expense (the common case);
-               payments are recorded from the Kontostand page. *@
-            <ms-button id="txn-new" kind="primary" icon="plus" label="Neue Ausgabe"
-                       href="@expenseEditUrl"></ms-button>
-        </div>
+    var typeAll = MatSplit.Web.Pages.Groups.DetailsModel.TypeAll;
+    var typeExpenses = MatSplit.Web.Pages.Groups.DetailsModel.TypeExpenses;
+    var typePayments = MatSplit.Web.Pages.Groups.DetailsModel.TypePayments;
+    <section class="mat-list" id="group-transactions" aria-label="Transaktionen">
+        <nav class="mat-tabs mat-tabs--pills" aria-label="Nach Typ filtern">
+            <a class="mat-tab@(Model.ActiveType == typeAll ? " is-active" : string.Empty)"
+               href="@Model.TypeUrl(typeAll)" aria-current="@(Model.ActiveType == typeAll ? "page" : null)">Alle</a>
+            <a class="mat-tab@(Model.ActiveType == typeExpenses ? " is-active" : string.Empty)"
+               href="@Model.TypeUrl(typeExpenses)" aria-current="@(Model.ActiveType == typeExpenses ? "page" : null)">Ausgaben</a>
+            <a class="mat-tab@(Model.ActiveType == typePayments ? " is-active" : string.Empty)"
+               href="@Model.TypeUrl(typePayments)" aria-current="@(Model.ActiveType == typePayments ? "page" : null)">Zahlungen</a>
+        </nav>
 
         @if (Model.Transactions.IsEmpty)
         {
@@ -107,24 +97,24 @@
         }
         else
         {
-            <div class="txn-list">
+            <ul class="mat-itemlist mat-itemlist--inset" aria-label="Transaktionen">
                 @foreach (var row in Model.Transactions.Items)
                 {
-                    <a class="ms-listrow txn-row" href="@row.EditUrl">
-                        <span class="ms-listrow__icon"><ms-icon name="@row.Icon" size="20"></ms-icon></span>
-                        <span class="ms-listrow__main">
-                            <span class="txn-line">
-                                <span class="txn-title">@row.Title</span>
+                    <li class="mat-item">
+                        <a class="mat-item__main" href="@row.EditUrl">
+                            <span class="mat-item__lead"><span class="mat-item__tile"><ms-icon name="@row.Icon"></ms-icon></span></span>
+                            <span class="mat-item__body">
+                                <span class="mat-item__title">@row.Title</span>
+                                <span class="mat-item__text">@row.Subtitle</span>
                             </span>
-                            <span class="ms-listrow__sub">@row.Subtitle</span>
-                        </span>
-                        <span class="ms-listrow__amount">
-                            <ms-money cents="@row.AmountCents" currency="@currency"></ms-money>
-                            <span class="ms-listrow__sub">@MatSplit.Web.Pages.Groups.DetailsModel.RelativeDay(row.Date)</span>
-                        </span>
-                    </a>
+                            <span class="mat-item__end ms-item-amount">
+                                <ms-money cents="@row.AmountCents" currency="@currency"></ms-money>
+                                <small class="mat-muted">@MatSplit.Web.Pages.Groups.DetailsModel.RelativeDay(row.Date)</small>
+                            </span>
+                        </a>
+                    </li>
                 }
-            </div>
+            </ul>
 
             <ms-pagination id="group-transactions-pages"
                            page="@Model.Transactions.Page"
@@ -132,34 +122,25 @@
                            total-count="@Model.Transactions.TotalCount"
                            page-url="@Model.TransactionsPageUrl()"></ms-pagination>
         }
-    </ms-card>
+    </section>
 }
 else
 {
-    <ms-card id="group-members-panel">
-        @{
-            var mAll = MatSplit.Web.Pages.Groups.DetailsModel.MemberAll;
-            var mAdmins = MatSplit.Web.Pages.Groups.DetailsModel.MemberAdmins;
-            var mUsers = MatSplit.Web.Pages.Groups.DetailsModel.MemberUsers;
-            var mAnon = MatSplit.Web.Pages.Groups.DetailsModel.MemberAnon;
-        }
-        <div class="txn-toolbar">
-            <div class="txn-filter" role="tablist" aria-label="Mitglieder filtern">
-                <a class="txn-filter__pill@(Model.ActiveMemberType == mAll ? " is-active" : string.Empty)"
-                   href="@Model.MemberTypeUrl(mAll)">Alle</a>
-                <a class="txn-filter__pill@(Model.ActiveMemberType == mAdmins ? " is-active" : string.Empty)"
-                   href="@Model.MemberTypeUrl(mAdmins)">Admins</a>
-                <a class="txn-filter__pill@(Model.ActiveMemberType == mUsers ? " is-active" : string.Empty)"
-                   href="@Model.MemberTypeUrl(mUsers)">Benutzer</a>
-                <a class="txn-filter__pill@(Model.ActiveMemberType == mAnon ? " is-active" : string.Empty)"
-                   href="@Model.MemberTypeUrl(mAnon)">Anonyme</a>
-            </div>
-            @if (Model.CanManage)
-            {
-                <ms-button id="members-add" kind="primary" icon="plus" label="Mitglied hinzufügen"
-                           href="@memberEditUrl"></ms-button>
-            }
-        </div>
+    var mAll = MatSplit.Web.Pages.Groups.DetailsModel.MemberAll;
+    var mAdmins = MatSplit.Web.Pages.Groups.DetailsModel.MemberAdmins;
+    var mUsers = MatSplit.Web.Pages.Groups.DetailsModel.MemberUsers;
+    var mAnon = MatSplit.Web.Pages.Groups.DetailsModel.MemberAnon;
+    <section class="mat-list" id="group-members-panel" aria-label="Mitglieder">
+        <nav class="mat-tabs mat-tabs--pills" aria-label="Mitglieder filtern">
+            <a class="mat-tab@(Model.ActiveMemberType == mAll ? " is-active" : string.Empty)"
+               href="@Model.MemberTypeUrl(mAll)" aria-current="@(Model.ActiveMemberType == mAll ? "page" : null)">Alle</a>
+            <a class="mat-tab@(Model.ActiveMemberType == mAdmins ? " is-active" : string.Empty)"
+               href="@Model.MemberTypeUrl(mAdmins)" aria-current="@(Model.ActiveMemberType == mAdmins ? "page" : null)">Admins</a>
+            <a class="mat-tab@(Model.ActiveMemberType == mUsers ? " is-active" : string.Empty)"
+               href="@Model.MemberTypeUrl(mUsers)" aria-current="@(Model.ActiveMemberType == mUsers ? "page" : null)">Benutzer</a>
+            <a class="mat-tab@(Model.ActiveMemberType == mAnon ? " is-active" : string.Empty)"
+               href="@Model.MemberTypeUrl(mAnon)" aria-current="@(Model.ActiveMemberType == mAnon ? "page" : null)">Anonyme</a>
+        </nav>
 
         @if (Model.Members.Count == 0)
         {
@@ -171,201 +152,59 @@ else
         }
         else if (Model.FilteredMembers.Count == 0)
         {
-            <p class="ms-muted" style="margin: var(--ms-space-3) 0;">Keine Mitglieder in dieser Kategorie.</p>
+            <p class="mat-muted">Keine Mitglieder in dieser Kategorie.</p>
         }
         else
         {
-            <div class="txn-list">
+            <ul class="mat-itemlist mat-itemlist--inset" aria-label="Mitglieder">
                 @foreach (var member in Model.FilteredMembers)
                 {
                     var name = member.User?.DisplayName ?? "Unbekannt";
                     var isYou = myUserId != 0 && member.UserId == myUserId;
                     var memberBalance = Model.Balance.Balances.FirstOrDefault(b => b.UserId == member.UserId);
-                    <div class="ms-listrow">
-                        <ms-avatar name="@name" size="md" you="@isYou"></ms-avatar>
-                        <span class="ms-listrow__main">
-                            <span class="txn-line">
-                                <span class="txn-title">@name @(isYou ? "(du)" : string.Empty)</span>
-                                @if (member.ShareFactor != 1)
+                    <li class="mat-item">
+                        <div class="mat-item__main">
+                            <span class="mat-item__lead"><ms-avatar name="@name" you="@isYou"></ms-avatar></span>
+                            <span class="mat-item__body">
+                                <span class="mat-item__title">@name @(isYou ? "(du)" : string.Empty)</span>
+                                @if (member.ShareFactor != 1 || member.IsGroupAdmin)
                                 {
-                                    <span class="ms-chip">@member.ShareFactor Personen</span>
-                                }
-                                @if (member.IsGroupAdmin)
-                                {
-                                    <span class="ms-chip">Admin</span>
+                                    <span class="mat-item__text">
+                                        @if (member.IsGroupAdmin)
+                                        {
+                                            <span class="mat-tag">Admin</span>
+                                        }
+                                        @if (member.ShareFactor != 1)
+                                        {
+                                            <span class="mat-tag">@member.ShareFactor Personen</span>
+                                        }
+                                    </span>
                                 }
                             </span>
-                        </span>
-                        <span class="ms-listrow__amount">
-                            <ms-money cents="@(memberBalance?.BalanceCents ?? 0)" currency="@currency"
-                                      show-sign="true" strong="true"></ms-money>
-                        </span>
+                            <span class="mat-item__end">
+                                <ms-money cents="@(memberBalance?.BalanceCents ?? 0)" currency="@currency"
+                                          show-sign="true" strong="true"></ms-money>
+                            </span>
+                        </div>
                         @if (Model.CanManage)
                         {
-                            <ms-button id="@($"member-{member.UserId}-edit")" kind="ghost" size="sm"
-                                       icon="edit" icon-only="true" label="Mitglied bearbeiten"
-                                       href="@($"{memberEditUrl}&userId={member.UserId}")"></ms-button>
+                            <span class="mat-item__aside">
+                                <ms-button id="@($"member-{member.UserId}-edit")" kind="ghost" size="sm"
+                                           icon="edit" icon-only="true" label="Mitglied bearbeiten"
+                                           href="@($"{memberEditUrl}&userId={member.UserId}")"></ms-button>
+                            </span>
                         }
-                    </div>
+                    </li>
                 }
-            </div>
+            </ul>
         }
 
         @if (Model.CanInvite)
         {
-            <div class="ms-row group-members-actions">
+            <ms-actions id="group-members-actions">
                 <ms-button id="group-members-share" kind="secondary" icon="share" label="Einladung teilen"
                            href="@shareUrl"></ms-button>
-            </div>
+            </ms-actions>
         }
-    </ms-card>
+    </section>
 }
-
-<style>
-    /* Page-scoped hub chrome (pill tabs + transaction list). Only local
-       selectors; no shared foundation styles are touched. */
-
-    .group-tabs {
-        display: flex;
-        align-items: center;
-        gap: var(--ms-space-2);
-        margin: var(--ms-space-4) 0 var(--ms-space-3);
-    }
-
-    .group-tab {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 9px 16px;
-        border-radius: var(--ms-radius-pill);
-        border: 1px solid var(--ms-primary);
-        background: var(--ms-surface);
-        color: var(--ms-primary);
-        font-weight: 650;
-        text-decoration: none;
-        transition: background var(--ms-transition), color var(--ms-transition);
-    }
-
-    .group-tab:hover {
-        background: var(--ms-primary-soft);
-    }
-
-    .group-tab.is-active {
-        background: var(--ms-primary);
-        border-color: var(--ms-primary);
-        color: var(--ms-primary-contrast);
-    }
-
-    .group-tab.is-active:hover {
-        background: var(--ms-primary-hover);
-    }
-
-    .group-tabs__tools {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--ms-space-2);
-        margin-left: auto;
-    }
-
-    .group-tabs__gear {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        border: 1px solid var(--ms-border);
-        background: var(--ms-surface);
-        color: var(--ms-text-soft);
-        text-decoration: none;
-        transition: background var(--ms-transition), color var(--ms-transition), border-color var(--ms-transition);
-    }
-
-    .group-tabs__gear:hover {
-        background: var(--ms-primary-soft);
-        border-color: var(--ms-primary);
-        color: var(--ms-primary);
-    }
-
-    .txn-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--ms-space-3);
-        flex-wrap: wrap;
-        margin-bottom: var(--ms-space-2);
-    }
-
-    .txn-filter {
-        display: flex;
-        gap: var(--ms-space-2);
-        flex-wrap: wrap;
-    }
-
-    .txn-filter__pill {
-        padding: 6px 14px;
-        border-radius: var(--ms-radius-pill);
-        border: 1px solid var(--ms-border);
-        background: var(--ms-surface-3);
-        color: var(--ms-text-soft);
-        font-size: var(--ms-text-sm);
-        font-weight: 600;
-        text-decoration: none;
-    }
-
-    .txn-filter__pill.is-active {
-        background: var(--ms-primary);
-        border-color: var(--ms-primary);
-        color: var(--ms-primary-contrast);
-    }
-
-    .txn-row {
-        color: inherit;
-        text-decoration: none;
-    }
-
-    .txn-row:hover {
-        background: var(--ms-surface-2);
-    }
-
-    .txn-line {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-    }
-
-    .txn-title {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: var(--ms-text);
-        font-weight: 650;
-    }
-
-    .group-members-actions {
-        margin-top: var(--ms-space-4);
-    }
-
-    /* On phones the tab labels ("Transaktionen", "Mitglieder") make the row too
-       wide next to the action icons, so the tabs collapse to icon-only. */
-    @@media (max-width: 640px) {
-        .group-tab span {
-            display: none;
-        }
-
-        .group-tab {
-            padding: 10px 16px;
-        }
-
-        /* Toolbar actions ("Neue Ausgabe" / "Mitglied hinzufügen") shrink to the
-           bare "+" icon on phones. */
-        .txn-toolbar .ms-btn__label {
-            display: none;
-        }
-
-        .txn-toolbar .ms-btn {
-            padding: 10px 12px;
-        }
-    }
-</style>

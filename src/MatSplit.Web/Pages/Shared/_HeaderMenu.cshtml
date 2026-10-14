@@ -1,0 +1,16 @@
+@{
+    // The menu behind the "more" button of the header bar on a phone: the secondary actions of the page as items. Like every popup
+    // it is written at the end of the page, outside of the shell.
+    var secondary = ViewData.ReadHeaderActions().Where(action => !action.Primary).ToList();
+}
+@if (secondary.Count > 1)
+{
+    <div class="mat-menu" id="header-actions-menu" role="menu" aria-label="Weitere Aktionen" hidden>
+        @foreach (var action in secondary)
+        {
+            <a class="mat-menu__item" role="menuitem" href="@action.Url">
+                <ms-icon name="@action.Icon"></ms-icon><span>@action.Label</span>
+            </a>
+        }
+    </div>
+}

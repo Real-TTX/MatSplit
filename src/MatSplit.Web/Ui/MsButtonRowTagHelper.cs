@@ -4,10 +4,9 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Button row of a form. Enforces the mandatory order positive to negative:
+/// Button row of a form (<c>mat-btn-row</c>). Enforces the mandatory order positive to negative:
 /// primary buttons (Save) first, then the neutral buttons (Back), then a gap and
-/// finally the destructive buttons (Delete) which css pushes to the right edge.
-/// The markup order inside the row does not matter.
+/// finally the destructive buttons (Delete). The markup order inside the row does not matter.
 /// </summary>
 [HtmlTargetElement("ms-button-row")]
 public sealed class MsButtonRowTagHelper : MsTagHelperBase
@@ -35,9 +34,9 @@ public sealed class MsButtonRowTagHelper : MsTagHelperBase
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("id", id);
         MsHtml.AddClass(output, MsHtml.Classes(
-            "ms-button-row",
-            Divider ? "ms-button-row--divider" : null,
-            Sticky ? "ms-button-row--sticky" : null,
+            "mat-btn-row",
+            Divider ? null : "mat-btn-row--plain",
+            Sticky ? "mat-btn-row--sticky" : null,
             CssClass));
 
         output.Content.Clear();
@@ -62,14 +61,13 @@ public sealed class MsButtonRowTagHelper : MsTagHelperBase
             return;
         }
 
-        var danger = new TagBuilder("span");
-        danger.AddCssClass("ms-button-row__danger");
+        var spacer = new TagBuilder("span");
+        spacer.AddCssClass("mat-btn-row__spacer");
+        output.Content.AppendHtml(spacer);
 
         foreach (var button in row.Danger)
         {
-            danger.InnerHtml.AppendHtml(button);
+            output.Content.AppendHtml(button);
         }
-
-        output.Content.AppendHtml(danger);
     }
 }

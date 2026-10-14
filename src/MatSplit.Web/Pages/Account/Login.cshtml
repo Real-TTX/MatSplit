@@ -1,9 +1,8 @@
 @page
 @model MatSplit.Web.Pages.Account.LoginModel
 
-<div class="ms-stack">
-    <ms-card id="login-card" title="Willkommen bei @Model.AppName"
-             subtitle="Melde dich mit E-Mail-Adresse oder Benutzername an." icon="logo">
+<div class="mat-stack">
+    <ms-card id="login-card">
         <ms-form id="login-form" autocomplete="on">
             <ms-field id="lf-login" for="Input.EmailOrName" autofocus="true"
                       autocomplete="username" placeholder="z. B. admin"></ms-field>
@@ -30,8 +29,8 @@
 
     @if (Model.AllowAnonymousJoin)
     {
-        <ms-card id="login-join" title="Mit Einladungslink beitreten" icon="link" tone="muted">
-            <p class="ms-muted">
+        <ms-card id="login-join" title="Mit Einladungslink beitreten" icon="link">
+            <p class="mat-muted">
                 Du hast einen Einladungslink f&#252;r eine Gruppe bekommen? Dann brauchst du kein
                 Konto: &#246;ffne den Link, w&#228;hle einen Anzeigenamen und du bist dabei.
             </p>

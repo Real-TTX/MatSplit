@@ -20,7 +20,7 @@
 
             @if (Model.CandidateOptions.Count > 0)
             {
-                <ms-field id="mf-user" for="Input.UserId" type="select" items="Model.CandidateOptions"
+                <ms-field id="mf-user" for="Input.UserId" type="select" items="Model.CandidateOptions" optional="true"
                           option-label="— oder bestehenden Benutzer aufnehmen —" full-width="true"></ms-field>
             }
         }

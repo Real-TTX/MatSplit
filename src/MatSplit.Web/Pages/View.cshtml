@@ -11,100 +11,104 @@
 
 @if (!Model.Found)
 {
-    <ms-card id="ro-missing" title="Nicht verfügbar" icon="link" tone="warning">
-        <p class="ms-muted">Dieser Nur-Lese-Link ist ungültig oder wurde deaktiviert.</p>
+    <ms-card id="ro-missing" title="Nicht verfügbar" icon="link">
+        <p class="mat-muted">Dieser Nur-Lese-Link ist ungültig oder wurde deaktiviert.</p>
     </ms-card>
 }
 else
 {
-    <div class="ms-stack ro">
-        <div class="ro-hero">
-            <div class="ro-hero__name">
-                <ms-icon name="group" size="22"></ms-icon>
-                <span>@Model.Group!.Name</span>
+    @* The public read-only view: the figures of the group, two tabs (transactions, members) and the type filter. *@
+    <div class="mat-stack">
+        <div class="mat-grid mat-grid--3">
+            <div class="mat-card">
+                <div class="mat-card__body mat-stat">
+                    <span class="mat-stat__label">Ausgaben</span>
+                    <span class="mat-stat__value"><ms-money cents="@Model.Balance.TotalExpensesCents" currency="@Model.Currency"></ms-money></span>
+                </div>
             </div>
-            <div class="ro-hero__note">Nur-Lese-Ansicht — sehen, nicht ändern.</div>
-
-            <div class="ro-stats">
-                <div class="ro-stat">
-                    <span class="ro-stat__label">Ausgaben</span>
-                    <span class="ro-stat__value"><ms-money cents="@Model.Balance.TotalExpensesCents" currency="@Model.Currency"></ms-money></span>
+            <div class="mat-card">
+                <div class="mat-card__body mat-stat">
+                    <span class="mat-stat__label">Zahlungen</span>
+                    <span class="mat-stat__value"><ms-money cents="@Model.Balance.TotalPaymentsCents" currency="@Model.Currency"></ms-money></span>
                 </div>
-                <div class="ro-stat">
-                    <span class="ro-stat__label">Zahlungen</span>
-                    <span class="ro-stat__value"><ms-money cents="@Model.Balance.TotalPaymentsCents" currency="@Model.Currency"></ms-money></span>
-                </div>
-                <div class="ro-stat ro-stat--accent">
-                    <span class="ro-stat__label">Offener Ausgleich</span>
-                    <span class="ro-stat__value"><ms-money cents="@Model.OpenSettlementCents" currency="@Model.Currency"></ms-money></span>
+            </div>
+            <div class="mat-card mat-card--accent">
+                <div class="mat-card__body mat-stat">
+                    <span class="mat-stat__label">Offener Ausgleich</span>
+                    <span class="mat-stat__value"><ms-money cents="@Model.OpenSettlementCents" currency="@Model.Currency"></ms-money></span>
                 </div>
             </div>
         </div>
 
-        <nav class="ro-tabs" aria-label="Ansicht">
-            <a class="ro-tab@(onTx ? " is-active" : string.Empty)" href="@Model.TabUrl(tabTx)">
-                <ms-icon name="expense" size="18"></ms-icon><span>Transaktionen</span>
-            </a>
-            <a class="ro-tab@(!onTx ? " is-active" : string.Empty)" href="@Model.TabUrl(tabMem)">
-                <ms-icon name="users" size="18"></ms-icon><span>Mitglieder (@Model.Members.Count)</span>
-            </a>
+        <nav class="mat-tabs" aria-label="Ansicht">
+            <a class="mat-tab@(onTx ? " is-active" : string.Empty)" href="@Model.TabUrl(tabTx)"
+               aria-current="@(onTx ? "page" : null)">Transaktionen</a>
+            <a class="mat-tab@(!onTx ? " is-active" : string.Empty)" href="@Model.TabUrl(tabMem)"
+               aria-current="@(!onTx ? "page" : null)">Mitglieder (@Model.Members.Count)</a>
         </nav>
 
         @if (onTx)
         {
-            <ms-card id="ro-transactions">
-                <div class="ro-filter" role="tablist" aria-label="Nach Typ filtern">
-                    <a class="ro-filter__pill@(Model.ActiveType == tAll ? " is-active" : string.Empty)"
-                       href="@Model.TypeUrl(tAll)">Alle</a>
-                    <a class="ro-filter__pill@(Model.ActiveType == tExp ? " is-active" : string.Empty)"
-                       href="@Model.TypeUrl(tExp)">Ausgaben</a>
-                    <a class="ro-filter__pill@(Model.ActiveType == tPay ? " is-active" : string.Empty)"
-                       href="@Model.TypeUrl(tPay)">Zahlungen</a>
-                </div>
+            <section class="mat-list" id="ro-transactions" aria-label="Transaktionen">
+                <nav class="mat-tabs mat-tabs--pills" aria-label="Nach Typ filtern">
+                    <a class="mat-tab@(Model.ActiveType == tAll ? " is-active" : string.Empty)"
+                       href="@Model.TypeUrl(tAll)" aria-current="@(Model.ActiveType == tAll ? "page" : null)">Alle</a>
+                    <a class="mat-tab@(Model.ActiveType == tExp ? " is-active" : string.Empty)"
+                       href="@Model.TypeUrl(tExp)" aria-current="@(Model.ActiveType == tExp ? "page" : null)">Ausgaben</a>
+                    <a class="mat-tab@(Model.ActiveType == tPay ? " is-active" : string.Empty)"
+                       href="@Model.TypeUrl(tPay)" aria-current="@(Model.ActiveType == tPay ? "page" : null)">Zahlungen</a>
+                </nav>
 
                 @if (Model.Transactions.Count == 0)
                 {
-                    <p class="ms-muted" style="margin: var(--ms-space-3) 0;">Noch keine Transaktionen in dieser Ansicht.</p>
+                    <ms-empty-state id="ro-empty" title="Noch keine Transaktionen"
+                                    text="In dieser Ansicht gibt es noch nichts zu sehen." icon="expense"></ms-empty-state>
                 }
                 else
                 {
-                    <div class="txn-list">
+                    <ul class="mat-itemlist mat-itemlist--inset" aria-label="Transaktionen">
                         @foreach (var row in Model.Transactions)
                         {
-                            <div class="ms-listrow">
-                                <span class="ms-listrow__icon"><ms-icon name="@row.Icon" size="20"></ms-icon></span>
-                                <span class="ms-listrow__main">
-                                    <strong>@row.Title</strong>
-                                    <span class="ms-listrow__sub">@row.Subtitle</span>
-                                </span>
-                                <span class="ms-listrow__amount">
-                                    <ms-money cents="@row.AmountCents" currency="@Model.Currency"></ms-money>
-                                    <span class="ms-listrow__sub">@MatSplit.Web.Pages.Groups.DetailsModel.RelativeDay(row.Date)</span>
-                                </span>
-                            </div>
+                            <li class="mat-item">
+                                <div class="mat-item__main">
+                                    <span class="mat-item__lead"><span class="mat-item__tile"><ms-icon name="@row.Icon"></ms-icon></span></span>
+                                    <span class="mat-item__body">
+                                        <span class="mat-item__title">@row.Title</span>
+                                        <span class="mat-item__text">@row.Subtitle</span>
+                                    </span>
+                                    <span class="mat-item__end ms-item-amount">
+                                        <ms-money cents="@row.AmountCents" currency="@Model.Currency"></ms-money>
+                                        <small class="mat-muted">@MatSplit.Web.Pages.Groups.DetailsModel.RelativeDay(row.Date)</small>
+                                    </span>
+                                </div>
+                            </li>
                         }
-                    </div>
+                    </ul>
                 }
-            </ms-card>
+            </section>
         }
         else
         {
             <ms-card id="ro-members" title="Kontostand pro Mitglied" icon="users"
-                     subtitle="Positiv bedeutet: bekommt Geld zurück.">
-                @foreach (var b in Model.Balance.Balances)
-                {
-                    <div class="ms-listrow">
-                        <ms-avatar name="@b.DisplayName" size="md"></ms-avatar>
-                        <span class="ms-listrow__main"><strong>@b.DisplayName</strong></span>
-                        <span class="ms-listrow__amount">
-                            <ms-money cents="@b.BalanceCents" currency="@Model.Currency" show-sign="true" strong="true"></ms-money>
-                        </span>
-                    </div>
-                }
+                     subtitle="Positiv bedeutet: bekommt Geld zurück." flush="true">
+                <ul class="mat-itemlist" aria-label="Kontostand pro Mitglied">
+                    @foreach (var b in Model.Balance.Balances)
+                    {
+                        <li class="mat-item">
+                            <div class="mat-item__main">
+                                <span class="mat-item__lead"><ms-avatar name="@b.DisplayName"></ms-avatar></span>
+                                <span class="mat-item__body"><span class="mat-item__title">@b.DisplayName</span></span>
+                                <span class="mat-item__end">
+                                    <ms-money cents="@b.BalanceCents" currency="@Model.Currency" show-sign="true" strong="true"></ms-money>
+                                </span>
+                            </div>
+                        </li>
+                    }
+                </ul>
             </ms-card>
 
             <ms-card id="ro-settlements" title="Ausgleichszahlungen" icon="balance"
-                     subtitle="Minimale Überweisungen, damit alle bei null stehen.">
+                     subtitle="Minimale Überweisungen, damit alle bei null stehen." flush="@(Model.Balance.Settlements.Count > 0)">
                 @if (Model.Balance.Settlements.Count == 0)
                 {
                     <ms-alert id="ro-settled" tone="success" title="Alles ausgeglichen"
@@ -112,130 +116,22 @@ else
                 }
                 else
                 {
-                    @foreach (var s in Model.Balance.Settlements)
-                    {
-                        <div class="ms-listrow">
-                            <span class="ms-listrow__icon"><ms-icon name="ausgleich" size="20"></ms-icon></span>
-                            <span class="ms-listrow__main"><strong>@s.FromDisplayName → @s.ToDisplayName</strong></span>
-                            <span class="ms-listrow__amount">
-                                <ms-money cents="@s.AmountCents" currency="@Model.Currency" strong="true"></ms-money>
-                            </span>
-                        </div>
-                    }
+                    <ul class="mat-itemlist" aria-label="Ausgleichszahlungen">
+                        @foreach (var s in Model.Balance.Settlements)
+                        {
+                            <li class="mat-item">
+                                <div class="mat-item__main">
+                                    <span class="mat-item__lead"><span class="mat-item__tile"><ms-icon name="ausgleich"></ms-icon></span></span>
+                                    <span class="mat-item__body"><span class="mat-item__title">@s.FromDisplayName → @s.ToDisplayName</span></span>
+                                    <span class="mat-item__end">
+                                        <ms-money cents="@s.AmountCents" currency="@Model.Currency" strong="true"></ms-money>
+                                    </span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
                 }
             </ms-card>
         }
     </div>
-}
-
-@section Styles {
-    <style>
-        /* Public read-only view: an app-like page with a summary hero, pill tabs
-           (Transaktionen / Mitglieder) and a type filter. Local selectors only. */
-        .ro-hero {
-            border-radius: var(--ms-radius-xl);
-            background: linear-gradient(135deg, var(--ms-primary), var(--ms-primary-hover));
-            color: var(--ms-primary-contrast);
-            padding: var(--ms-space-5) var(--ms-space-6);
-        }
-
-        .ro-hero__name {
-            display: flex;
-            align-items: center;
-            gap: var(--ms-space-2);
-            font-size: 1.5rem;
-            font-weight: 800;
-        }
-
-        .ro-hero__note {
-            margin-top: 2px;
-            opacity: 0.9;
-            font-size: var(--ms-text-sm);
-        }
-
-        .ro-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: var(--ms-space-3);
-            margin-top: var(--ms-space-5);
-        }
-
-        .ro-stat {
-            border-radius: var(--ms-radius);
-            background: rgba(255, 255, 255, 0.16);
-            padding: var(--ms-space-3) var(--ms-space-4);
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .ro-stat--accent {
-            background: rgba(255, 255, 255, 0.28);
-        }
-
-        .ro-stat__label {
-            font-size: var(--ms-text-sm);
-            opacity: 0.9;
-        }
-
-        .ro-stat__value {
-            font-weight: 800;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .ro-tabs {
-            display: flex;
-            gap: var(--ms-space-2);
-            flex-wrap: wrap;
-        }
-
-        .ro-tab {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 9px 16px;
-            border-radius: var(--ms-radius-pill);
-            border: 1px solid var(--ms-primary);
-            background: var(--ms-surface);
-            color: var(--ms-primary);
-            font-weight: 650;
-            text-decoration: none;
-        }
-
-        .ro-tab.is-active {
-            background: var(--ms-primary);
-            border-color: var(--ms-primary);
-            color: var(--ms-primary-contrast);
-        }
-
-        .ro-filter {
-            display: flex;
-            gap: var(--ms-space-2);
-            flex-wrap: wrap;
-            margin-bottom: var(--ms-space-2);
-        }
-
-        .ro-filter__pill {
-            padding: 6px 14px;
-            border-radius: var(--ms-radius-pill);
-            border: 1px solid var(--ms-border);
-            background: var(--ms-surface-3);
-            color: var(--ms-text-soft);
-            font-size: var(--ms-text-sm);
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .ro-filter__pill.is-active {
-            background: var(--ms-primary);
-            border-color: var(--ms-primary);
-            color: var(--ms-primary-contrast);
-        }
-
-        @@media (max-width: 560px) {
-            .ro-stats {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 }

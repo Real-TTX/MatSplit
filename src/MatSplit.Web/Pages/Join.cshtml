@@ -1,112 +1,66 @@
 @page
 @model MatSplit.Web.Pages.JoinModel
 
-<div class="ms-join ms-stack">
-    @if (Model.Group is null)
-    {
-        <div class="ms-hero-icon ms-hero-icon--soft"><ms-icon name="warning" size="44"></ms-icon></div>
+@* The brand above (the layout of the pages without a menu) names the group; this is the card with what to do. *@
+@if (Model.Group is null)
+{
+    <ms-card id="join-card" title="Beitritt nicht möglich" subtitle="Dieser Einladungslink kann leider nicht verwendet werden." icon="warning">
+        <div class="mat-stack">
+            <ms-alert id="join-error-text" tone="error" text="@Model.ErrorText"></ms-alert>
 
-        <div class="ms-join__head">
-            <h2 class="ms-screen-title ms-join__title">Beitritt nicht möglich</h2>
-            <p class="ms-join__text">Dieser Einladungslink kann leider nicht verwendet werden.</p>
+            <ms-button id="join-error-login" kind="primary" icon="user" label="Zur Anmeldung"
+                       type="button" href="/Account/Login" full-width="true"></ms-button>
         </div>
-
-        <ms-alert id="join-error-text" tone="error" text="@Model.ErrorText"></ms-alert>
-
-        <ms-button id="join-error-login" kind="primary" icon="user" label="Zur Anmeldung"
-                   type="button" href="/Account/Login" full-width="true"></ms-button>
-    }
-    else if (Model.IsSignedIn)
-    {
-        <div class="ms-hero-icon"><ms-icon name="users" size="44"></ms-icon></div>
-
-        <div class="ms-join__head">
-            <h2 class="ms-screen-title ms-join__title">Gruppe beitreten</h2>
-            <p class="ms-join__text">
+    </ms-card>
+}
+else if (Model.IsSignedIn)
+{
+    <ms-card id="join-card" title="Gruppe beitreten" icon="users">
+        <div class="mat-stack">
+            <p>
                 Du bist als <strong>@Model.SignedInName</strong> angemeldet. Tritt der Gruppe
                 <strong>@Model.Group.Name</strong> direkt mit diesem Konto bei &#8211; dann bleiben
                 alle deine Gruppen und Ausgaben zusammen.
             </p>
+
+            <ms-form id="join-existing-form" handler="Existing">
+                <ms-field id="jx-token" name="Token" type="hidden" value="@Model.Token"></ms-field>
+
+                <ms-button-row id="jx-buttons" divider="false">
+                    <ms-button id="jx-submit" kind="primary" icon="check" label="Jetzt beitreten"
+                               full-width="true"></ms-button>
+                    <ms-button id="jx-switch" kind="ghost" icon="logout" label="Anderes Konto verwenden"
+                               type="button" href="/Account/Logout" full-width="true"></ms-button>
+                </ms-button-row>
+            </ms-form>
         </div>
-
-        <ms-form id="join-existing-form" handler="Existing">
-            <ms-field id="jx-token" name="Token" type="hidden" value="@Model.Token"></ms-field>
-
-            <ms-button-row id="jx-buttons" divider="false">
-                <ms-button id="jx-submit" kind="primary" icon="check" label="Jetzt beitreten"
-                           full-width="true"></ms-button>
-                <ms-button id="jx-switch" kind="ghost" icon="logout" label="Anderes Konto verwenden"
-                           type="button" href="/Account/Logout" full-width="true"></ms-button>
-            </ms-button-row>
-        </ms-form>
-    }
-    else
-    {
-        <div class="ms-hero-icon ms-hero-icon--soft"><ms-icon name="users" size="44"></ms-icon></div>
-
-        <div class="ms-join__head">
-            <h2 class="ms-screen-title ms-join__title">Gruppe beitreten</h2>
-            <p class="ms-join__text">
+    </ms-card>
+}
+else
+{
+    <ms-card id="join-card" title="Gruppe beitreten" icon="users">
+        <div class="mat-stack">
+            <p>
                 Gib deinen Namen ein, um der Gruppe <strong>@Model.Group.Name</strong> beizutreten.
+                Eine Anmeldung ist nicht erforderlich.
             </p>
+
+            <ms-form id="join-form">
+                <ms-field id="jf-name" for="Input.DisplayName" label="Dein Name" autofocus="true"
+                          placeholder="Max Mustermann" autocomplete="nickname"></ms-field>
+                <ms-field id="jf-token" name="Token" type="hidden" value="@Model.Token"></ms-field>
+
+                <ms-button-row id="jf-buttons" divider="false">
+                    <ms-button id="jf-submit" kind="primary" label="Beitreten & Loslegen"
+                               full-width="true"></ms-button>
+                </ms-button-row>
+            </ms-form>
+
+            <div class="mat-row ms-join-login">
+                <span class="mat-muted">Du hast schon ein Konto?</span>
+                <ms-button id="join-login" kind="ghost" size="sm" icon="user" label="Anmelden"
+                           type="button" href="@Model.LoginUrl"></ms-button>
+            </div>
         </div>
-
-        <ms-form id="join-form">
-            <ms-field id="jf-name" for="Input.DisplayName" label="Dein Name" autofocus="true"
-                      placeholder="Max Mustermann" autocomplete="nickname"></ms-field>
-            <ms-field id="jf-token" name="Token" type="hidden" value="@Model.Token"></ms-field>
-
-            <ms-button-row id="jf-buttons" divider="false">
-                <ms-button id="jf-submit" kind="primary" label="Beitreten & Loslegen"
-                           full-width="true"></ms-button>
-            </ms-button-row>
-        </ms-form>
-
-        <p class="ms-join__note">Keine Anmeldung erforderlich.</p>
-
-        <div class="ms-join__login">
-            <span class="ms-muted">Du hast schon ein Konto?</span>
-            <ms-button id="join-login" kind="ghost" size="sm" icon="user" label="Anmelden"
-                       type="button" href="@Model.LoginUrl"></ms-button>
-        </div>
-    }
-</div>
-
-<style>
-    .ms-join {
-        max-width: 420px;
-        margin-inline: auto;
-    }
-
-    .ms-join__head {
-        display: flex;
-        flex-direction: column;
-        gap: var(--ms-space-2);
-        text-align: center;
-    }
-
-    .ms-join__title {
-        margin: 0;
-    }
-
-    .ms-join__text {
-        margin: 0;
-        color: var(--ms-text-soft);
-        line-height: 1.5;
-    }
-
-    .ms-join__note {
-        margin: 0;
-        text-align: center;
-        color: var(--ms-text-muted);
-        font-size: var(--ms-text-sm);
-    }
-
-    .ms-join__login {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        gap: var(--ms-space-2);
-    }
-</style>
+    </ms-card>
+}

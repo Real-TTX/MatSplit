@@ -2,11 +2,12 @@
    MatSplit install helper.
    Android/Chromium: catches 'beforeinstallprompt' and offers one button that
    triggers the native prompt exactly once.
-   iOS Safari: no install event exists, so a short "Teilen -> Zum
-   Home-Bildschirm" hint is shown instead - but only in Safari and only when
-   the app does not already run standalone.
+   iOS: there is no install event, so a short "Teilen -> Zum Home-Bildschirm"
+   guide is shown instead - only when the app does not already run from the
+   home screen. Since iOS 16.4 every browser can add a web app, so the guide
+   is not limited to Safari; the wording follows the browser.
    The hint is dismissible and stays away for 30 days (localStorage).
-   Styles live in Pages/Shared/_OfflineBanner.cshtml (.ms-pwa-install).
+   Styles live in css/app.css (.ms-pwa-install), the buttons are MatUi's.
    ========================================================================== */
 (function () {
     'use strict';
@@ -14,6 +15,7 @@
     var DISMISS_KEY = 'matsplit.pwa.installDismissed';
     var SNOOZE_DAYS = 30;
     var SHOW_DELAY = 1200;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
 
     var root = document.documentElement;
     var deferredPrompt = null;
@@ -48,8 +50,8 @@
         return iosDevice || iPadDesktopUa;
     }
 
-    /* On iOS every browser uses WebKit, but only Safari can add to the home
-       screen from the share sheet. */
+    /* On iOS every browser uses WebKit; Safari has the share button at the
+       bottom (iPhone) or the top (iPad), the others in the address bar. */
     function isIosSafari() {
         if (!isIos()) {
             return false;
@@ -57,6 +59,12 @@
 
         var ua = window.navigator.userAgent || '';
         return !/CriOS|FxiOS|EdgiOS|OPiOS|Chrome|Firefox|DuckDuckGo|Yandex/.test(ua);
+    }
+
+    /* A web view inside another app (Instagram, Facebook, Gmail ...) cannot add to the home screen. */
+    function isInAppBrowser() {
+        var ua = window.navigator.userAgent || '';
+        return /FBAN|FBAV|Instagram|Line\/|MicroMessenger|Snapchat|GSA\//.test(ua);
     }
 
     function isDismissed() {
@@ -97,12 +105,54 @@
         root.removeAttribute('data-ms-pwa-install');
     }
 
+    function icon(id, className) {
+        var svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('class', className);
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        var use = document.createElementNS(SVG_NS, 'use');
+        use.setAttribute('href', '#' + id);
+        svg.appendChild(use);
+        return svg;
+    }
+
+    /* The share symbol of iOS (a square with an arrow up), so that the guide shows what to look for. */
+    function shareGlyph() {
+        var svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('class', 'mat-icon');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        var path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', 'M12 3v12M8.5 6.5 12 3l3.5 3.5M7 10H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1');
+        svg.appendChild(path);
+        return svg;
+    }
+
     function button(label, kind) {
         var element = document.createElement('button');
         element.type = 'button';
-        element.className = 'ms-pwa-install__button ms-pwa-install__button--' + kind;
+        element.className = 'mat-btn mat-btn--' + kind + ' mat-btn--sm';
         element.textContent = label;
         return element;
+    }
+
+    function step(parts) {
+        var item = document.createElement('li');
+        parts.forEach(function (part) {
+            if (typeof part === 'string') {
+                item.appendChild(document.createTextNode(part));
+            } else {
+                item.appendChild(part);
+            }
+        });
+        return item;
+    }
+
+    function bold(text) {
+        var strong = document.createElement('strong');
+        strong.textContent = text;
+        return strong;
     }
 
     function build(mode) {
@@ -112,66 +162,64 @@
         box.setAttribute('role', 'complementary');
         box.setAttribute('aria-label', 'App installieren');
 
-        var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        icon.setAttribute('class', 'ms-pwa-install__icon');
-        icon.setAttribute('width', '28');
-        icon.setAttribute('height', '28');
-        icon.setAttribute('viewBox', '0 0 24 24');
-        icon.setAttribute('aria-hidden', 'true');
-        var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-        use.setAttribute('href', '#ms-i-download');
-        icon.appendChild(use);
-
         var body = document.createElement('div');
         body.className = 'ms-pwa-install__body';
 
         var title = document.createElement('p');
         title.className = 'ms-pwa-install__title';
         title.textContent = 'MatSplit als App';
-
-        var text = document.createElement('p');
-        text.className = 'ms-pwa-install__text';
-        text.textContent = mode === 'ios'
-            ? 'In Safari auf "Teilen" tippen und "Zum Home-Bildschirm" waehlen - danach laeuft MatSplit im Vollbild und offline.'
-            : 'Installiere MatSplit auf dem Startbildschirm: Vollbild, schneller Start und Offline-Erfassung.';
-
         body.appendChild(title);
-        body.appendChild(text);
 
         var actions = document.createElement('div');
         actions.className = 'ms-pwa-install__actions';
 
-        if (mode === 'prompt') {
+        if (mode === 'ios') {
+            var intro = document.createElement('p');
+            intro.className = 'ms-pwa-install__text';
+            intro.textContent = 'Auf dem Home-Bildschirm startet MatSplit im Vollbild, schnell und auch offline.';
+            body.appendChild(intro);
+
+            var steps = document.createElement('ol');
+            steps.className = 'ms-pwa-install__steps';
+            steps.appendChild(step(isIosSafari()
+                ? ['Tippe auf ', shareGlyph(), ' ', bold('Teilen'), ' (iPhone: unten, iPad: oben).']
+                : ['Tippe im Browser auf ', shareGlyph(), ' ', bold('Teilen'), ' (oder auf die drei Punkte).']));
+            steps.appendChild(step(['Wähle ', bold('Zum Home-Bildschirm'), ' (eventuell nach unten wischen).']));
+            steps.appendChild(step(['Tippe auf ', bold('Hinzufügen'), '.']));
+            body.appendChild(steps);
+
+            var understood = button('Verstanden', 'secondary');
+            understood.addEventListener('click', dismiss);
+            actions.appendChild(understood);
+        } else {
+            var text = document.createElement('p');
+            text.className = 'ms-pwa-install__text';
+            text.textContent = 'Installiere MatSplit auf dem Startbildschirm: Vollbild, schneller Start und Offline-Erfassung.';
+            body.appendChild(text);
+
             var install = button('Installieren', 'primary');
             install.addEventListener('click', function () {
                 install.disabled = true;
                 triggerPrompt();
             });
             actions.appendChild(install);
+
+            var later = button('Später', 'secondary');
+            later.addEventListener('click', dismiss);
+            actions.appendChild(later);
         }
 
-        var later = button(mode === 'ios' ? 'Verstanden' : 'Spaeter', 'ghost');
-        later.addEventListener('click', dismiss);
-        actions.appendChild(later);
+        body.appendChild(actions);
 
         var close = document.createElement('button');
         close.type = 'button';
-        close.className = 'ms-pwa-install__close';
-        close.setAttribute('aria-label', 'Hinweis schliessen');
-        var closeIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        closeIcon.setAttribute('width', '16');
-        closeIcon.setAttribute('height', '16');
-        closeIcon.setAttribute('viewBox', '0 0 24 24');
-        closeIcon.setAttribute('aria-hidden', 'true');
-        var closeUse = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-        closeUse.setAttribute('href', '#ms-i-close');
-        closeIcon.appendChild(closeUse);
-        close.appendChild(closeIcon);
+        close.className = 'mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm ms-pwa-install__close';
+        close.setAttribute('aria-label', 'Hinweis schließen');
+        close.appendChild(icon('mat-i-x', 'mat-icon'));
         close.addEventListener('click', dismiss);
 
-        box.appendChild(icon);
+        box.appendChild(icon('mat-i-download', 'mat-icon ms-pwa-install__icon'));
         box.appendChild(body);
-        box.appendChild(actions);
         box.appendChild(close);
 
         return box;
@@ -259,8 +307,8 @@
             return;
         }
 
-        /* iOS never fires beforeinstallprompt, so the hint is the only option. */
-        if (isIosSafari()) {
+        /* iOS never fires beforeinstallprompt, so the guide is the only option. */
+        if (isIos() && !isInAppBrowser()) {
             window.setTimeout(function () {
                 show('ios');
             }, SHOW_DELAY);
@@ -282,7 +330,7 @@
                 /* ignore */
             }
             shown = false;
-            show(deferredPrompt ? 'prompt' : (isIosSafari() ? 'ios' : 'prompt'));
+            show(deferredPrompt ? 'prompt' : (isIos() ? 'ios' : 'prompt'));
         },
         /** Hide and snooze for 30 days. */
         dismiss: dismiss

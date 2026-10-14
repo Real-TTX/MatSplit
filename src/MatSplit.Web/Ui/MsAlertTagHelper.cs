@@ -4,7 +4,8 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Inline message box for hints, success and error messages.
+/// MatUi alert (<c>mat-alert</c>): an inline message for hints, success and error messages.
+/// Every alert has an icon and a lead, so the colour is never the only signal.
 /// </summary>
 [HtmlTargetElement("ms-alert")]
 public sealed class MsAlertTagHelper : MsTagHelperBase
@@ -38,19 +39,19 @@ public sealed class MsAlertTagHelper : MsTagHelperBase
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("id", id);
-        output.Attributes.SetAttribute("role", tone is "error" or "warning" ? "alert" : "status");
-        MsHtml.AddClass(output, MsHtml.Classes("ms-alert", "ms-alert--" + tone, CssClass));
+        output.Attributes.SetAttribute("role", tone is "error" or "danger" or "warning" ? "alert" : "status");
+        MsHtml.AddClass(output, MsHtml.Classes("mat-alert", "mat-alert--" + ToneClass(tone), CssClass));
 
         var icon = string.IsNullOrWhiteSpace(Icon) ? DefaultIcon(tone) : Icon!;
-        output.PreContent.AppendHtml(MsHtml.Icon(icon, 20, "ms-alert__icon"));
+        output.PreContent.AppendHtml(MsHtml.Icon(icon));
 
         var body = new TagBuilder("div");
-        body.AddCssClass("ms-alert__body");
+        body.AddCssClass("mat-alert__body");
 
         if (!string.IsNullOrWhiteSpace(Title))
         {
             var title = new TagBuilder("strong");
-            title.AddCssClass("ms-alert__title");
+            title.AddCssClass("mat-alert__title");
             title.InnerHtml.Append(Title!);
             body.InnerHtml.AppendHtml(title);
         }
@@ -75,20 +76,27 @@ public sealed class MsAlertTagHelper : MsTagHelperBase
         }
 
         var close = new TagBuilder("button");
-        close.AddCssClass("ms-alert__close");
+        close.AddCssClass("mat-alert__close");
         close.Attributes["type"] = "button";
         close.Attributes["id"] = id + "-close";
-        close.Attributes["data-ms-dismiss"] = id;
-        close.Attributes["aria-label"] = "Meldung schlie\u00dfen";
-        close.InnerHtml.AppendHtml(MsHtml.Icon("close", 16));
+        close.Attributes["data-dismiss"] = "true";
+        close.Attributes["aria-label"] = "Meldung schließen";
+        close.InnerHtml.AppendHtml(MsHtml.Icon("x"));
         output.PostContent.AppendHtml(close);
     }
 
+    private static string ToneClass(string tone) => tone switch
+    {
+        "error" => "danger",
+        "success" or "warning" or "danger" => tone,
+        _ => "info"
+    };
+
     private static string DefaultIcon(string tone) => tone switch
     {
-        "success" => "check",
-        "warning" => "warning",
-        "error" => "warning",
+        "success" => "check-circle",
+        "warning" => "alert",
+        "error" or "danger" => "x-circle",
         _ => "info"
     };
 }

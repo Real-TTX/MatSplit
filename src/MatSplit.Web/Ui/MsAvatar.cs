@@ -1,12 +1,7 @@
-using System.Globalization;
-
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Pure helpers for the <see cref="MsAvatarTagHelper"/>: initials from a display
-/// name and a deterministic background colour derived from a stable string hash.
-/// No <c>Random</c> / <c>DateTime</c> is used, so the same name always yields the
-/// same avatar across requests, servers and reloads.
+/// Pure helper for the <see cref="MsAvatarTagHelper"/>: the initials of a display name.
 /// </summary>
 internal static class MsAvatar
 {
@@ -60,36 +55,6 @@ internal static class MsAvatar
         }
 
         return (letters[0] + letters[^1]).ToUpperInvariant();
-    }
-
-    /// <summary>
-    /// Deterministic background colour as an <c>hsl(...)</c> string derived from a
-    /// stable FNV-1a hash of the trimmed, lower-cased name. Saturation and
-    /// lightness are fixed to values that read well with white text in both the
-    /// light and the dark theme.
-    /// </summary>
-    public static string Background(string? name)
-    {
-        var hue = Hue(name);
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"hsl({hue}, 62%, 45%)");
-    }
-
-    /// <summary>Hue 0..359 from a stable hash of the name.</summary>
-    public static int Hue(string? name)
-    {
-        var key = (name ?? string.Empty).Trim().ToLowerInvariant();
-
-        // FNV-1a 32 bit: deterministic, no allocation, stable across runtimes.
-        uint hash = 2166136261u;
-        foreach (var character in key)
-        {
-            hash ^= character;
-            hash *= 16777619u;
-        }
-
-        return (int)(hash % 360u);
     }
 
     private static string StripParentheticals(string value)

@@ -78,8 +78,53 @@ internal static class MsHtml
     public static bool HasContent(TagHelperContent? content)
         => content is not null && !content.IsEmptyOrWhiteSpace;
 
-    /// <summary>Builds an inline svg icon that references the sprite symbol.</summary>
-    public static IHtmlContent Icon(string? name, int size = 20, string? extraClass = null)
+    /// <summary>
+    /// Icons of the old MatSplit sprite that the toolkit sprite (matui-icons.svg) knows under another name.
+    /// A name that is in neither place is looked up in the app sprite (<c>_AppIcons.cshtml</c>).
+    /// </summary>
+    private static readonly Dictionary<string, string> ToolkitIcons = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["group"] = "users",
+        ["receipt"] = "file-text",
+        ["history"] = "clock",
+        ["admin"] = "shield",
+        ["forward"] = "arrow-right",
+        ["close"] = "x",
+        ["warning"] = "alert",
+        ["empty"] = "box",
+        ["arrow-left"] = "back",
+        ["chart"] = "bar-chart",
+        ["profile"] = "user-circle",
+        ["cog"] = "settings",
+        ["dots"] = "more-horizontal"
+    };
+
+    /// <summary>Icons that exist in the toolkit sprite under their own name.</summary>
+    private static readonly HashSet<string> ToolkitNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "home", "users", "user", "plus", "edit", "trash", "save", "back", "search", "filter", "sort", "menu",
+        "sun", "moon", "monitor", "logout", "link", "settings", "info", "check", "chevron-down", "chevron-up",
+        "chevron-left", "chevron-right", "copy", "calendar", "download", "upload", "activity", "x", "x-circle",
+        "check-circle", "alert", "clock", "dollar", "file-text", "shield", "arrow-right", "box", "bar-chart",
+        "user-circle", "more-horizontal", "eye", "eye-off", "lock", "key", "image", "refresh", "smartphone",
+        "globe", "help-circle", "star", "list", "bell", "tag", "mail", "sliders"
+    };
+
+    /// <summary>The id of the symbol an icon name refers to: the toolkit sprite first, the app sprite for what only MatSplit needs.</summary>
+    public static string IconId(string name)
+    {
+        var key = name.Trim();
+
+        if (ToolkitIcons.TryGetValue(key, out var mapped))
+        {
+            return "mat-i-" + mapped;
+        }
+
+        return ToolkitNames.Contains(key) ? "mat-i-" + key : "ms-i-" + key;
+    }
+
+    /// <summary>Builds an inline svg icon that references the sprite symbol; the toolkit sizes it (<c>mat-icon</c>).</summary>
+    public static IHtmlContent Icon(string? name, string? extraClass = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -87,10 +132,7 @@ internal static class MsHtml
         }
 
         var svg = new TagBuilder("svg");
-        svg.AddCssClass(Classes("ms-icon", extraClass));
-        svg.Attributes["width"] = size.ToString(CultureInfo.InvariantCulture);
-        svg.Attributes["height"] = size.ToString(CultureInfo.InvariantCulture);
-        svg.Attributes["viewBox"] = "0 0 24 24";
+        svg.AddCssClass(Classes("mat-icon", extraClass));
         svg.Attributes["aria-hidden"] = "true";
         svg.Attributes["focusable"] = "false";
 
@@ -98,7 +140,7 @@ internal static class MsHtml
         {
             TagRenderMode = TagRenderMode.Normal
         };
-        use.Attributes["href"] = "#ms-i-" + name.Trim();
+        use.Attributes["href"] = "#" + IconId(name);
         svg.InnerHtml.AppendHtml(use);
 
         return svg;

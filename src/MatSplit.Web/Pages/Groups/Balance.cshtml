@@ -1,73 +1,90 @@
 @page
 @model MatSplit.Web.Pages.Groups.BalanceModel
+@{
+    ViewData[LayoutKeys.HeaderActions] = new[]
+    {
+        new HeaderAction($"/Groups/Payments/Edit?groupId={Model.GroupId}", "plus", "Zahlung erfassen", Primary: true)
+    };
+}
 
+<div class="mat-stack">
 
-<div class="ms-stack">
-
-    <div class="ms-grid ms-grid--3">
-        <ms-card id="bal-expenses" title="Ausgaben" icon="expense">
-            <ms-money cents="@Model.Result.TotalExpensesCents" currency="@Model.Currency" strong="true"></ms-money>
-            <p class="ms-muted">Summe aller Ausgaben dieser Gruppe.</p>
-        </ms-card>
-        <ms-card id="bal-payments" title="Verbuchte Zahlungen" icon="paypal">
-            <ms-money cents="@Model.Result.TotalPaymentsCents" currency="@Model.Currency" strong="true"></ms-money>
-            <p class="ms-muted">Bereits geflossenes Geld zwischen den Mitgliedern.</p>
-        </ms-card>
-        <ms-card id="bal-open" title="Offener Ausgleich" icon="balance" tone="accent">
-            <ms-money cents="@Model.OpenSettlementCents" currency="@Model.Currency" strong="true"></ms-money>
-            <p class="ms-muted">
-                @if (Model.Result.Settlements.Count == 1)
-                {
-                    <text>Eine offene Ausgleichszahlung.</text>
-                }
-                else
-                {
-                    <text>@Model.Result.Settlements.Count offene Ausgleichszahlungen.</text>
-                }
-            </p>
-        </ms-card>
+    <div class="mat-grid mat-grid--3">
+        <div class="mat-card" id="bal-expenses">
+            <div class="mat-card__body mat-stat">
+                <span class="mat-stat__label">Ausgaben</span>
+                <span class="mat-stat__value"><ms-money cents="@Model.Result.TotalExpensesCents" currency="@Model.Currency"></ms-money></span>
+                <span class="mat-stat__delta">Summe aller Ausgaben dieser Gruppe.</span>
+            </div>
+        </div>
+        <div class="mat-card" id="bal-payments">
+            <div class="mat-card__body mat-stat">
+                <span class="mat-stat__label">Verbuchte Zahlungen</span>
+                <span class="mat-stat__value"><ms-money cents="@Model.Result.TotalPaymentsCents" currency="@Model.Currency"></ms-money></span>
+                <span class="mat-stat__delta">Bereits geflossenes Geld zwischen den Mitgliedern.</span>
+            </div>
+        </div>
+        <div class="mat-card mat-card--accent" id="bal-open">
+            <div class="mat-card__body mat-stat">
+                <span class="mat-stat__label">Offener Ausgleich</span>
+                <span class="mat-stat__value"><ms-money cents="@Model.OpenSettlementCents" currency="@Model.Currency"></ms-money></span>
+                <span class="mat-stat__delta">
+                    @if (Model.Result.Settlements.Count == 1)
+                    {
+                        <text>Eine offene Ausgleichszahlung.</text>
+                    }
+                    else
+                    {
+                        <text>@Model.Result.Settlements.Count offene Ausgleichszahlungen.</text>
+                    }
+                </span>
+            </div>
+        </div>
     </div>
 
     <ms-card id="bal-members" title="Kontostand pro Mitglied" icon="users"
-             subtitle="Positiv bedeutet: bekommt Geld zurück.">
-        @foreach (var balance in Model.Result.Balances)
+             subtitle="Positiv bedeutet: bekommt Geld zurück." flush="true">
+        <ul class="mat-itemlist" aria-label="Kontostand pro Mitglied">
+            @foreach (var balance in Model.Result.Balances)
+            {
+                var isYou = Model.IsCurrentUser(balance.UserId);
+                <li class="mat-item mat-item--wrap">
+                    <div class="mat-item__main">
+                        <span class="mat-item__lead"><ms-avatar name="@balance.DisplayName" you="@isYou"></ms-avatar></span>
+                        <span class="mat-item__body">
+                            <span class="mat-item__title">@balance.DisplayName@(isYou ? " (du)" : "")</span>
+                            <span class="mat-item__text">
+                                @if (balance.ShareFactor != 1)
+                                {
+                                    <text>@balance.ShareFactor Personen · </text>
+                                }
+                                Bezahlt <ms-money cents="@balance.ExpensesPaidCents" currency="@Model.Currency"></ms-money>
+                                · Anteil <ms-money cents="@MatSplit.Web.Pages.Groups.BalanceModel.ShareCents(balance)"
+                                                   currency="@Model.Currency"></ms-money>
+                            </span>
+                        </span>
+                        <span class="mat-item__end">
+                            <ms-money cents="@balance.BalanceCents" currency="@Model.Currency"
+                                      show-sign="true" strong="true"></ms-money>
+                        </span>
+                    </div>
+                </li>
+            }
+        </ul>
+
+        @if (Model.Result.Balances.Count == 0)
         {
-            var isYou = Model.IsCurrentUser(balance.UserId);
-            <div class="ms-listrow">
-                <ms-avatar name="@balance.DisplayName" size="md" you="@isYou"></ms-avatar>
-                <span class="ms-listrow__main">
-                    <strong>@balance.DisplayName@(isYou ? " (du)" : "")</strong>
-                    <span class="ms-listrow__sub">
-                        @if (balance.ShareFactor != 1)
-                        {
-                            <text>@balance.ShareFactor Personen · </text>
-                        }
-                        Bezahlt <ms-money cents="@balance.ExpensesPaidCents" currency="@Model.Currency"></ms-money>
-                        · Anteil <ms-money cents="@MatSplit.Web.Pages.Groups.BalanceModel.ShareCents(balance)"
-                                           currency="@Model.Currency"></ms-money>
-                    </span>
-                </span>
-                <span class="ms-listrow__amount">
-                    <ms-money cents="@balance.BalanceCents" currency="@Model.Currency"
-                              show-sign="true" strong="true"></ms-money>
-                </span>
-            </div>
+            <ms-empty-state id="bal-empty" title="Keine Mitglieder"
+                            text="Lade zuerst Mitglieder ein, dann kann abgerechnet werden."
+                            icon="users"
+                            action-url="@($"/Groups/Details?groupId={Model.GroupId}&tab=mitglieder")"
+                            action-label="Mitglieder verwalten"></ms-empty-state>
         }
     </ms-card>
 
-    @if (Model.Result.Balances.Count == 0)
-    {
-        <ms-empty-state id="bal-empty" title="Keine Mitglieder"
-                        text="Lade zuerst Mitglieder ein, dann kann abgerechnet werden."
-                        icon="users"
-                        action-url="@($"/Groups/Details?groupId={Model.GroupId}&tab=mitglieder")"
-                        action-label="Mitglieder verwalten"></ms-empty-state>
-    }
-
     <ms-card id="bal-settlements" title="Ausgleichszahlungen" icon="balance"
              subtitle="Minimale Anzahl an Überweisungen, damit alle bei null stehen."
-             header-action-url="@($"/Groups/Payments/Edit?groupId={Model.GroupId}")"
-             header-action-icon="plus" header-action-label="Zahlung erfassen">
+             flush="@(Model.Result.Settlements.Count > 0)">
         @if (Model.Result.Settlements.Count == 0)
         {
             <ms-alert id="bal-settled" tone="success" title="Alles ausgeglichen"
@@ -75,68 +92,54 @@
         }
         else
         {
-            @for (var index = 0; index < Model.Result.Settlements.Count; index++)
-            {
-                var settlement = Model.Result.Settlements[index];
-                var rowId = $"settle-{index}";
-                <div class="ms-listrow">
-                    <span class="ms-listrow__icon"><ms-icon name="ausgleich" size="20"></ms-icon></span>
-                    <span class="ms-listrow__main">
-                        <strong>@settlement.FromDisplayName → @settlement.ToDisplayName</strong>
-                        <span class="ms-listrow__sub bal-settle-actions">
-                            @if (!string.IsNullOrWhiteSpace(settlement.PayPalUrl))
-                            {
-                                <ms-button id="@($"{rowId}-paypal")" kind="secondary" size="sm" icon="paypal"
-                                           label="Mit PayPal zahlen" href="@settlement.PayPalUrl"
-                                           target="_blank"></ms-button>
-                            }
-                            else
-                            {
-                                <span class="ms-muted">@Model.PayPalHint(settlement)</span>
-                                @if (Model.IsCurrentUser(settlement.ToUserId))
-                                {
-                                    <ms-button id="@($"{rowId}-profile")" kind="ghost" size="sm" icon="user"
-                                               label="PayPal hinterlegen" href="/Account/Profile"></ms-button>
-                                }
-                            }
-                            <ms-form id="@($"{rowId}-form")" handler="Settle" validation-summary="none">
-                                <ms-field id="@($"{rowId}-group")" name="groupId" type="hidden"
-                                          value="@Model.GroupId.ToString()"></ms-field>
-                                <ms-field id="@($"{rowId}-from")" name="fromUserId" type="hidden"
-                                          value="@settlement.FromUserId.ToString()"></ms-field>
-                                <ms-field id="@($"{rowId}-to")" name="toUserId" type="hidden"
-                                          value="@settlement.ToUserId.ToString()"></ms-field>
-                                <ms-field id="@($"{rowId}-amount")" name="amountCents" type="hidden"
-                                          value="@settlement.AmountCents.ToString()"></ms-field>
-                                <ms-button id="@($"{rowId}-book")" kind="primary" size="sm" icon="check"
-                                           label="Als bezahlt verbuchen"
-                                           confirm="Diese Ausgleichszahlung als bezahlt verbuchen?"></ms-button>
-                            </ms-form>
-                        </span>
-                    </span>
-                    <span class="ms-listrow__amount">
-                        <ms-money cents="@settlement.AmountCents" currency="@Model.Currency" strong="true"></ms-money>
-                    </span>
-                </div>
-            }
+            <ul class="mat-itemlist" aria-label="Ausgleichszahlungen">
+                @for (var index = 0; index < Model.Result.Settlements.Count; index++)
+                {
+                    var settlement = Model.Result.Settlements[index];
+                    var rowId = $"settle-{index}";
+                    <li class="mat-item mat-item--top mat-item--wrap">
+                        <div class="mat-item__main">
+                            <span class="mat-item__lead"><span class="mat-item__tile"><ms-icon name="ausgleich"></ms-icon></span></span>
+                            <span class="mat-item__body">
+                                <span class="mat-item__title">@settlement.FromDisplayName → @settlement.ToDisplayName</span>
+                                <span class="mat-row ms-settle-actions">
+                                    @if (!string.IsNullOrWhiteSpace(settlement.PayPalUrl))
+                                    {
+                                        <ms-button id="@($"{rowId}-paypal")" kind="secondary" size="sm" icon="paypal"
+                                                   label="Mit PayPal zahlen" href="@settlement.PayPalUrl"
+                                                   target="_blank"></ms-button>
+                                    }
+                                    else
+                                    {
+                                        <span class="mat-muted">@Model.PayPalHint(settlement)</span>
+                                        @if (Model.IsCurrentUser(settlement.ToUserId))
+                                        {
+                                            <ms-button id="@($"{rowId}-profile")" kind="ghost" size="sm" icon="user"
+                                                       label="PayPal hinterlegen" href="/Account/Profile"></ms-button>
+                                        }
+                                    }
+                                    <ms-form id="@($"{rowId}-form")" handler="Settle" validation-summary="none" class="ms-inline-form">
+                                        <ms-field id="@($"{rowId}-group")" name="groupId" type="hidden"
+                                                  value="@Model.GroupId.ToString()"></ms-field>
+                                        <ms-field id="@($"{rowId}-from")" name="fromUserId" type="hidden"
+                                                  value="@settlement.FromUserId.ToString()"></ms-field>
+                                        <ms-field id="@($"{rowId}-to")" name="toUserId" type="hidden"
+                                                  value="@settlement.ToUserId.ToString()"></ms-field>
+                                        <ms-field id="@($"{rowId}-amount")" name="amountCents" type="hidden"
+                                                  value="@settlement.AmountCents.ToString()"></ms-field>
+                                        <ms-button id="@($"{rowId}-book")" kind="primary" size="sm" icon="check"
+                                                   label="Als bezahlt verbuchen"
+                                                   confirm="Diese Ausgleichszahlung als bezahlt verbuchen?"></ms-button>
+                                    </ms-form>
+                                </span>
+                            </span>
+                            <span class="mat-item__end">
+                                <ms-money cents="@settlement.AmountCents" currency="@Model.Currency" strong="true"></ms-money>
+                            </span>
+                        </div>
+                    </li>
+                }
+            </ul>
         }
     </ms-card>
 </div>
-
-@section Styles {
-    <style>
-        /* Settlement rows carry their own action buttons in the sub line. */
-        .bal-settle-actions {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: var(--ms-space-2);
-            margin-top: 6px;
-        }
-
-        .bal-settle-actions .ms-form {
-            display: inline-flex;
-            margin: 0;
-        }
-    </style>
-}

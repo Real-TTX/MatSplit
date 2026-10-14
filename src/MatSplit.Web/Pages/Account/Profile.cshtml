@@ -9,7 +9,7 @@
     };
 }
 
-<div class="ms-stack">
+<div class="mat-stack">
     <div class="ms-profile-head">
         <ms-avatar name="@Model.DisplayName" size="lg" you="true"></ms-avatar>
         <div class="ms-profile-head__meta">
@@ -66,7 +66,7 @@
 
             @if (Model.HasPassword)
             {
-                <hr />
+                <hr class="ms-sep mat-field--full" />
 
                 <ms-field id="pf-change" for="Input.ChangePassword" type="checkbox" full-width="true"></ms-field>
                 <ms-field id="pf-current" for="Input.CurrentPassword" type="password"
@@ -98,7 +98,7 @@
                         <th scope="col">Angemeldet</th>
                         <th scope="col">Letzter Zugriff</th>
                         <th scope="col">L&#228;uft ab</th>
-                        <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+                        <th scope="col"><span class="mat-sr-only">Aktionen</span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -112,14 +112,14 @@
                                 @session.Device
                                 @if (session.IsCurrent)
                                 {
-                                    <span class="ms-chip">Diese Sitzung</span>
+                                    <span class="mat-pill mat-pill--ok">Diese Sitzung</span>
                                 }
                             </td>
                             <td data-label="Angemeldet">@session.CreatedUtc.ToString("dd.MM.yyyy HH:mm")</td>
                             <td data-label="Letzter Zugriff">@session.LastSeenUtc.ToString("dd.MM.yyyy HH:mm")</td>
                             <td data-label="L&#228;uft ab">@session.ExpiresUtc.ToString("dd.MM.yyyy")</td>
                             <td data-label="Aktionen">
-                                <div class="ms-table__rowactions">
+                                <div class="mat-table__actions">
                                     <ms-button id="@($"session-{session.Id}-end")" kind="danger" size="sm"
                                                icon="logout" icon-only="true" label="Abmelden"
                                                name="sessionId" value="@session.Id"
@@ -147,7 +147,8 @@
     </ms-card>
 
     <ms-card id="profile-meta" title="Kontodaten" icon="info">
-        <dl class="ms-kv">
+      <div class="mat-stack">
+        <dl class="mat-kv">
             <dt>Anzeigename</dt>
             <dd>@Model.DisplayName</dd>
             <dt>Rolle</dt>
@@ -155,42 +156,15 @@
             <dt>Passwort</dt>
             <dd>@(Model.HasPassword ? "gesetzt" : "nicht gesetzt")</dd>
             <dt>Konto-Kennung</dt>
-            <dd class="ms-muted">@Model.UserToken</dd>
+            <dd class="mat-muted">@Model.UserToken</dd>
         </dl>
-        <div class="ms-row">
+        <div class="mat-row">
             <ms-button id="profile-logout" kind="secondary" icon="logout" label="Abmelden"
                        type="button" href="/Account/Logout"></ms-button>
         </div>
+      </div>
     </ms-card>
 </div>
-
-<style>
-    .ms-profile-head {
-        display: flex;
-        align-items: center;
-        gap: var(--ms-space-3);
-    }
-
-    .ms-profile-head__meta {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        min-width: 0;
-    }
-
-    .ms-profile-head__name {
-        font-size: var(--ms-text-lg);
-        font-weight: 700;
-        letter-spacing: -0.01em;
-        color: var(--ms-text);
-        word-break: break-word;
-    }
-
-    .ms-profile-head__role {
-        color: var(--ms-text-muted);
-        font-size: var(--ms-text-sm);
-    }
-</style>
 
 @section Scripts {
     <script>

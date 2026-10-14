@@ -28,9 +28,9 @@
                 <tr>
                     <th scope="col">Vorschau</th>
                     <th scope="col">Datei</th>
-                    <th scope="col" class="ms-num">Gr&#246;&#223;e</th>
+                    <th scope="col" class="mat-num">Gr&#246;&#223;e</th>
                     <th scope="col">Hochgeladen</th>
-                    <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+                    <th scope="col"><span class="mat-sr-only">Aktionen</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -53,12 +53,12 @@
                         <td data-label="Datei">
                             <a href="@($"/receipts/{receipt.Id}")" target="_blank" rel="noopener">@receipt.FileName</a>
                         </td>
-                        <td data-label="Gr&#246;&#223;e" class="ms-num">
+                        <td data-label="Gr&#246;&#223;e" class="mat-num">
                             @MatSplit.Web.Pages.Groups.Expenses.ReceiptPreviewModel.FormatSize(receipt.FileSizeBytes)
                         </td>
                         <td data-label="Hochgeladen">@receipt.CreateDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
                         <td data-label="Aktionen">
-                            <div class="ms-table__rowactions">
+                            <div class="mat-table__actions">
                                 <ms-button id="@($"rc-{receipt.Id}-open")" kind="ghost" size="sm" icon="forward"
                                            icon-only="true" label="Beleg öffnen"
                                            href="@($"/receipts/{receipt.Id}")" target="_blank"></ms-button>

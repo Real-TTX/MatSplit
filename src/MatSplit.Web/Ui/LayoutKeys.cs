@@ -37,6 +37,12 @@ public static class LayoutKeys
     /// <summary>Hides the left menu, used by Login / Join (bool).</summary>
     public const string HideMenu = "HideMenu";
 
+    /// <summary>A page without menu that is not a card of the sign-in kind but a wide public view (the read-only link) (bool).</summary>
+    public const string PublicPage = "PublicPage";
+
+    /// <summary><see cref="IReadOnlyList{T}"/> of <see cref="HeaderAction"/>: the icons at the right end of the header bar.</summary>
+    public const string HeaderActions = "HeaderActions";
+
     /// <summary>Success message, survives a redirect when put into TempData.</summary>
     public const string Flash = "Flash";
 

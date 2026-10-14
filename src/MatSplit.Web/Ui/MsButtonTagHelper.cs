@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Button or link with icon. Inside ms-button-row / ms-actions the button
+/// MatUi button (<c>mat-btn</c>) or link with icon. Inside ms-button-row / ms-actions the button
 /// registers itself with its parent so the parent can enforce the order
 /// positive to negative; outside it renders in place.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed class MsButtonTagHelper : MsTagHelperBase
     /// <summary>Razor page handler, rendered as formaction=?handler=name.</summary>
     public string? Handler { get; set; }
 
-    /// <summary>Confirmation question shown before the action runs.</summary>
+    /// <summary>Confirmation question shown in a MatUi dialog before the action runs.</summary>
     public string? Confirm { get; set; }
 
     public bool Disabled { get; set; }
@@ -78,12 +78,12 @@ public sealed class MsButtonTagHelper : MsTagHelperBase
         var tag = new TagBuilder(isLink ? "a" : "button");
         tag.Attributes["id"] = id;
         tag.AddCssClass(MsHtml.Classes(
-            "ms-btn",
-            "ms-btn--" + KindClass(kind),
-            string.Equals(Size, "sm", StringComparison.OrdinalIgnoreCase) ? "ms-btn--sm" : null,
-            FullWidth ? "ms-btn--block" : null,
-            IconOnly ? "ms-btn--icon" : null,
-            kind == MsButtonKind.Danger ? "is-danger" : null,
+            "mat-btn",
+            "mat-btn--" + KindClass(kind),
+            string.Equals(Size, "sm", StringComparison.OrdinalIgnoreCase) ? "mat-btn--sm" : null,
+            string.Equals(Size, "lg", StringComparison.OrdinalIgnoreCase) ? "mat-btn--lg" : null,
+            FullWidth ? "mat-btn--block" : null,
+            IconOnly ? "mat-btn--icon" : null,
             CssClass));
 
         if (isLink)
@@ -136,20 +136,16 @@ public sealed class MsButtonTagHelper : MsTagHelperBase
                 tag.Attributes["formaction"] = formAction!;
             }
 
+            // Delete and the other buttons that name a handler send the form without the check of the fields (FORM-05).
+            if (kind == MsButtonKind.Danger || !string.IsNullOrWhiteSpace(formAction))
+            {
+                tag.Attributes["formnovalidate"] = "formnovalidate";
+            }
+
             if (Disabled)
             {
                 tag.Attributes["disabled"] = "disabled";
             }
-        }
-
-        if (!string.IsNullOrWhiteSpace(Confirm))
-        {
-            tag.Attributes["data-ms-confirm"] = Confirm!;
-        }
-
-        if (!string.IsNullOrWhiteSpace(Title))
-        {
-            tag.Attributes["title"] = Title!;
         }
 
         var caption = Label;
@@ -159,9 +155,25 @@ public sealed class MsButtonTagHelper : MsTagHelperBase
             caption = children.GetContent().Trim();
         }
 
+        if (!string.IsNullOrWhiteSpace(Confirm))
+        {
+            // A dialog of MatUi instead of window.confirm (DIALOG-01); the red button names the action.
+            tag.Attributes["data-confirm"] = Confirm!;
+
+            if (kind == MsButtonKind.Danger && !string.IsNullOrWhiteSpace(caption))
+            {
+                tag.Attributes["data-confirm-ok"] = caption!;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(Title))
+        {
+            tag.Attributes["title"] = Title!;
+        }
+
         if (!string.IsNullOrWhiteSpace(Icon))
         {
-            tag.InnerHtml.AppendHtml(MsHtml.Icon(Icon, string.Equals(Size, "sm", StringComparison.OrdinalIgnoreCase) ? 16 : 18));
+            tag.InnerHtml.AppendHtml(MsHtml.Icon(Icon));
         }
 
         if (IconOnly)
@@ -169,17 +181,12 @@ public sealed class MsButtonTagHelper : MsTagHelperBase
             if (!string.IsNullOrWhiteSpace(caption))
             {
                 tag.Attributes["aria-label"] = caption!;
-
-                if (string.IsNullOrWhiteSpace(Title))
-                {
-                    tag.Attributes["title"] = caption!;
-                }
+                tag.Attributes["data-tip"] = caption!;
             }
         }
         else if (!string.IsNullOrWhiteSpace(caption))
         {
             var span = new TagBuilder("span");
-            span.AddCssClass("ms-btn__label");
             span.InnerHtml.Append(caption!);
             tag.InnerHtml.AppendHtml(span);
         }

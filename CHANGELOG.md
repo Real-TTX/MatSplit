@@ -7,6 +7,45 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 
 ## [Unreleased]
 
+### Geaendert
+
+- **Design: MatDesign uebernommen** (MatUi 0.1.0, Kopie unter `wwwroot/matui/`). Die eigene Oberflaeche
+  (`theme.css`, `controls.css`, `layout.css`, `mobile.css`, `scrollbars.css` und die Oberflaechen-Teile von
+  `site.js`) ist durch das Toolkit ersetzt: Menue links mit Logo, Gruppen und Administration, Kopfleiste mit
+  Brotkrumen und den Aktionen der Seite (die wichtigste als Akzent-Icon), Benutzermenue mit Konto/Abmelden und
+  3-Zustands-Theme-Button am Fuss des Menues, flacher Look ohne Verlaeufe, Akzentfarbe `#bf5610` (Registry von
+  MatDesign), Hell/Dunkel aus einem Satz Tokens. Die `ms-*`-Tag-Helper bleiben, rendern aber `mat-*`-Markup;
+  alle Seiten sind darauf umgestellt, die eigenen Seitenstile stehen gesammelt in `wwwroot/css/app.css`.
+- **Listen**: Suche als Feld in der Werkzeugleiste, Filter und Sortierung als Dialoge (auf dem Handy
+  Vollbild), aktive Werkzeuge als entfernbare Chips. Transaktionen, Mitglieder, Salden und
+  Ausgleichszahlungen sind Zeilenlisten, Gruppen sind Karten mit Verbrauchsbalken.
+- **Formulare**: Pruefung im Browser durch MatUi mit den deutschen Meldungen aus den DataAnnotations,
+  Zusammenfassung oben, abhaengige Felder (`data-show-if`), Rueckfragen als Dialog statt Browser-Dialog.
+- Das Farbschema des Kontos wird auf jeder Seite als `data-theme` geschrieben (auch „System“); ein im Browser
+  gemerkter Wert ueberschreibt es nicht mehr.
+
+### PWA (iOS und Android)
+
+- **Sichere Bereiche**: `viewport-fit=cover` mit `env(safe-area-inset-*)` an allen vier Kanten - Notch/Dynamic
+  Island oben, Home-Indikator unten, Aussparung seitlich im Querformat (Menue, Kopfleiste, Seite, Fussleiste,
+  Dialoge, Offline-Balken, Installationshinweis, Kamera-Ansicht).
+- **Vollbild ohne toten Streifen**: die Shell ist an die vier Bildschirmkanten gepinnt (`position: fixed`), weil
+  `100vh`/`100dvh` in einer installierten iOS-App zu kurz ausfallen. Die Bildschirmtastatur schiebt den unteren
+  Rand hoch (`visualViewport`), sodass das fokussierte Feld nie dahinter liegt.
+- **Statusleiste**: `theme-color` folgt der Kopfleiste des tatsaechlich angezeigten Themes (auch bei Hell/Dunkel
+  gegen das System); iOS nutzt `default` (lesbare Statusleiste).
+- **Icons**: neues flaches Logo (Akzent-Kachel mit geteilter Scheibe); `icon-192/512` (any), eigene
+  **maskable**-Icons mit Schutzzone, `apple-touch-icon` ohne Transparenz, Favicon als SVG und PNG.
+- **iOS-Startbilder** (`apple-touch-startup-image`, hell und dunkel, iPhone und iPad) - kein weisser Blitz beim Start.
+- Installationshinweis fuer iOS als Schritt-fuer-Schritt-Anleitung mit dem Teilen-Symbol (auch fuer andere
+  iOS-Browser ab 16.4, nicht in In-App-Browsern); der Android-Prompt bleibt.
+- Manifest mit getrennten `any`-/`maskable`-Icons, `launch_handler` und Farben passend zur Kopfleiste; Offline-Seite
+  im neuen Design; Service-Worker-Cache v8 mit den MatUi-Dateien im Precache.
+
+### Behoben
+
+- Felder sind auf Touch-Geraeten mindestens 16 px gross (MatUi setzt 15 px, iOS zoomte dann beim Fokus).
+
 ### Geplant
 
 - Bestehende Benutzer per E-Mail in Gruppen einladen (aktuell: Einladungslink).

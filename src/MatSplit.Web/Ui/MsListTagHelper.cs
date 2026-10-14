@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Wrapper for every list page. Collects the slots ms-toolbar, ms-table,
+/// Wrapper for every list page (<c>mat-list</c>). Collects the slots ms-toolbar, ms-table,
 /// ms-pagination and ms-actions and renders them in the order required by the
 /// ui guideline: toolbar above, table, pagination directly below the table and
 /// the list actions at the bottom.
@@ -41,7 +41,7 @@ public sealed class MsListTagHelper : MsTagHelperBase
         output.TagName = "section";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("id", id);
-        MsHtml.AddClass(output, MsHtml.Classes("ms-list", CssClass));
+        MsHtml.AddClass(output, MsHtml.Classes("mat-list", CssClass));
 
         var body = new HtmlContentBuilder();
 
@@ -57,10 +57,7 @@ public sealed class MsListTagHelper : MsTagHelperBase
 
         if (!freeContent.IsEmptyOrWhiteSpace)
         {
-            var free = new TagBuilder("div");
-            free.AddCssClass("ms-list__free");
-            free.InnerHtml.AppendHtml(freeContent);
-            body.AppendHtml(free);
+            body.AppendHtml(freeContent);
         }
 
         if (slots.Table is not null)
@@ -88,16 +85,16 @@ public sealed class MsListTagHelper : MsTagHelperBase
 
     private IHtmlContent BuildHead(string id)
     {
-        var head = new TagBuilder("header");
-        head.AddCssClass("ms-list__head");
+        var head = new TagBuilder("div");
+        head.AddCssClass("mat-section__head");
 
         var heading = new TagBuilder("h2");
-        heading.AddCssClass("ms-list__title");
+        heading.AddCssClass("ms-list-title");
         heading.Attributes["id"] = id + "-title";
 
         if (!string.IsNullOrWhiteSpace(Icon))
         {
-            heading.InnerHtml.AppendHtml(MsHtml.Icon(Icon, 20));
+            heading.InnerHtml.AppendHtml(MsHtml.Icon(Icon));
         }
 
         var titleText = new TagBuilder("span");
@@ -107,7 +104,7 @@ public sealed class MsListTagHelper : MsTagHelperBase
         if (Count.HasValue)
         {
             var badge = new TagBuilder("span");
-            badge.AddCssClass("ms-badge");
+            badge.AddCssClass("mat-badge mat-badge--soft");
             badge.InnerHtml.Append(Count.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
             heading.InnerHtml.AppendHtml(badge);
         }
@@ -117,7 +114,7 @@ public sealed class MsListTagHelper : MsTagHelperBase
         if (!string.IsNullOrWhiteSpace(Subtitle))
         {
             var subtitle = new TagBuilder("p");
-            subtitle.AddCssClass("ms-list__subtitle");
+            subtitle.AddCssClass("mat-section__lead");
             subtitle.InnerHtml.Append(Subtitle!);
             head.InnerHtml.AppendHtml(subtitle);
         }

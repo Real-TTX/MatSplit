@@ -7,15 +7,16 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Label, input, hint and validation message as one control. Bind it either with
-/// for="Input.Name" (model binding, display name and client validation come from
-/// the model) or with name/value for filter fields. Supports progressive
-/// disclosure through depends-on / depends-value.
+/// Label, input, hint and validation message as one MatUi field (<c>mat-field</c>). Bind it either with
+/// for="Input.Name" (model binding, display name and the messages of the validation attributes come from
+/// the model) or with name/value for filter fields. Supports progressive disclosure through
+/// depends-on / depends-value (<c>data-show-if</c> of MatUi).
 /// </summary>
 [HtmlTargetElement("ms-field")]
 public sealed class MsFieldTagHelper : MsTagHelperBase
 {
     private readonly IHtmlGenerator _generator;
+    private string? _toolbarFormId;
 
     public MsFieldTagHelper(IHtmlGenerator generator) => _generator = generator;
 
@@ -49,6 +50,12 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
     public string? Placeholder { get; set; }
 
     public bool Required { get; set; }
+
+    /// <summary>
+    /// The field is not required although its model property is (a non nullable value type is required for the model
+    /// binder). For a field the server asks for only in some cases, such as the user a member is taken from.
+    /// </summary>
+    public bool Optional { get; set; }
 
     [HtmlAttributeName("readonly")]
     public bool ReadOnly { get; set; }
@@ -135,6 +142,10 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
         var name = ResolveName(id);
         var children = await output.GetChildContentAsync();
 
+        // In a toolbar the field belongs to the GET form of the bar and is placed by the toolbar.
+        var toolbar = context.Items.TryGetValue(typeof(MsToolbarContext), out var rawToolbar) ? rawToolbar as MsToolbarContext : null;
+        _toolbarFormId = toolbar?.FormId;
+
         output.TagName = null;
 
         if (string.Equals(type, "hidden", StringComparison.Ordinal))
@@ -143,91 +154,135 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             return;
         }
 
+        var fieldName = For?.Name ?? name;
+        var modelError = ModelError(fieldName);
+
         var wrapper = new TagBuilder("div");
         wrapper.Attributes["id"] = id + "-field";
         wrapper.AddCssClass(MsHtml.Classes(
-            "ms-field",
-            "ms-field--" + type,
-            FullWidth ? "ms-field--full" : null,
-            string.IsNullOrWhiteSpace(DependsOn) ? null : "ms-field--conditional",
+            "mat-field",
+            FullWidth ? "mat-field--full" : null,
+            modelError is null ? null : "is-invalid",
             CssClass));
 
         if (!string.IsNullOrWhiteSpace(DependsOn))
         {
-            wrapper.Attributes["data-depends-on"] = DependsOn!;
-            wrapper.Attributes["data-depends-value"] = DependsValue ?? "*";
+            // MatUi shows the field while the master field has the value and disables it while it is hidden.
+            wrapper.Attributes["data-show-if"] = DependsOn!;
+            wrapper.Attributes["data-show-value"] = DependsValue ?? "*";
             wrapper.Attributes["hidden"] = "hidden";
         }
 
         var isCheckbox = string.Equals(type, "checkbox", StringComparison.Ordinal);
+        var isStatic = string.Equals(type, "static", StringComparison.Ordinal);
         var labelText = ResolveLabel();
 
         // A non nullable bool is "required" for the model binder, but a cleared
         // checkbox is a perfectly valid value - never mark it with an asterisk.
-        var showRequiredMarker = Required || (!isCheckbox && For?.Metadata.IsRequired == true);
+        var showRequiredMarker = Required || (!isCheckbox && !Optional && For?.Metadata.IsRequired == true);
 
         if (!isCheckbox && !string.IsNullOrWhiteSpace(labelText))
         {
             wrapper.InnerHtml.AppendHtml(BuildLabel(id, labelText!, showRequiredMarker));
         }
 
-        var control = new TagBuilder("div");
-        control.AddCssClass("ms-field__control");
-
-        if (!string.IsNullOrWhiteSpace(Prefix))
-        {
-            var prefix = new TagBuilder("span");
-            prefix.AddCssClass("ms-field__prefix");
-            prefix.InnerHtml.Append(Prefix!);
-            control.InnerHtml.AppendHtml(prefix);
-        }
-
-        control.InnerHtml.AppendHtml(BuildInput(id, name, type, children, labelText, showRequiredMarker));
-
+        var input = BuildInput(id, name, type, children, labelText, showRequiredMarker);
         var suffix = ResolveSuffix(type);
 
-        if (!string.IsNullOrWhiteSpace(suffix))
+        if (string.IsNullOrWhiteSpace(Prefix) && string.IsNullOrWhiteSpace(suffix))
         {
-            var suffixTag = new TagBuilder("span");
-            suffixTag.AddCssClass("ms-field__suffix");
-            suffixTag.InnerHtml.Append(suffix!);
-            control.InnerHtml.AppendHtml(suffixTag);
+            wrapper.InnerHtml.AppendHtml(input);
+        }
+        else
+        {
+            var group = new TagBuilder("div");
+            group.AddCssClass("mat-input-group");
+
+            if (!string.IsNullOrWhiteSpace(Prefix))
+            {
+                group.InnerHtml.AppendHtml(Addon(Prefix!));
+            }
+
+            group.InnerHtml.AppendHtml(input);
+
+            if (!string.IsNullOrWhiteSpace(suffix))
+            {
+                group.InnerHtml.AppendHtml(Addon(suffix!));
+            }
+
+            wrapper.InnerHtml.AppendHtml(group);
         }
 
         if (Camera && string.Equals(type, "file", StringComparison.Ordinal))
         {
-            control.InnerHtml.AppendHtml(BuildCameraButton(id));
+            wrapper.InnerHtml.AppendHtml(BuildCameraButton(id));
         }
-
-        wrapper.InnerHtml.AppendHtml(control);
 
         if (!string.IsNullOrWhiteSpace(Hint))
         {
-            var hint = new TagBuilder("p");
-            hint.AddCssClass("ms-field__hint");
+            var hint = new TagBuilder("span");
+            hint.AddCssClass("mat-hint");
             hint.Attributes["id"] = id + "-hint";
             hint.InnerHtml.Append(Hint!);
             wrapper.InnerHtml.AppendHtml(hint);
         }
 
-        if (!NoValidation && !string.Equals(type, "static", StringComparison.Ordinal))
+        if (!NoValidation && !isStatic)
         {
-            var message = _generator.GenerateValidationMessage(
-                ViewContext,
-                For?.ModelExplorer,
-                For?.Name ?? name,
-                message: null,
-                tag: "span",
-                htmlAttributes: new { @class = "ms-field__error", id = id + "-error" });
+            // The reserved line under the field: the server writes the model error here, MatUi the client side one.
+            var error = new TagBuilder("span");
+            error.AddCssClass("mat-error");
+            error.Attributes["id"] = id + "-error";
+            error.Attributes["aria-live"] = "polite";
 
-            if (message is not null)
+            if (modelError is not null)
             {
-                wrapper.InnerHtml.AppendHtml(message);
+                error.InnerHtml.Append(modelError);
             }
+
+            wrapper.InnerHtml.AppendHtml(error);
         }
 
         MsHtml.CopyAttributes(output, wrapper);
+
+        if (toolbar is not null)
+        {
+            toolbar.Fields.Add(new MsToolbarField(id, name, labelText ?? name, type, Placeholder, wrapper, Items?.ToList()));
+            output.SuppressOutput();
+            return;
+        }
+
         output.Content.SetHtmlContent(wrapper);
+    }
+
+    private static TagBuilder Addon(string text)
+    {
+        var addon = new TagBuilder("span");
+        addon.AddCssClass("mat-input-addon");
+        addon.InnerHtml.Append(text);
+        return addon;
+    }
+
+    private static TagBuilder RequiredMarker()
+    {
+        var marker = new TagBuilder("span");
+        marker.AddCssClass("mat-req");
+        marker.Attributes["aria-hidden"] = "true";
+        marker.InnerHtml.Append("*");
+        return marker;
+    }
+
+    /// <summary>The first message the model binder or the model validation left for the field, null when there is none.</summary>
+    private string? ModelError(string fieldName)
+    {
+        if (!ViewContext.ViewData.ModelState.TryGetValue(fieldName, out var entry))
+        {
+            return null;
+        }
+
+        return entry.Errors
+            .Select(error => error.ErrorMessage)
+            .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
     }
 
     private string ResolveName(string id)
@@ -265,11 +320,11 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
     private IHtmlContent BuildCameraButton(string id)
     {
         var button = new TagBuilder("button");
-        button.AddCssClass("ms-btn ms-btn--ghost ms-btn--sm ms-field__camera");
+        button.AddCssClass("mat-btn mat-btn--secondary mat-btn--sm ms-camera-button");
         button.Attributes["type"] = "button";
         button.Attributes["id"] = id + "-camera";
         button.Attributes["data-ms-camera"] = id;
-        button.InnerHtml.AppendHtml(MsHtml.Icon("camera", 16));
+        button.InnerHtml.AppendHtml(MsHtml.Icon("camera"));
 
         var label = new TagBuilder("span");
         label.InnerHtml.Append("Foto aufnehmen");
@@ -280,20 +335,14 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
     private IHtmlContent BuildLabel(string id, string text, bool required)
     {
         var label = new TagBuilder("label");
-        label.AddCssClass(LabelHidden ? "ms-field__label ms-visually-hidden" : "ms-field__label");
+        label.AddCssClass(LabelHidden ? "mat-label mat-sr-only" : "mat-label");
         label.Attributes["for"] = id;
-
-        var span = new TagBuilder("span");
-        span.InnerHtml.Append(text);
-        label.InnerHtml.AppendHtml(span);
+        label.InnerHtml.Append(text);
 
         if (required)
         {
-            var marker = new TagBuilder("abbr");
-            marker.AddCssClass("ms-field__req");
-            marker.Attributes["title"] = "Pflichtfeld";
-            marker.InnerHtml.Append("*");
-            label.InnerHtml.AppendHtml(marker);
+            label.InnerHtml.Append(" ");
+            label.InnerHtml.AppendHtml(RequiredMarker());
         }
 
         return label;
@@ -342,7 +391,7 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             }
             else
             {
-                stat.InnerHtml.Append(Value ?? ModelText() ?? "\u2013");
+                stat.InnerHtml.Append(Value ?? ModelText() ?? "–");
             }
 
             return stat;
@@ -357,12 +406,12 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
 
         if (string.Equals(type, "textarea", StringComparison.Ordinal))
         {
-            return BuildTextArea(name, attributes);
+            return NativeValidation(BuildTextArea(name, attributes), Optional);
         }
 
         if (string.Equals(type, "select", StringComparison.Ordinal))
         {
-            return BuildSelect(name, children, attributes);
+            return NativeValidation(BuildSelect(name, children, attributes), Optional);
         }
 
         if (string.Equals(type, "file", StringComparison.Ordinal))
@@ -370,26 +419,34 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             return BuildFile(name, attributes);
         }
 
-        return BuildTextBox(name, type, attributes);
+        return NativeValidation(BuildTextBox(name, type, attributes), Optional);
     }
 
     private Dictionary<string, object> BuildAttributes(string id, string type)
     {
         var cssClass = type switch
         {
-            "checkbox" => "ms-checkbox",
-            "select" => "ms-select",
-            "textarea" => "ms-input ms-textarea",
-            "money" => "ms-input ms-input--money",
-            "file" => "ms-input ms-input--file",
-            _ => "ms-input"
+            "checkbox" => string.Empty,
+            "select" => "mat-select",
+            "textarea" => "mat-textarea",
+            "money" => "mat-input",
+            _ => "mat-input"
         };
 
         var attributes = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
         {
-            ["id"] = id,
-            ["class"] = cssClass
+            ["id"] = id
         };
+
+        if (!string.IsNullOrEmpty(cssClass))
+        {
+            attributes["class"] = cssClass;
+        }
+
+        if (!string.IsNullOrEmpty(_toolbarFormId))
+        {
+            attributes["form"] = _toolbarFormId;
+        }
 
         if (!string.IsNullOrWhiteSpace(Placeholder))
         {
@@ -441,9 +498,21 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             attributes["maxlength"] = MaxLength.Value.ToString(CultureInfo.InvariantCulture);
         }
 
+        var describedBy = new List<string>();
+
         if (!string.IsNullOrWhiteSpace(Hint))
         {
-            attributes["aria-describedby"] = id + "-hint";
+            describedBy.Add(id + "-hint");
+        }
+
+        if (!NoValidation)
+        {
+            describedBy.Add(id + "-error");
+        }
+
+        if (describedBy.Count > 0)
+        {
+            attributes["aria-describedby"] = string.Join(' ', describedBy);
         }
 
         if (string.Equals(type, "money", StringComparison.Ordinal))
@@ -624,7 +693,7 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
     private IHtmlContent BuildCheckbox(string id, string name, string? labelText, bool required, Dictionary<string, object> attributes)
     {
         var wrapper = new TagBuilder("label");
-        wrapper.AddCssClass("ms-check");
+        wrapper.AddCssClass("mat-check");
         wrapper.Attributes["for"] = id;
 
         if (For is not null)
@@ -667,16 +736,13 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
         }
 
         var caption = new TagBuilder("span");
-        caption.AddCssClass("ms-check__label");
+        caption.AddCssClass("mat-check__text");
         caption.InnerHtml.Append(labelText ?? string.Empty);
 
         if (required)
         {
-            var marker = new TagBuilder("abbr");
-            marker.AddCssClass("ms-field__req");
-            marker.Attributes["title"] = "Pflichtfeld";
-            marker.InnerHtml.Append("*");
-            caption.InnerHtml.AppendHtml(marker);
+            caption.InnerHtml.Append(" ");
+            caption.InnerHtml.AppendHtml(RequiredMarker());
         }
 
         wrapper.InnerHtml.AppendHtml(caption);
@@ -684,10 +750,96 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
     }
 
     /// <summary>
+    /// MatUi checks the native constraints of a field (<c>required</c>, <c>maxlength</c>, <c>pattern</c> ...) and
+    /// writes the message from <c>data-msg-*</c>. The model validation attributes of ASP.NET carry the same rules
+    /// as <c>data-val-*</c> with the German message, so they are turned into the native form here: a rule the model
+    /// has is checked in the browser, with the words of the model.
+    /// </summary>
+    private static IHtmlContent NativeValidation(IHtmlContent content, bool optional)
+    {
+        if (content is not TagBuilder tag)
+        {
+            return content;
+        }
+
+        string? Rule(string key) => tag.Attributes.TryGetValue("data-val-" + key, out var value) ? value : null;
+
+        var required = optional ? null : Rule("required");
+
+        if (required is not null)
+        {
+            tag.Attributes["required"] = "required";
+            tag.Attributes["data-msg-required"] = required;
+        }
+
+        var length = Rule("length");
+
+        if (length is not null)
+        {
+            if (tag.Attributes.TryGetValue("data-val-length-max", out var max))
+            {
+                tag.Attributes["maxlength"] = max;
+            }
+
+            if (tag.Attributes.TryGetValue("data-val-length-min", out var min))
+            {
+                tag.Attributes["minlength"] = min;
+            }
+
+            tag.Attributes["data-msg-range"] = length;
+        }
+
+        var maxLength = Rule("maxlength");
+
+        if (maxLength is not null && tag.Attributes.TryGetValue("data-val-maxlength-max", out var maxLengthValue))
+        {
+            tag.Attributes["maxlength"] = maxLengthValue;
+            tag.Attributes["data-msg-range"] = maxLength;
+        }
+
+        var range = Rule("range");
+
+        if (range is not null)
+        {
+            if (tag.Attributes.TryGetValue("data-val-range-min", out var min) && !tag.Attributes.ContainsKey("min"))
+            {
+                tag.Attributes["min"] = min;
+            }
+
+            if (tag.Attributes.TryGetValue("data-val-range-max", out var max) && !tag.Attributes.ContainsKey("max"))
+            {
+                tag.Attributes["max"] = max;
+            }
+
+            tag.Attributes["data-msg-range"] = range;
+        }
+
+        var regex = Rule("regex");
+
+        if (regex is not null)
+        {
+            if (tag.Attributes.TryGetValue("data-val-regex-pattern", out var pattern) && !tag.Attributes.ContainsKey("pattern"))
+            {
+                tag.Attributes["pattern"] = pattern;
+            }
+
+            tag.Attributes["data-msg-pattern"] = regex;
+        }
+
+        var typeMessage = Rule("email") ?? Rule("url") ?? Rule("phone");
+
+        if (typeMessage is not null)
+        {
+            tag.Attributes["data-msg-type"] = typeMessage;
+        }
+
+        return tag;
+    }
+
+    /// <summary>
     /// Removes the framework's <c>data-val-required</c> from controls that can
     /// never be empty on the client: a checkbox posts "false" when unchecked and
-    /// a hidden field always carries a server side value. site.js never
-    /// evaluates the rule, it would only leave an english message in the markup.
+    /// a hidden field always carries a server side value.
     /// </summary>
     private static void DropRequiredValidation(IHtmlContent content)
     {

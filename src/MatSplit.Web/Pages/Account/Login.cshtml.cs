@@ -106,7 +106,7 @@ public class LoginModel(
         AllowAnonymousJoin = config.AllowAnonymousJoin;
         ShowDevelopmentHint = environment.IsDevelopment();
 
-        this.SetTitle("Anmelden", AppName, "user");
+        this.SetTitle("Anmelden", "Melde dich mit E-Mail-Adresse oder Benutzername an.", "user");
         ViewData[LayoutKeys.HideMenu] = true;
     }
 

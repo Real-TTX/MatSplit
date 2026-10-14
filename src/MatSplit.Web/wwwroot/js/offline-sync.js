@@ -175,7 +175,7 @@
 
     function withDb(callback) {
         if (!supported) {
-            return Promise.reject(new Error('Offline-Speicher steht nicht zur Verfuegung.'));
+            return Promise.reject(new Error('Offline-Speicher steht nicht zur Verfügung.'));
         }
 
         return openDb().then(function (db) {
@@ -276,7 +276,7 @@
     function bannerText() {
         if (state.status === 'syncing') {
             return state.pending > 1
-                ? state.pending + ' Eintraege werden synchronisiert ...'
+                ? state.pending + ' Einträge werden synchronisiert ...'
                 : 'Eintrag wird synchronisiert ...';
         }
 
@@ -286,15 +286,15 @@
 
         if (!state.online) {
             return state.pending > 0
-                ? 'Offline - ' + state.pending + ' Eintrag/Eintraege warten auf Synchronisierung'
-                : 'Offline - Aenderungen werden zwischengespeichert';
+                ? 'Offline - ' + state.pending + ' Eintrag/Einträge warten auf Synchronisierung'
+                : 'Offline - Änderungen werden zwischengespeichert';
         }
 
         if (state.pending > 0) {
-            return state.pending + ' Eintrag/Eintraege warten auf Synchronisierung';
+            return state.pending + ' Eintrag/Einträge warten auf Synchronisierung';
         }
 
-        return 'Alle Eintraege sind synchronisiert';
+        return 'Alle Einträge sind synchronisiert';
     }
 
     function bannerTone() {
@@ -503,7 +503,7 @@
                     item.attempts = (item.attempts || 0) + 1;
                     item.status = 'error';
                     item.lastError = (result && result.error)
-                        || 'Der Server hat den Eintrag nicht bestaetigt.';
+                        || 'Der Server hat den Eintrag nicht bestätigt.';
                     lastError = item.lastError;
                     update.push(item);
                 });
@@ -559,7 +559,7 @@
                 state.lastError = summary.failed > 0 ? summary.lastError : null;
 
                 if (summary.sent > 0) {
-                    setMessage(summary.sent + ' Eintrag/Eintraege uebernommen.');
+                    setMessage(summary.sent + ' Eintrag/Einträge übernommen.');
                 }
 
                 return refreshCounts().then(function () {
@@ -832,11 +832,11 @@
         });
 
         if (shares.length === 0) {
-            return { error: 'Bitte mindestens einen Beteiligten auswaehlen.' };
+            return { error: 'Bitte mindestens einen Beteiligten auswählen.' };
         }
 
         if (amountMode && sum !== amountCents) {
-            return { error: 'Die festen Betraege ergeben nicht den Gesamtbetrag.' };
+            return { error: 'Die festen Beträge ergeben nicht den Gesamtbetrag.' };
         }
 
         return { shares: shares };
@@ -913,7 +913,7 @@
         }
 
         if (isNaN(fromId) || fromId <= 0 || isNaN(toId) || toId <= 0) {
-            return { error: 'Zahler und Empfaenger muessen gewaehlt sein.' };
+            return { error: 'Zahler und Empfänger müssen gewählt sein.' };
         }
 
         if (amountCents === null || amountCents <= 0) {
@@ -921,7 +921,7 @@
         }
 
         return {
-            label: 'Zahlung ueber ' + (amountCents / 100).toFixed(2).replace('.', ',') + ' EUR',
+            label: 'Zahlung über ' + (amountCents / 100).toFixed(2).replace('.', ',') + ' EUR',
             payload: {
                 groupId: groupId,
                 fromUserId: fromId,
@@ -963,7 +963,7 @@
 
         if (!isInsertForm(form)) {
             event.preventDefault();
-            setMessage('Bestehende Eintraege koennen offline nicht geaendert werden (der Server gewinnt).');
+            setMessage('Bestehende Einträge können offline nicht geändert werden (der Server gewinnt).');
             return;
         }
 
@@ -991,7 +991,7 @@
             resetForm(form);
             var text = KINDS[kind].label + ' offline gespeichert - wird synchronisiert, sobald du online bist.';
             if (warnUpload) {
-                text += ' Belegfotos lassen sich offline nicht uebertragen, bitte spaeter erneut hochladen.';
+                text += ' Belegfotos lassen sich offline nicht übertragen, bitte später erneut hochladen.';
             }
             setMessage(text);
             return requestBackgroundSync();

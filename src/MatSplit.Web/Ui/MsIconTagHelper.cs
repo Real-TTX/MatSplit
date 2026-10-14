@@ -1,11 +1,11 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Inline svg icon referencing the sprite that the layout renders once per page.
-/// Decorative by default; pass a label to make it readable for screen readers.
+/// Inline svg icon (<c>mat-icon</c>) referencing the sprites that the layout renders once per page
+/// (the toolkit sprite and the app sprite). Decorative by default; pass a label to make it readable
+/// for screen readers. The toolkit sizes the icon: the old size attribute is accepted and ignored.
 /// </summary>
 [HtmlTargetElement("ms-icon")]
 public sealed class MsIconTagHelper : MsTagHelperBase
@@ -15,8 +15,8 @@ public sealed class MsIconTagHelper : MsTagHelperBase
     /// <summary>Symbol name, e.g. group, expense, trash.</summary>
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Edge length in pixels.</summary>
-    public int Size { get; set; } = 20;
+    /// <summary>Accepted for the pages that name it; MatUi sizes icons by the font size around them.</summary>
+    public int Size { get; set; }
 
     /// <summary>Accessible name; when set the icon is exposed to screen readers.</summary>
     public string? Label { get; set; }
@@ -32,14 +32,9 @@ public sealed class MsIconTagHelper : MsTagHelperBase
             return;
         }
 
-        var size = Size <= 0 ? 20 : Size;
-
         output.TagName = "svg";
         output.TagMode = TagMode.StartTagAndEndTag;
-        MsHtml.AddClass(output, MsHtml.Classes("ms-icon", CssClass));
-        output.Attributes.SetAttribute("width", size.ToString(CultureInfo.InvariantCulture));
-        output.Attributes.SetAttribute("height", size.ToString(CultureInfo.InvariantCulture));
-        output.Attributes.SetAttribute("viewBox", "0 0 24 24");
+        MsHtml.AddClass(output, MsHtml.Classes("mat-icon", CssClass));
         output.Attributes.SetAttribute("focusable", "false");
 
         if (!string.IsNullOrWhiteSpace(Id))
@@ -57,6 +52,6 @@ public sealed class MsIconTagHelper : MsTagHelperBase
             output.Attributes.SetAttribute("aria-label", Label!);
         }
 
-        output.Content.SetHtmlContent("<use href=\"#ms-i-" + Name.Trim() + "\"></use>");
+        output.Content.SetHtmlContent("<use href=\"#" + MsHtml.IconId(Name) + "\"></use>");
     }
 }

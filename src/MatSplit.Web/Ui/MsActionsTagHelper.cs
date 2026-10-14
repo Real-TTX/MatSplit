@@ -5,9 +5,8 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatSplit.Web.Ui;
 
 /// <summary>
-/// Action bar below a list. Buttons are left aligned, destructive buttons are
-/// separated and pushed to the right. Children are usually ms-button elements,
-/// plain html is rendered after them.
+/// Action bar below a list (<c>mat-actions</c>). Buttons are left aligned, destructive buttons come
+/// last. Children are usually ms-button elements, plain html is rendered after them.
 /// </summary>
 [HtmlTargetElement("ms-actions")]
 public sealed class MsActionsTagHelper : MsTagHelperBase
@@ -27,7 +26,7 @@ public sealed class MsActionsTagHelper : MsTagHelperBase
 
         var wrap = new TagBuilder("div");
         wrap.Attributes["id"] = id;
-        wrap.AddCssClass(MsHtml.Classes("ms-actions", CssClass));
+        wrap.AddCssClass(MsHtml.Classes("mat-actions", CssClass));
 
         foreach (var button in row.Primary)
         {
@@ -44,17 +43,9 @@ public sealed class MsActionsTagHelper : MsTagHelperBase
             wrap.InnerHtml.AppendHtml(freeContent);
         }
 
-        if (row.Danger.Count > 0)
+        foreach (var button in row.Danger)
         {
-            var danger = new TagBuilder("span");
-            danger.AddCssClass("ms-actions__danger");
-
-            foreach (var button in row.Danger)
-            {
-                danger.InnerHtml.AppendHtml(button);
-            }
-
-            wrap.InnerHtml.AppendHtml(danger);
+            wrap.InnerHtml.AppendHtml(button);
         }
 
         MsHtml.CopyAttributes(output, wrap);

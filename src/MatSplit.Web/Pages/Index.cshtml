@@ -5,11 +5,13 @@
     ViewData[LayoutKeys.TitleIcon] = "home";
 }
 
-<ms-card id="home-card" title="Willkommen bei MatSplit" icon="logo" tone="accent">
-    <p class="ms-muted">
+<ms-card id="home-card" title="Willkommen bei MatSplit" tone="accent">
+    <div class="mat-stack">
+    <p class="mat-muted">
         Gemeinsame Ausgaben für Urlaub und WG – du wirst zur Gruppenübersicht weitergeleitet.
     </p>
-    <div class="ms-row">
+    <div class="mat-row">
         <ms-button id="home-groups" kind="primary" icon="group" label="Zu den Gruppen" href="/Groups"></ms-button>
+    </div>
     </div>
 </ms-card>

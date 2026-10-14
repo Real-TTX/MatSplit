@@ -1,81 +1,64 @@
 @inject AppConfigService AppConfig
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @{
+    // The shell of MatUi (docs/ADOPTING.md of MatDesign): menu on the left, top bar with the breadcrumb, the page with
+    // its head, a footer. A page fills the slots through the helpers of PageLayoutExtensions (title, breadcrumb, menu groups).
     var appName = ViewData.ReadString(LayoutKeys.AppName) ?? AppConfig.Current.AppName;
     var pageTitle = ViewData.ReadString(LayoutKeys.Title);
-    var documentTitle = string.IsNullOrWhiteSpace(pageTitle) ? appName : pageTitle + " \u00b7 " + appName;
-    var themePreference = (User?.FindFirst(MatSplitClaims.ThemeClaim)?.Value ?? "System").ToLowerInvariant();
-    var initialTheme = themePreference == "dark" ? "dark" : "light";
+    var subtitle = ViewData.ReadString(LayoutKeys.Subtitle);
+    var documentTitle = string.IsNullOrWhiteSpace(pageTitle) ? appName : pageTitle + " · " + appName;
     var hideMenu = ViewData.ReadFlag(LayoutKeys.HideMenu);
+    var isPublic = ViewData.ReadFlag(LayoutKeys.PublicPage);
     var flash = TempData[LayoutKeys.Flash] as string;
     var flashError = TempData[LayoutKeys.FlashError] as string;
-    // The admin area holds wide data tables, so it gets a roomier content column
-    // than the app default. Mobile keeps the full-width behaviour either way.
+
+    // The account decides the theme: data-theme is written on every page of a signed-in user, "system" included (the CSS
+    // treats it like no attribute and follows the OS), so the page does not flash in another theme and what the browser saved
+    // (matui.boot.js) never overrides the account. Without an account matui.boot.js applies the choice of the browser.
+    var themePreference = (User?.FindFirst(MatSplitClaims.ThemeClaim)?.Value ?? "System").ToLowerInvariant();
+    var themeAttribute = User?.Identity?.IsAuthenticated == true && themePreference is "dark" or "light" or "system"
+        ? $" data-theme=\"{themePreference}\""
+        : string.Empty;
+
+    // The admin area holds wide data tables, so it gets a roomier content column than the app default.
     var wideContent = (ViewContext.HttpContext.Request.Path.Value ?? "/")
         .StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
-<html lang="de" class="ms-no-js" data-theme="@initialTheme" data-theme-preference="@themePreference">
+<html lang="de" data-app="matsplit"@Html.Raw(themeAttribute) @MsUi.ToolkitTexts>
 <head>
     <meta charset="utf-8" />
+    @* viewport-fit=cover: the page spans the whole screen of an iPhone; the notch, the rounded corners and the home indicator
+       are kept free with env(safe-area-inset-*) (the --mat-safe-* tokens of MatUi). initial-scale=1 and 16 px fields: no zoom on focus. *@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@documentTitle</title>
     <meta name="description" content="MatSplit - gemeinsame Ausgaben f&#252;r Urlaub und WG selbst gehostet verwalten." />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f2701d" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1b1310" media="(prefers-color-scheme: dark)" />
-    <meta name="application-name" content="@appName" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="@appName" />
-    <meta name="format-detection" content="telephone=no" />
-    <link rel="manifest" href="~/manifest.webmanifest" />
-    <link rel="icon" href="~/img/favicon.svg" type="image/svg+xml" />
-    @* iOS ignores svg for apple-touch-icon and would screenshot the page. *@
-    <link rel="apple-touch-icon" sizes="180x180" href="~/img/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="~/img/icon-192.png" />
-    <link rel="mask-icon" href="~/img/logo-mark.svg" color="#f2701d" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <script>
-        (function () {
-            var root = document.documentElement;
-            try {
-                var stored = window.localStorage.getItem('matsplit.theme');
-                var mode = stored || root.getAttribute('data-theme-preference') || 'system';
-                var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                root.setAttribute('data-theme', dark ? 'dark' : 'light');
-                root.setAttribute('data-theme-mode', mode);
-            } catch (error) {
-                root.setAttribute('data-theme', 'light');
-                root.setAttribute('data-theme-mode', 'system');
-            }
-            root.classList.remove('ms-no-js');
-            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-                root.setAttribute('data-standalone', 'true');
-            }
-        })();
-    </script>
-    <noscript>
-        <style>
-            .ms-field--conditional[hidden] { display: grid !important; }
-            .ms-shell__nav { transform: none !important; visibility: visible !important; }
-        </style>
-    </noscript>
+    <partial name="_PwaHead" />
+    <script src="~/matui/matui.boot.js" asp-append-version="true"></script>
+    <link rel="stylesheet" href="~/matui/matui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body class="ms-app">
+<body>
     <partial name="_OfflineBanner" />
-    <a class="ms-skip" href="#ms-main">Zum Inhalt springen</a>
-    <partial name="_IconSprite" />
-    <div class="ms-shell @(hideMenu ? "ms-shell--bare" : string.Empty)">
-        @if (!hideMenu)
-        {
-            <partial name="_Menu" />
-            <div class="ms-shell__overlay" data-ms-drawer-close="true" hidden></div>
-        }
-        <main class="ms-main" id="ms-main">
-            <partial name="_Header" />
-            <div class="ms-content @(wideContent ? "ms-content--wide" : string.Empty)">
+    <a class="mat-skip" href="#main">Zum Inhalt springen</a>
+    @MsUi.Sprite(Env.WebRootPath)
+    <partial name="_AppIcons" />
+
+    @if (hideMenu)
+    {
+        @* Sign-in, invitation and error pages without a menu (SHELL-11): the brand, then the page in a centred column. *@
+        <main class="mat-auth ms-auth @(isPublic ? "ms-auth--public" : string.Empty)" id="main">
+            <div class="ms-auth__column">
+                <div class="mat-auth__brand">
+                    <span class="mat-logo mat-logo--lg" role="img" aria-label="@appName"><svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#ms-i-logo"></use></svg></span>
+                    <h1>@(string.IsNullOrWhiteSpace(pageTitle) ? appName : pageTitle)</h1>
+                    @if (!string.IsNullOrWhiteSpace(subtitle))
+                    {
+                        <p class="mat-muted">@subtitle</p>
+                    }
+                </div>
                 @if (!string.IsNullOrWhiteSpace(flash))
                 {
                     <ms-alert id="ms-flash" tone="success" text="@flash" dismissible="true"></ms-alert>
@@ -86,13 +69,52 @@
                 }
                 @RenderBody()
             </div>
-            <footer class="ms-footer">
-                <span>@appName</span>
-                <span class="ms-footer__sep">&#183;</span>
-                <span>Selfhosted mit &#9788; Sommerlaune</span>
+            <footer class="mat-footer mat-footer--center mat-footer--plain">
+                <p class="mat-footer__text">@appName &#183; Selfhosted mit &#9788; Sommerlaune</p>
             </footer>
         </main>
-    </div>
+    }
+    else
+    {
+        <div class="mat-app">
+            <partial name="_Menu" />
+
+            <div class="mat-main">
+                <partial name="_Header" />
+
+                <main class="mat-page @(wideContent ? "mat-page--wide" : string.Empty)" id="main">
+                    <div class="mat-page__head">
+                        <div class="mat-page__title">
+                            <h1>@(string.IsNullOrWhiteSpace(pageTitle) ? appName : pageTitle)</h1>
+                            @if (!string.IsNullOrWhiteSpace(subtitle))
+                            {
+                                <p class="mat-page__sub">@subtitle</p>
+                            }
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(flash))
+                    {
+                        @* what was just done is a toast (SHELL-12), seen above an open dialog too *@
+                        <div data-toast="@flash" data-tone="success" hidden></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(flashError))
+                    {
+                        <ms-alert id="ms-flash-error" tone="error" text="@flashError" dismissible="true"></ms-alert>
+                    }
+                    @RenderBody()
+                </main>
+
+                <footer class="mat-footer">
+                    <p class="mat-footer__text">@appName &#183; Selfhosted mit &#9788; Sommerlaune</p>
+                </footer>
+            </div>
+        </div>
+
+        <partial name="_UserMenu" />
+        <partial name="_HeaderMenu" />
+    }
+
+    <script src="~/matui/matui.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         if ('serviceWorker' in navigator) {

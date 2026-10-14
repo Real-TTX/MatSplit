@@ -11,34 +11,61 @@ Sync-API, Installations-Hinweis und die Eigenheiten von iOS und Android.
 | `src/MatSplit.Web/wwwroot/offline.html` | Fallback-Seite fuer Navigationen ohne Netz |
 | `src/MatSplit.Web/wwwroot/js/offline-sync.js` | Outbox (IndexedDB), Formular-Abfang, Replay, Banner-Steuerung |
 | `src/MatSplit.Web/wwwroot/js/pwa-install.js` | `beforeinstallprompt` (Android) + iOS-Hinweis, Standalone-Erkennung |
-| `src/MatSplit.Web/Pages/Shared/_OfflineBanner.cshtml` | Balken oben (Markup + Styles) und Einbindung der beiden Skripte |
+| `src/MatSplit.Web/Pages/Shared/_OfflineBanner.cshtml` | Balken oben (Markup) und Einbindung der beiden Skripte |
+| `src/MatSplit.Web/Pages/Shared/_PwaHead.cshtml` | alle Head-Angaben der installierten App: Manifest, `theme-color`, iOS-Metadaten, Icons |
+| `src/MatSplit.Web/Pages/Shared/_SplashLinks.cshtml` | iOS-Startbilder (`apple-touch-startup-image`), nur fuer Apple-Geraete gerendert |
+| `src/MatSplit.Web/wwwroot/css/app.css` | Stile von Balken, Installationshinweis, Kamera und alles Sichere-Bereiche-/Tastatur-Verhalten |
+| `src/MatSplit.Web/wwwroot/js/site.js` | Farbe der Systemleisten, `data-standalone`/`data-platform`, Anpassung an die Bildschirmtastatur |
 | `src/MatSplit.Web/Api/SyncApi.cs` | `/api/sync/ping`, `/status`, `POST /expenses`, `POST /payments` |
-| `src/MatSplit.Web/wwwroot/manifest.webmanifest` | Manifest (gehoert dem UI-Agenten) |
+| `src/MatSplit.Web/wwwroot/manifest.webmanifest` | Manifest |
+| `src/MatSplit.Web/wwwroot/img/` | Icons (`icon-192/512` any, `icon-maskable-*`, `apple-touch-icon`, `favicon.svg/-32.png`) und `splash/` |
 
 Registriert wird der Service Worker vom Layout (`navigator.serviceWorker.register('/sw.js')`).
 
-### Einbindung im Layout (erledigt)
+### Einbindung im Layout
 
-`Pages/Shared/_Layout.cshtml` rendert das Partial als **erstes Element in
-`<body>`** - vor `<a class="ms-skip">` bzw. `<div class="ms-shell">`:
+`Pages/Shared/_Layout.cshtml` rendert `_OfflineBanner` als **erstes Element in `<body>`**; das Partial laedt
+`js/offline-sync.js` und `js/pwa-install.js` (beide `defer`). Die Klassennamen in `app.css` sind
+`.ms-offline-banner*` und `.ms-pwa-install*`. Die Stile benutzen nur Tokens des Toolkits (`--mat-*`) und
+die Sicheren Bereiche (`--mat-safe-*`).
 
-```cshtml
-<body class="ms-app">
-    <partial name="_OfflineBanner" />
-    <a class="ms-skip" href="#ms-main">Zum Inhalt springen</a>
-```
+## 1a. Sichere Bereiche, Vollbild und Tastatur (iOS und Android)
 
-Das Partial bringt seine Styles selbst mit und laedt `js/offline-sync.js` und
-`js/pwa-install.js` (beide `defer`). Es sind keine weiteren Layout-Aenderungen
-noetig. Wer die Styles lieber in `wwwroot/css/` haben will, kann den
-`<style>`-Block 1:1 nach `controls.css` verschieben - die Klassennamen sind
-`.ms-offline-banner*` und `.ms-pwa-install*`.
+* **`viewport-fit=cover`** steht im Layout: die Seite fuellt den ganzen Bildschirm, Notch, Dynamic Island, gerundete
+  Ecken und Home-Indikator werden mit `env(safe-area-inset-*)` freigehalten. MatUi stellt sie als `--mat-safe-top|right|bottom|left`
+  bereit. Menue und Kopfleiste (oben, links/rechts), Seite und Fussleiste (links/rechts im Querformat, unten),
+  Dialoge, Toasts, Kamera-Ansicht, Offline-Balken (oben) und Installationshinweis (unten) rechnen damit.
+* **Die Shell ist an die vier Kanten gepinnt** (`.mat-app { position: fixed; inset: ... }`, `html` hat die Seitenfarbe).
+  In einer installierten iOS-App sind `100vh`/`100dvh` zu kurz und lassen unten einen toten Streifen; so reicht die
+  Shell immer bis zur echten Kante, und das Menue-Ende liegt auf dem Home-Indikator statt dahinter.
+* **Offline-Balken**: er deckt die Notch ab; `offline-sync.js` schreibt seine Hoehe in `--ms-offline-banner-height`,
+  die Shell rutscht um diese Hoehe nach unten, und Kopfleiste/Menue lassen dann ihr eigenes oberes Polster weg
+  (`html[data-ms-banner="visible"]`).
+* **Bildschirmtastatur**: iOS und Android verkleinern nur den sichtbaren Bereich (`visualViewport`), das Layout bleibt
+  stehen - die untere Haelfte der Seite und das fokussierte Feld lagen dahinter. `site.js` schreibt die Hoehe
+  des Verdeckten nach `--ms-keyboard-inset` (und `html.ms-keyboard-open`), die Shell endet darueber, das Feld wird in der
+  scrollenden Seite in die Mitte gerollt. Pinch-Zoom zaehlt nicht als Tastatur (`visualViewport.scale`).
+* **Kein Zoom beim Antippen**: Felder sind auf Touch-Geraeten 16 px gross (`app.css`), `touch-action: manipulation`
+  verhindert den Doppeltipp-Zoom; Pinch-Zoom bleibt fuer Menschen, die ihn brauchen.
+* **Statusleiste und Farbe der Browserleiste**: `theme-color` ist die Farbe der Kopfleiste (`--mat-glass`) des *angezeigten* Themes.
+  Zwei Tags mit `prefers-color-scheme` gelten bis zum Skript, danach schreibt `site.js` die gelesene Farbe in beide
+  (Hell/Dunkel gegen das System, Farbschemata von MatUi) und entfernt die Media-Angabe. iOS-Standalone nutzt
+  `apple-mobile-web-app-status-bar-style="default"`: eine deckende Leiste mit der Textfarbe des Systems; `black-translucent`
+  liesse die Seite unter die Leiste laufen, aber der Text waere immer weiss und auf der hellen Kopfleiste nicht lesbar.
+* **Icons**: `any` (192, 512; abgerundete Kachel mit transparenten Ecken), **maskable** (192, 512; randlose Flaeche, das Zeichen
+  liegt in der Schutzzone von 80 %), `apple-touch-icon` 180 (deckend und eckig - iOS rundet selbst), `favicon.svg` und `-32.png`.
+  Alle sind aus dem flachen Logo gerendert (Akzent `#bf5610`, geteilte Scheibe in Weiss); `scripts/make-icons.js`
+  erzeugt sie und die Startbilder neu (Anleitung im Kopf der Datei).
+* **Startbilder** (`img/splash/<hell|dunkel>-<Breite>x<Hoehe>.png`): iOS zeigt sie zwischen dem Tippen auf das Icon und dem
+  ersten Bild. Eines je Geraetegroesse (iPhone SE bis 16 Pro Max, iPad mini bis Pro 13", iPad auch quer), je hell und dunkel,
+  in der Farbe der Seite mit der Kachel des Logos in der Mitte. Die `media`-Angaben in `_SplashLinks.cshtml` muessen
+  genau auf `device-width`, `device-height`, Pixelverhaeltnis, Ausrichtung und Farbschema passen.
 
 ## 2. Was offline funktioniert - und was nicht
 
 | Funktion | Offline | Bemerkung |
 | --- | --- | --- |
-| App-Shell (CSS, JS, Logo, Icons) | ja | Precache beim `install`, `CACHE_VERSION` = `v2` |
+| App-Shell (CSS, JS, Logo, Icons) | ja | Precache beim `install`, `CACHE_VERSION` = `v8` |
 | Bereits besuchte Seiten | nein | HTML ist benutzerspezifisch, wird nie gecacht |
 | Navigation ohne Netz | Fallback | `offline.html` mit Status und Warteschlange |
 | Neue **Ausgabe** erfassen | ja | landet in IndexedDB `pendingExpenses` |
@@ -64,12 +91,12 @@ Vordergrund (`visibilitychange`), Background-Sync-Event und Klick auf
 | `/api/*`, `/health` | network-only, nie Cache |
 | Alles ausser GET | wird durchgelassen (kein Cache) |
 
-Cache-Namen sind versioniert (`matsplit-shell-v1`, `matsplit-assets-v1`,
+Cache-Namen sind versioniert (`matsplit-shell-v8`, `matsplit-assets-v8`,
 `matsplit-media-v1`). Beim `activate` werden alle `matsplit-*`-Caches gelöscht,
 die nicht zur aktuellen Version gehoeren; `skipWaiting()` und `clients.claim()`
 sorgen dafuer, dass eine neue Version sofort greift. Bei einer Aenderung an
 `sw.js` oder an der Precache-Liste muss `CACHE_VERSION` hochgezaehlt werden
-(`v1` -> `v2`).
+(`v8` -> `v9`).
 
 Weil CSS/JS ueber `asp-append-version="true"` mit `?v=...` ausgeliefert werden,
 laufen alle Cache-Lookups mit `ignoreSearch: true`.
@@ -267,15 +294,18 @@ Root-Element trifft (ein `hidden` am `<html>` wuerde die ganze Seite ausblenden)
   rendert `ms-field type="file" capture="environment"`. Der getUserMedia-Pfad in
   `site.js` ist nur Komfort.
 - **Installation** laeuft ausschliesslich ueber "Teilen -> Zum Home-Bildschirm";
-  `beforeinstallprompt` gibt es nicht. `pwa-install.js` zeigt deshalb genau
-  diesen Hinweis - nur in Safari (nicht in Chrome/Firefox fuer iOS, die das
-  nicht koennen) und nur wenn die App nicht schon standalone laeuft.
-- **Notch / Dynamic Island.** `viewport-fit=cover` steht im Layout, der
-  Offline-Balken und der Installationshinweis rechnen mit
-  `env(safe-area-inset-top/bottom/left/right)`.
+  `beforeinstallprompt` gibt es nicht. `pwa-install.js` zeigt deshalb eine
+  Anleitung in drei Schritten mit dem Teilen-Symbol - in Safari und, seit iOS 16.4, in jedem
+  iOS-Browser (der Wortlaut folgt dem Browser), nicht in In-App-Browsern (Instagram, Facebook ...)
+  und nur wenn die App nicht schon standalone laeuft.
+- **Notch / Dynamic Island / Home-Indikator.** Siehe Abschnitt 1a: `viewport-fit=cover`,
+  `env(safe-area-inset-*)` an allen vier Kanten, die Shell ist an die Bildschirmkanten gepinnt.
 - **Statusleiste.** `apple-mobile-web-app-status-bar-style="default"` haelt die
-  Statusleiste lesbar; bei `black-translucent` wuerde der Balken darunter
-  rutschen.
+  Statusleiste lesbar; bei `black-translucent` waere ihr Text immer weiss.
+- **Startbild.** Ohne `apple-touch-startup-image` zeigt iOS beim Start einen weissen Bildschirm (im
+  Dunkelmodus ein Blitz); die Bilder liegen in `img/splash/` und werden nur an Apple-Geraete ausgeliefert.
+- **Tastatur.** iOS verschiebt beim Fokus einer Eingabe in einem `position: fixed`-Layout gern die ganze
+  Seite; `site.js` meldet die Tastaturhoehe (`--ms-keyboard-inset`) und setzt die Seite nach dem Schliessen zurueck.
 - Nach dem Hinzufuegen zum Home-Bildschirm startet iOS eine **eigene**
   Cookie-Umgebung: einmal neu anmelden ist normal.
 
@@ -303,8 +333,8 @@ dort entweder einen Reverse-Proxy mit TLS nutzen oder in Chrome unter
 1. `docker compose -f docker-compose.dev.yml up --build`, dann
    `http://localhost:4774` oeffnen und anmelden.
 2. DevTools -> Application -> Service Workers: Status "activated", Quelle `/sw.js`.
-3. Application -> Cache Storage: `matsplit-shell-v1` enthaelt `offline.html`,
-   `site.css`, `offline-sync.js`, Icons.
+3. Application -> Cache Storage: `matsplit-shell-v8` enthaelt `offline.html`,
+   `matui/matui.css`, `css/app.css`, `offline-sync.js`, Icons.
 4. DevTools -> Network -> "Offline" aktivieren. Neu laden: `offline.html`
    erscheint, der obere Balken wird orange ("Offline ...").
 5. Weiter offline: `/Groups/Expenses/Edit?groupId=1` war noch nicht geladen -

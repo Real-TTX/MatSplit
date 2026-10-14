@@ -1,8 +1,7 @@
 @page
 @model MatSplit.Web.Pages.Admin.Users.IndexModel
 
-<ms-list id="admin-users" title="Benutzer" subtitle="Alle Konten dieser Installation"
-         icon="users" count="@Model.Result.TotalCount">
+<ms-list id="admin-users">
 
     <ms-toolbar id="admin-users-filter" action="/Admin/Users" reset-url="/Admin/Users" auto-submit-text="true">
         <ms-field id="admin-users-search" name="search" type="search" label="Suche"
@@ -27,9 +26,9 @@
                 <th scope="col">E-Mail</th>
                 <th scope="col">Rolle</th>
                 <th scope="col">Typ</th>
-                <th scope="col" class="ms-num">Gruppen</th>
+                <th scope="col" class="mat-num">Gruppen</th>
                 <th scope="col">Erstellt</th>
-                <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+                <th scope="col"><span class="mat-sr-only">Aktionen</span></th>
             </tr>
         </thead>
         <tbody>
@@ -41,21 +40,21 @@
                         @row.DisplayName
                         @if (row.Id == Model.CurrentUserId)
                         {
-                            <span class="ms-chip">Ich</span>
+                            <span class="mat-pill mat-pill--accent">Ich</span>
                         }
                         @if (row.IsDeleted)
                         {
-                            <span class="ms-chip">Gelöscht</span>
+                            <span class="mat-pill mat-pill--error">Gelöscht</span>
                         }
                         @if (row.MergedIntoUserId.HasValue)
                         {
-                            <span class="ms-chip">Zusammengeführt</span>
+                            <span class="mat-pill mat-pill--info">Zusammengeführt</span>
                         }
                     </td>
                     <td data-label="E-Mail">
                         @if (string.IsNullOrWhiteSpace(row.Email))
                         {
-                            <span class="ms-muted">&#8211;</span>
+                            <span class="mat-muted">&#8211;</span>
                         }
                         else
                         {
@@ -67,17 +66,17 @@
                         @row.KindLabel
                         @if (!row.IsAnonymous && !row.HasPassword)
                         {
-                            <span class="ms-chip">ohne Passwort</span>
+                            <span class="mat-pill mat-pill--warn">ohne Passwort</span>
                         }
                         @if (row.HasPayPal)
                         {
-                            <span class="ms-chip">PayPal</span>
+                            <span class="mat-pill mat-pill--plain">PayPal</span>
                         }
                     </td>
-                    <td data-label="Gruppen" class="ms-num">@row.GroupCount</td>
+                    <td data-label="Gruppen" class="mat-num">@row.GroupCount</td>
                     <td data-label="Erstellt">@row.CreateDate.ToString("dd.MM.yyyy")</td>
                     <td data-label="Aktionen">
-                        <div class="ms-table__rowactions">
+                        <div class="mat-table__actions">
                             <ms-button id="@($"admin-user-{row.Id}-edit")" kind="ghost" size="sm"
                                        icon="edit" icon-only="true" label="Bearbeiten"
                                        href="@($"/Admin/Users/Edit?id={row.Id}")"></ms-button>

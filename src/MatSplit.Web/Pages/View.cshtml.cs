@@ -59,6 +59,7 @@ public class ViewModel(
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         ViewData[LayoutKeys.HideMenu] = true;
+        ViewData[LayoutKeys.PublicPage] = true;
 
         var group = await groups.GetGroupByReadOnlyTokenAsync(Token, cancellationToken);
 

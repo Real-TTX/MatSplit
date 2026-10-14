@@ -2,6 +2,7 @@
 @model MatSplit.Web.Pages.Account.LogoutModel
 
 <ms-card id="logout-card" title="Abmelden" subtitle="@Model.DisplayName" icon="logout">
+    <div class="mat-stack">
     <ms-form id="logout-form" validation-summary="none">
         <p>M&#246;chtest du dich wirklich abmelden? Die aktuelle Sitzung wird dabei beendet.</p>
 
@@ -21,4 +22,5 @@
                        confirm="Wirklich abmelden?"></ms-button>
         </ms-button-row>
     </ms-form>
+    </div>
 </ms-card>

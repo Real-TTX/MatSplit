@@ -562,8 +562,13 @@ Die Demo-Gruppe wird nur erzeugt, wenn noch keine Gruppe existiert.
   explizit angegebener Kultur (`de-DE` bzw. invariant), sind davon also nicht
   betroffen. Zusaetzlich sind die Model-Binding-Meldungen in Program.cs auf
   Deutsch gesetzt (`MvcOptions.ModelBindingMessageProvider`).
-- **PWA-Icons**: `apple-touch-icon.png` (180x180), `icon-192.png` und
-  `icon-512.png` sind echte PNGs (iOS akzeptiert fuer `apple-touch-icon` kein
-  SVG). `icon-512.svg` bleibt als groessenlose `"sizes": "any"`-Variante im
-  Manifest. Das Manifest heisst `manifest.webmanifest` (korrekter MIME-Typ)
-  statt `manifest.json`.
+- **PWA-Icons**: `apple-touch-icon.png` (180x180, deckend), `icon-192.png` und
+  `icon-512.png` (any) sowie `icon-maskable-192/512.png` sind echte PNGs (iOS akzeptiert
+  fuer `apple-touch-icon` kein SVG); `favicon.svg` ist die groessenlose
+  `"sizes": "any"`-Variante im Manifest. Alle sind aus dem flachen Logo gerendert (Akzent
+  `#bf5610`). Das Manifest heisst `manifest.webmanifest` (korrekter MIME-Typ)
+  statt `manifest.json`. Details zu Sicheren Bereichen, Vollbild, Tastatur und Startbildern:
+  [pwa.md](pwa.md) (Abschnitt 1a).
+- **Design**: Oberflaeche, Farben und Dunkelmodus kommen vom Toolkit MatUi (Kopie unter
+  `wwwroot/matui/`, Akzent `[data-app="matsplit"]`); die `ms-*`-Tag-Helper rendern dessen Markup,
+  die App-Stile stehen in `wwwroot/css/app.css` - siehe [ui-controls.md](ui-controls.md).

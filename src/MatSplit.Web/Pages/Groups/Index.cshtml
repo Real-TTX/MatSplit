@@ -1,151 +1,61 @@
 @page
 @model MatSplit.Web.Pages.Groups.IndexModel
-@* Creation is the prominent "Neue Gruppe" button at the bottom (desktop AND
-   mobile), so this page sets no app bar "+" action. *@
+@* Creation is the prominent "Neue Gruppe" button under the list (desktop AND mobile) and the plus at the
+   heading of the groups in the menu, so this page sets no "+" in the header bar. *@
 
 <ms-list id="groups">
 
-    @* Heading row: title left, a filter disclosure button right. The toolbar is
-       no longer always visible; it opens from the "Filter" button. Active filters
-       are shown as removable tags below. Pure CSS/HTML, no script needed. *@
-    <div class="groups-head">
-        <div class="groups-head__title">
-            <ms-icon name="group" size="20"></ms-icon>
-            <h2 id="groups-title">Meine Gruppen</h2>
-            <span class="ms-badge">@Model.Result.TotalCount</span>
-        </div>
+    <ms-toolbar id="groups-tools" action="/Groups" reset-url="/Groups">
+        <ms-field id="groups-search" name="search" type="search" label="Suche"
+                  value="@Model.Search" placeholder="Name oder Beschreibung"></ms-field>
+        <ms-field id="groups-sort" name="sort" type="select" label="Sortierung"
+                  items="Model.SortOptions"></ms-field>
+    </ms-toolbar>
 
-        <details class="groups-filter">
-            <summary class="ms-btn ms-btn--secondary ms-btn--sm groups-filter__toggle">
-                <ms-icon name="filter" size="18"></ms-icon>
-                <span>Filter</span>
-            </summary>
-            <form class="groups-filter__panel" method="get" action="/Groups">
-                <ms-field id="groups-search" name="search" type="search" label="Suche"
-                          value="@Model.Search" placeholder="Name oder Beschreibung"></ms-field>
-                <ms-field id="groups-sort" name="sort" type="select" label="Sortierung"
-                          items="Model.SortOptions"></ms-field>
-                <div class="ms-row">
-                    <ms-button id="groups-filter-apply" kind="primary" icon="filter" label="Filtern"></ms-button>
-                    <ms-button id="groups-filter-reset" kind="ghost" icon="close" label="Zurücksetzen"
-                               type="button" href="/Groups"></ms-button>
-                </div>
-            </form>
-        </details>
-    </div>
-
-    @{
-        var hasSearch = !string.IsNullOrWhiteSpace(Model.Search);
-        var sortActive = !string.IsNullOrWhiteSpace(Model.Sort) && Model.Sort != "name";
-        var sortLabel = Model.SortOptions.FirstOrDefault(o => o.Selected)?.Text;
-        var searchRemoveUrl = "/Groups" + (sortActive ? "?sort=" + Uri.EscapeDataString(Model.Sort!) : string.Empty);
-        var sortRemoveUrl = "/Groups" + (hasSearch ? "?search=" + Uri.EscapeDataString(Model.Search!) : string.Empty);
-    }
-    @if (hasSearch || sortActive)
-    {
-        <div class="groups-tags" aria-label="Aktive Filter">
-            @if (hasSearch)
-            {
-                <a class="ms-chip groups-tag" href="@searchRemoveUrl" title="Suchfilter entfernen">
-                    <span>Suche: @Model.Search</span>
-                    <ms-icon name="close" size="14"></ms-icon>
-                </a>
-            }
-            @if (sortActive)
-            {
-                <a class="ms-chip groups-tag" href="@sortRemoveUrl" title="Sortierung zurücksetzen">
-                    <span>@sortLabel</span>
-                    <ms-icon name="close" size="14"></ms-icon>
-                </a>
-            }
-            <a class="groups-tags__clear" href="/Groups">Alle zurücksetzen</a>
-        </div>
-    }
-
-    @* Mobile card rendering. Same data as the table below; CSS shows only one
-       of them per breakpoint. Card = name (+ emoji), own saldo, member count,
-       spending progress bar and total spent. *@
     @if (Model.Result.TotalCount > 0)
     {
-        <div class="ms-grouplist">
+        @* The groups are cards that are links: name, the own saldo, the members and how much was spent
+           compared with the group that spent the most. *@
+        <div class="mat-gallery ms-grouplist" id="groups-cards">
             @foreach (var group in Model.Result.Items)
             {
                 var spentPct = Model.MaxExpensesCents > 0
                     ? Math.Clamp((int)Math.Round(group.TotalExpensesCents * 100d / Model.MaxExpensesCents), 0, 100)
                     : 0;
 
-                <a class="ms-grouplist__item" href="@($"/Groups/Details?groupId={group.Id}")">
-                    <div class="ms-grouplist__top">
+                <a class="mat-card ms-grouplist__item" href="@($"/Groups/Details?groupId={group.Id}")">
+                    <span class="ms-grouplist__top">
                         <span class="ms-grouplist__name">@group.Name</span>
                         <span class="ms-grouplist__balance">
                             <span class="ms-grouplist__balance-label">Saldo</span>
                             <ms-money cents="@group.OwnBalanceCents" currency="@group.Currency" show-sign="true"></ms-money>
                         </span>
+                    </span>
+                    @if (!string.IsNullOrWhiteSpace(group.Description))
+                    {
+                        <span class="mat-muted ms-grouplist__description">@group.Description</span>
+                    }
+                    <span class="mat-muted">
+                        @group.MemberCount @(group.MemberCount == 1 ? "Mitglied" : "Mitglieder")
+                        @if (group.ShareTotal != group.MemberCount)
+                        {
+                            <span class="mat-tag">@group.ShareTotal Anteile</span>
+                        }
+                    </span>
+                    <div class="mat-meter" role="progressbar" aria-valuenow="@spentPct" aria-valuemin="0" aria-valuemax="100"
+                         aria-label="Anteil an den Ausgaben der größten Gruppe">
+                        <div class="mat-meter__fill" data-value="@spentPct"></div>
                     </div>
-                    <span class="ms-grouplist__meta">@group.MemberCount @(group.MemberCount == 1 ? "Mitglied" : "Mitglieder")</span>
-                    <span class="ms-grouplist__bar"><span style="width:@spentPct%"></span></span>
                     <span class="ms-grouplist__spent">
                         <ms-money cents="@group.TotalExpensesCents" currency="@group.Currency"></ms-money> ausgegeben
+                    </span>
+                    <span class="ms-grouplist__spent">
+                        Letzte Aktivität @MatSplit.Web.Pages.Groups.IndexModel.FormatMoment(group.LastActivityUtc)
                     </span>
                 </a>
             }
         </div>
     }
-
-    <ms-table id="groups-table" caption="Gruppenübersicht">
-        <thead>
-            <tr>
-                <th scope="col">Name</th>
-                <th scope="col" class="ms-num">Mitglieder</th>
-                <th scope="col" class="ms-num">Ausgaben</th>
-                <th scope="col">Letzte Aktivität</th>
-                <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var group in Model.Result.Items)
-            {
-                <tr>
-                    <td data-label="Name">
-                        <a href="@($"/Groups/Details?groupId={group.Id}")">@group.Name</a>
-                        @if (!string.IsNullOrWhiteSpace(group.Description))
-                        {
-                            <span class="ms-muted">@group.Description</span>
-                        }
-                    </td>
-                    <td data-label="Mitglieder" class="ms-num">
-                        @group.MemberCount
-                        @if (group.ShareTotal != group.MemberCount)
-                        {
-                            <span class="ms-chip">@group.ShareTotal Anteile</span>
-                        }
-                    </td>
-                    <td data-label="Ausgaben" class="ms-num">
-                        <ms-money cents="@group.TotalExpensesCents" currency="@group.Currency"></ms-money>
-                    </td>
-                    <td data-label="Letzte Aktivität">
-                        @MatSplit.Web.Pages.Groups.IndexModel.FormatMoment(group.LastActivityUtc)
-                    </td>
-                    <td data-label="Aktionen">
-                        <div class="ms-table__rowactions">
-                            <ms-button id="@($"group-{group.Id}-open")" kind="ghost" size="sm"
-                                       icon="forward" icon-only="true" label="Öffnen"
-                                       href="@($"/Groups/Details?groupId={group.Id}")"></ms-button>
-                            <ms-button id="@($"group-{group.Id}-members")" kind="ghost" size="sm"
-                                       icon="users" icon-only="true" label="Mitglieder"
-                                       href="@($"/Groups/Details?groupId={group.Id}&tab=mitglieder")"></ms-button>
-                            @if (group.CanManage)
-                            {
-                                <ms-button id="@($"group-{group.Id}-edit")" kind="ghost" size="sm"
-                                           icon="edit" icon-only="true" label="Bearbeiten"
-                                           href="@($"/Groups/Edit?id={group.Id}")"></ms-button>
-                            }
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </ms-table>
 
     @if (Model.Result.TotalCount == 0)
     {
@@ -170,112 +80,3 @@
         </ms-actions>
     }
 </ms-list>
-
-<style>
-    /* The group list uses the .ms-grouplist card optic on every breakpoint
-       (mockup style), so the ms-table is only the accessible / print fallback
-       and stays hidden on screen. Both render the same rows; only this page's
-       own markup is targeted, no foundation styles are changed. */
-    #groups #groups-table-wrap {
-        display: none;
-    }
-
-    @@media (max-width: 900px) {
-        /* The app bar already shows the "Gruppen" title on mobile, so the
-           in-content heading would only duplicate it. Keep the filter button. */
-        .groups-head__title {
-            display: none;
-        }
-
-        .groups-head {
-            justify-content: flex-end;
-        }
-
-        /* Same prominent bottom "Neue Gruppe" button as on desktop, full width. */
-        #groups #groups-actions .ms-btn {
-            width: 100%;
-        }
-    }
-
-    /* Heading row with the filter disclosure on the right. */
-    .groups-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--ms-space-3);
-        flex-wrap: wrap;
-    }
-
-    .groups-head__title {
-        display: flex;
-        align-items: center;
-        gap: var(--ms-space-2);
-    }
-
-    .groups-head__title h2 {
-        margin: 0;
-        font-size: 1.75rem;
-        font-weight: 800;
-        letter-spacing: -0.01em;
-    }
-
-    .groups-head__title .ms-icon {
-        color: var(--ms-primary);
-    }
-
-    /* Filter button + pop-over panel (native <details>, no JS). */
-    .groups-filter {
-        position: relative;
-    }
-
-    .groups-filter__toggle {
-        list-style: none;
-        cursor: pointer;
-    }
-
-    .groups-filter__toggle::-webkit-details-marker {
-        display: none;
-    }
-
-    .groups-filter__panel {
-        position: absolute;
-        right: 0;
-        z-index: 20;
-        min-width: min(320px, 90vw);
-        margin-top: 8px;
-        padding: var(--ms-space-4);
-        border: 1px solid var(--ms-border);
-        border-radius: var(--ms-radius);
-        background: var(--ms-surface);
-        box-shadow: var(--ms-shadow-2);
-        display: flex;
-        flex-direction: column;
-        gap: var(--ms-space-3);
-    }
-
-    /* Active filter tags. */
-    .groups-tags {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--ms-space-2);
-    }
-
-    .groups-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .groups-tag:hover {
-        background: var(--ms-primary-soft);
-        color: var(--ms-primary);
-    }
-
-    .groups-tags__clear {
-        font-size: var(--ms-text-sm);
-        color: var(--ms-text-soft);
-    }
-</style>

@@ -34,6 +34,13 @@ public static class PageLayoutExtensions
         page.ViewData[LayoutKeys.Breadcrumb] = items;
     }
 
+    /// <summary>Sets the icons at the right end of the header bar; the main action (<see cref="HeaderAction.Primary"/>) goes last.</summary>
+    public static void SetHeaderActions(this PageModel page, params HeaderAction[] actions)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        page.ViewData[LayoutKeys.HeaderActions] = actions;
+    }
+
     /// <summary>Fills the group list of the left menu and marks the active group.</summary>
     public static void SetMenuGroups(this PageModel page, IEnumerable<MenuGroupEntry> groups, long? activeGroupId = null)
     {
@@ -113,6 +120,16 @@ public static class PageLayoutExtensions
             IEnumerable<BreadcrumbItem> items => items.ToList(),
             _ => []
         };
+    }
+
+    /// <summary>Reads the header actions from ViewData, the main action last, at most four.</summary>
+    public static IReadOnlyList<HeaderAction> ReadHeaderActions(this ViewDataDictionary viewData)
+    {
+        ArgumentNullException.ThrowIfNull(viewData);
+
+        return viewData[LayoutKeys.HeaderActions] is IEnumerable<HeaderAction> actions
+            ? actions.OrderBy(action => action.Primary).Take(4).ToList()
+            : [];
     }
 
     /// <summary>Reads the active group id from ViewData.</summary>

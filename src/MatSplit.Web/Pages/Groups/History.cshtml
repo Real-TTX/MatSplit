@@ -2,14 +2,12 @@
 @model MatSplit.Web.Pages.Groups.HistoryModel
 
 
-<ms-list id="history" title="Aktivitäten" subtitle="Alle Änderungen dieser Gruppe"
-         icon="activity" count="@Model.Result.TotalCount">
+<ms-list id="history">
 
     <ms-toolbar id="history-filter"
                 action="/Groups/History"
                 reset-url="@($"/Groups/History?groupId={Model.GroupId}")"
-                preserve="groupId,filter"
-                auto-submit-text="true">
+                preserve="groupId,filter">
         <ms-field id="history-search" name="search" type="search" label="Suche"
                   value="@Model.Search" placeholder="Text, Typ oder Person"></ms-field>
         <ms-field id="history-action" name="action" type="select" label="Aktion"
@@ -22,20 +20,20 @@
                   items="Model.SortOptions"></ms-field>
     </ms-toolbar>
 
-    <div class="ms-pills" aria-label="Aktivitäten filtern">
-        <a class="ms-pill @(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterAll ? "is-active" : null)"
+    <nav class="mat-tabs mat-tabs--pills" aria-label="Aktivitäten filtern">
+        <a class="mat-tab@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterAll ? " is-active" : string.Empty)"
            href="@Model.BuildFilterUrl(MatSplit.Web.Pages.Groups.HistoryModel.FilterAll)"
            aria-current="@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterAll ? "page" : null)">Alle</a>
-        <a class="ms-pill @(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterExpenses ? "is-active" : null)"
+        <a class="mat-tab@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterExpenses ? " is-active" : string.Empty)"
            href="@Model.BuildFilterUrl(MatSplit.Web.Pages.Groups.HistoryModel.FilterExpenses)"
            aria-current="@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterExpenses ? "page" : null)">Ausgaben</a>
-        <a class="ms-pill @(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterPayments ? "is-active" : null)"
+        <a class="mat-tab@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterPayments ? " is-active" : string.Empty)"
            href="@Model.BuildFilterUrl(MatSplit.Web.Pages.Groups.HistoryModel.FilterPayments)"
            aria-current="@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterPayments ? "page" : null)">Zahlungen</a>
-        <a class="ms-pill @(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterJoins ? "is-active" : null)"
+        <a class="mat-tab@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterJoins ? " is-active" : string.Empty)"
            href="@Model.BuildFilterUrl(MatSplit.Web.Pages.Groups.HistoryModel.FilterJoins)"
            aria-current="@(Model.ActiveFilter == MatSplit.Web.Pages.Groups.HistoryModel.FilterJoins ? "page" : null)">Beitritte</a>
-    </div>
+    </nav>
 
     @if (Model.Entries.Count > 0)
     {
@@ -46,7 +44,7 @@
                     <th scope="col">Person</th>
                     <th scope="col">Aktion</th>
                     <th scope="col">Details</th>
-                    <th scope="col" class="ms-num">Betrag</th>
+                    <th scope="col" class="mat-num">Betrag</th>
                 </tr>
             </thead>
             <tbody>
@@ -62,7 +60,7 @@
                             @MatSplit.Web.Pages.Groups.HistoryModel.ActorName(entry)
                         </td>
                         <td data-label="Aktion">
-                            <span class="ms-chip">@MatSplit.Web.Pages.Groups.HistoryModel.ActionLabel(entry.Action)</span>
+                            <span class="mat-tag">@MatSplit.Web.Pages.Groups.HistoryModel.ActionLabel(entry.Action)</span>
                         </td>
                         <td data-label="Details">
                             @MatSplit.Web.Pages.Groups.HistoryModel.FeedSentence(entry)
@@ -71,7 +69,7 @@
                                 <strong>„@title“</strong>
                             }
                         </td>
-                        <td data-label="Betrag" class="ms-num">
+                        <td data-label="Betrag" class="mat-num">
                             @if (money is not null)
                             {
                                 <ms-money cents="@money.Cents" currency="@money.Currency"></ms-money>
@@ -99,13 +97,3 @@
                    page-url="@Model.BuildPageUrl()"></ms-pagination>
 
 </ms-list>
-
-@* The desktop toolbar (search, date range, sort) is a desktop only addition;
-   on mobile the category pills replace it to match the mockup. *@
-<style>
-    @@media (max-width: 900px) {
-        #history-filter {
-            display: none;
-        }
-    }
-</style>

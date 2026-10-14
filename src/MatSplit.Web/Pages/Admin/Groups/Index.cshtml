@@ -1,8 +1,7 @@
 @page
 @model MatSplit.Web.Pages.Admin.Groups.IndexModel
 
-<ms-list id="admin-groups" title="Gruppen" subtitle="Alle Gruppen mit Eigentümer, Mitgliedern und Ausgaben"
-         icon="group" count="@Model.Result.TotalCount">
+<ms-list id="admin-groups">
 
     <ms-toolbar id="admin-groups-filter" action="/Admin/Groups" reset-url="/Admin/Groups" auto-submit-text="true">
         <ms-field id="admin-groups-search" name="search" type="search" label="Suche"
@@ -21,12 +20,12 @@
             <tr>
                 <th scope="col">Name</th>
                 <th scope="col">Eigentümer</th>
-                <th scope="col" class="ms-num">Mitglieder</th>
-                <th scope="col" class="ms-num">Ausgaben</th>
-                <th scope="col" class="ms-num">Summe</th>
-                <th scope="col" class="ms-num">Zahlungen</th>
+                <th scope="col" class="mat-num">Mitglieder</th>
+                <th scope="col" class="mat-num">Ausgaben</th>
+                <th scope="col" class="mat-num">Summe</th>
+                <th scope="col" class="mat-num">Zahlungen</th>
                 <th scope="col">Erstellt</th>
-                <th scope="col"><span class="ms-visually-hidden">Aktionen</span></th>
+                <th scope="col"><span class="mat-sr-only">Aktionen</span></th>
             </tr>
         </thead>
         <tbody>
@@ -38,27 +37,27 @@
                         @row.Name
                         @if (row.IsDeleted)
                         {
-                            <span class="ms-chip">Gelöscht</span>
+                            <span class="mat-pill mat-pill--error">Gelöscht</span>
                         }
                         @if (!row.InviteEnabled)
                         {
-                            <span class="ms-chip">Einladung aus</span>
+                            <span class="mat-pill mat-pill--warn">Einladung aus</span>
                         }
                         @if (row.Currency != "EUR")
                         {
-                            <span class="ms-chip">@row.Currency</span>
+                            <span class="mat-tag">@row.Currency</span>
                         }
                     </td>
                     <td data-label="Eigentümer">@row.OwnerText</td>
-                    <td data-label="Mitglieder" class="ms-num">@row.MemberCount</td>
-                    <td data-label="Ausgaben" class="ms-num">@row.ExpenseCount</td>
-                    <td data-label="Summe" class="ms-num">
+                    <td data-label="Mitglieder" class="mat-num">@row.MemberCount</td>
+                    <td data-label="Ausgaben" class="mat-num">@row.ExpenseCount</td>
+                    <td data-label="Summe" class="mat-num">
                         <ms-money cents="@row.ExpenseTotalCents" currency="@row.Currency"></ms-money>
                     </td>
-                    <td data-label="Zahlungen" class="ms-num">@row.PaymentCount</td>
+                    <td data-label="Zahlungen" class="mat-num">@row.PaymentCount</td>
                     <td data-label="Erstellt">@row.CreateDate.ToString("dd.MM.yyyy")</td>
                     <td data-label="Aktionen">
-                        <div class="ms-table__rowactions">
+                        <div class="mat-table__actions">
                             <ms-button id="@($"admin-group-{row.Id}-details")" kind="ghost" size="sm"
                                        icon="info" icon-only="true" label="Übersicht"
                                        href="@($"/Groups/Details?groupId={row.Id}")"></ms-button>

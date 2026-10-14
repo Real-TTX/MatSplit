@@ -1,5 +1,8 @@
 @inject AppConfigService AppConfig
 @{
+    // The menu of the shell (SHELL-01 .. SHELL-07): the brand, the groups of the user as items with a small plus at the
+    // heading of the list (the list the user can change), the administration for admins, and at the foot the user, the
+    // 3-state theme button and the version.
     var appName = ViewData.ReadString(LayoutKeys.AppName) ?? AppConfig.Current.AppName;
     var path = ViewContext.HttpContext.Request.Path.Value ?? "/";
     path = path.Length > 1 ? path.TrimEnd('/') : "/";
@@ -10,114 +13,128 @@
     // Link guests (Anonymous role) join by invite and may not create groups.
     var canCreateGroup = isAuthenticated && !User.IsInRole(nameof(UserRole.Anonymous));
     var displayName = ViewData.ReadString(LayoutKeys.CurrentUserName) ?? User.Identity?.Name ?? "Gast";
+    var role = isAdmin ? "Administrator" : User.IsInRole(nameof(UserRole.Anonymous)) ? "Gast" : "Mitglied";
+    var themeSaveUrl = ViewData.ReadString("ThemeSaveUrl")
+        ?? (isAuthenticated ? MatSplit.Web.Pages.Account.ProfileModel.ThemeSaveUrl : null);
 
     bool IsPath(string target)
         => path.Equals(target, StringComparison.OrdinalIgnoreCase)
         || path.StartsWith(target + "/", StringComparison.OrdinalIgnoreCase);
 
-    string LinkClass(string target, bool exact = false)
-    {
-        var active = exact
-            ? path.Equals(target, StringComparison.OrdinalIgnoreCase)
-            : IsPath(target);
-        return active ? "ms-nav__link is-active" : "ms-nav__link";
-    }
-}
-<nav class="ms-shell__nav" id="ms-menu" aria-label="Hauptnavigation">
-    <div class="ms-menu">
-        <div class="ms-menu__top">
-            <a class="ms-menu__brand" href="/" aria-label="@appName Startseite">
-                <img class="ms-menu__logo" src="~/img/logo-mark.svg" width="32" height="32" alt="" />
-                <span class="ms-menu__brand-name">@appName</span>
-            </a>
-            <button class="ms-menu__close" type="button" data-ms-drawer-close="true" aria-label="Men&#252; schlie&#223;en">
-                <ms-icon name="close" size="20"></ms-icon>
-            </button>
-        </div>
+    string ItemClass(bool active) => active ? "mat-nav__item is-active" : "mat-nav__item";
+    string? Current(bool active) => active ? "page" : null;
 
-        <div class="ms-menu__scroll" data-ms-scroll="true">
-            @* Flat group list: every group links straight to its hub
-               (/Groups/Details); no "Start"/"Gruppen" hierarchy, the brand logo
-               already leads to the group overview. *@
-            <ul class="ms-nav">
+    var groupsOverviewActive = path.Equals("/Groups", StringComparison.OrdinalIgnoreCase) && activeGroupId is null;
+}
+<aside class="mat-nav" id="mat-nav">
+    <div class="mat-nav__brand">
+        <a href="/" aria-label="@appName Startseite">
+            <span class="mat-logo" role="img" aria-label="@appName"><svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#ms-i-logo"></use></svg></span>
+            <span>
+                <span class="mat-nav__name">@appName</span>
+                <span class="mat-nav__tagline">Gemeinsame Ausgaben</span>
+            </span>
+        </a>
+        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-nav__close" data-nav-close aria-label="Men&#252; schlie&#223;en">
+            <ms-icon name="x"></ms-icon>
+        </button>
+    </div>
+
+    <nav class="mat-nav__scroll" aria-label="Hauptnavigation">
+        <ul class="mat-nav__list">
+            @if (isAuthenticated)
+            {
+                <li>
+                    <a class="@ItemClass(groupsOverviewActive)" href="/Groups" aria-current="@Current(groupsOverviewActive)">
+                        <ms-icon name="home"></ms-icon><span>&#220;bersicht</span>
+                    </a>
+                </li>
+
+                @if (canCreateGroup)
+                {
+                    <li class="mat-nav__group mat-nav__group--action" role="presentation">
+                        <span class="mat-nav__group-title">Gruppen</span>
+                        <a class="mat-nav__group-action" href="/Groups/Edit" aria-label="Neue Gruppe anlegen" title="Neue Gruppe anlegen">
+                            <ms-icon name="plus"></ms-icon>
+                        </a>
+                    </li>
+                }
+                else if (groups.Count > 0)
+                {
+                    <li class="mat-nav__group" role="presentation">Gruppen</li>
+                }
+
                 @foreach (var group in groups)
                 {
                     var isActiveGroup = activeGroupId == group.Id;
                     <li>
-                        <a class="ms-nav__link@(isActiveGroup ? " is-active" : string.Empty)"
-                           href="/Groups/Details?groupId=@group.Id">
-                            <span class="ms-nav__dot" aria-hidden="true"></span>
-                            <span class="ms-nav__summary-text">@group.Name</span>
-                            @if (group.IsGroupAdmin)
-                            {
-                                <ms-icon name="admin" size="14" class="ms-nav__badge-icon"></ms-icon>
-                            }
+                        <a class="@ItemClass(isActiveGroup)" href="/Groups/Details?groupId=@group.Id" aria-current="@Current(isActiveGroup)">
+                            <ms-icon name="users"></ms-icon><span>@group.Name</span>
                         </a>
                     </li>
                 }
-                @if (canCreateGroup)
-                {
-                    <li>
-                        <a class="ms-nav__link ms-nav__sub--add" href="/Groups/Edit">
-                            <ms-icon name="plus" size="18"></ms-icon>
-                            <span>Neue Gruppe</span>
-                        </a>
-                    </li>
-                }
-            </ul>
+            }
 
             @if (isAdmin)
             {
-                <p class="ms-nav__caption" id="ms-menu-admin">Administration</p>
-                <ul class="ms-nav" aria-labelledby="ms-menu-admin">
-                    <li>
-                        <a class="@LinkClass("/Admin", exact: true)" href="/Admin">
-                            <ms-icon name="admin" size="18"></ms-icon>
-                            <span>&#220;bersicht</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="@LinkClass("/Admin/Users")" href="/Admin/Users">
-                            <ms-icon name="users" size="18"></ms-icon>
-                            <span>Benutzer</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="@LinkClass("/Admin/Groups")" href="/Admin/Groups">
-                            <ms-icon name="group" size="18"></ms-icon>
-                            <span>Gruppen</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="@LinkClass("/Admin/Settings")" href="/Admin/Settings">
-                            <ms-icon name="settings" size="18"></ms-icon>
-                            <span>Einstellungen</span>
-                        </a>
-                    </li>
-                </ul>
+                <li class="mat-nav__group" role="presentation">Administration</li>
+                <li>
+                    <a class="@ItemClass(path.Equals("/Admin", StringComparison.OrdinalIgnoreCase))" href="/Admin">
+                        <ms-icon name="admin"></ms-icon><span>&#220;bersicht</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="@ItemClass(IsPath("/Admin/Users"))" href="/Admin/Users">
+                        <ms-icon name="users"></ms-icon><span>Benutzer</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="@ItemClass(IsPath("/Admin/Groups"))" href="/Admin/Groups">
+                        <ms-icon name="group"></ms-icon><span>Gruppen</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="@ItemClass(IsPath("/Admin/Settings"))" href="/Admin/Settings">
+                        <ms-icon name="settings"></ms-icon><span>Einstellungen</span>
+                    </a>
+                </li>
             }
-        </div>
+        </ul>
+    </nav>
 
-        <div class="ms-menu__foot">
+    <div class="mat-nav__foot">
+        <div class="mat-nav__account">
             @if (isAuthenticated)
             {
-                <a class="@LinkClass("/Account/Profile")" href="/Account/Profile">
-                    <ms-icon name="user" size="18"></ms-icon>
-                    <span class="ms-menu__user">@displayName</span>
-                </a>
-                <a class="ms-nav__link" href="/Account/Logout">
-                    <ms-icon name="logout" size="18"></ms-icon>
-                    <span>Abmelden</span>
-                </a>
+                <button type="button" class="mat-user" data-menu-toggle="user-menu" data-menu-place="top" aria-haspopup="menu" aria-expanded="false">
+                    <span class="mat-avatar" aria-hidden="true">@MsAvatar.Initials(displayName)</span>
+                    <span class="mat-user__text">
+                        <span class="mat-user__name">@displayName</span>
+                        <span class="mat-user__role">@role</span>
+                    </span>
+                    <ms-icon name="chevron-up" class="mat-user__chev"></ms-icon>
+                </button>
             }
             else
             {
-                <a class="@LinkClass("/Account/Login")" href="/Account/Login">
-                    <ms-icon name="logout" size="18"></ms-icon>
-                    <span>Anmelden</span>
+                <a class="mat-user" href="/Account/Login">
+                    <span class="mat-avatar" aria-hidden="true"><ms-icon name="user"></ms-icon></span>
+                    <span class="mat-user__text"><span class="mat-user__name">Anmelden</span></span>
                 </a>
             }
-            <partial name="_ThemeSwitcher" />
+            <button type="button" class="mat-theme" data-theme-toggle data-theme-state="system"
+                    data-theme-save-url="@themeSaveUrl"
+                    aria-label="Design: System. Klicken f&#252;r Hell." title="Design: System. Klicken f&#252;r Hell.">
+                <svg class="mat-icon" data-theme-icon="system" aria-hidden="true" focusable="false"><use href="#mat-i-monitor"></use></svg>
+                <svg class="mat-icon" data-theme-icon="light" aria-hidden="true" focusable="false"><use href="#mat-i-sun"></use></svg>
+                <svg class="mat-icon" data-theme-icon="dark" aria-hidden="true" focusable="false"><use href="#mat-i-moon"></use></svg>
+            </button>
         </div>
+        <div class="mat-nav__version">@appName @MsUi.Version</div>
     </div>
-</nav>
+</aside>
+@if (!string.IsNullOrEmpty(themeSaveUrl))
+{
+    @* matui.js posts the theme with this token; a page without a form would otherwise have none and the handler would answer 400. *@
+    @Html.AntiForgeryToken()
+}

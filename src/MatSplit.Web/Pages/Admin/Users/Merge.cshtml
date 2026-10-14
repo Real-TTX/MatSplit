@@ -1,7 +1,7 @@
 @page
 @model MatSplit.Web.Pages.Admin.Users.MergeModel
 
-<div class="ms-stack">
+<div class="mat-stack">
     <ms-alert id="merge-info" tone="info" title="Doppeltes Konto aufräumen"
               text="Mitgliedschaften, bezahlte Ausgaben, Anteile und Zahlungen der Quelle werden auf das Ziel übertragen. Die Quelle wird danach gelöscht und dauerhaft auf das Ziel verwiesen."></ms-alert>
 
@@ -29,13 +29,13 @@
 
     @if (Model.Source is not null || Model.Target is not null)
     {
-        <div class="ms-grid ms-grid--2">
+        <div class="mat-grid mat-grid--2">
             @if (Model.Source is not null)
             {
                 <ms-card id="merge-source-card" title="@Model.Source.DisplayName"
                          subtitle="Quelle – wird nach dem Zusammenführen gelöscht"
                          icon="user" tone="danger">
-                    <dl class="ms-kv">
+                    <dl class="mat-kv">
                         <dt>Rolle</dt>
                         <dd>@Model.Source.RoleLabel@(Model.Source.IsAnonymous ? " (anonym)" : string.Empty)</dd>
                         <dt>E-Mail</dt>
@@ -64,7 +64,7 @@
                 <ms-card id="merge-target-card" title="@Model.Target.DisplayName"
                          subtitle="Ziel – übernimmt alle Daten"
                          icon="user" tone="success">
-                    <dl class="ms-kv">
+                    <dl class="mat-kv">
                         <dt>Rolle</dt>
                         <dd>@Model.Target.RoleLabel@(Model.Target.IsAnonymous ? " (anonym)" : string.Empty)</dd>
                         <dt>E-Mail</dt>
