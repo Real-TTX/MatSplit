@@ -1,0 +1,26 @@
+{
+  "time": "<string>",
+  "values": {
+    "groups": {
+      "value": "<number>"
+    },
+    "people": {
+      "value": "<number>"
+    },
+    "guests": {
+      "value": "<number>"
+    },
+    "expenses30d": {
+      "value": "<number>"
+    },
+    "openSettlements": {
+      "value": "<number>"
+    },
+    "receipts": {
+      "value": "<number>"
+    },
+    "lastActivity": {
+      "value": "<string>"
+    }
+  }
+}

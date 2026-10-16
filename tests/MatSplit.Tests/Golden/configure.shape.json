@@ -1,0 +1,9 @@
+{
+  "values": {
+    "appName": "<string>",
+    "defaultCurrency": "<string>",
+    "allowAnonymousJoin": "<bool>",
+    "sessionLifetimeDays": "<number>",
+    "maxReceiptSizeMb": "<number>"
+  }
+}

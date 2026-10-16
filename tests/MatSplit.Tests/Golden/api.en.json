@@ -1,0 +1,198 @@
+{
+  "contract": 1,
+  "app": {
+    "id": "matsplit",
+    "name": "MatSplit",
+    "description": "Shared expenses for holidays and shared flats",
+    "version": "<version>",
+    "icon": "/img/favicon.svg",
+    "accent": "#bf5610",
+    "home": "/"
+  },
+  "auth": {
+    "apiKey": true
+  },
+  "pages": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "icon": "dashboard",
+      "sections": [
+        {
+          "kind": "tiles",
+          "items": [
+            "groups",
+            "people",
+            "guests",
+            "expenses30d",
+            "openSettlements",
+            "receipts",
+            "lastActivity"
+          ]
+        },
+        {
+          "kind": "actions",
+          "items": [
+            "openAdmin",
+            "openSettings",
+            "cleanupSessions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "icon": "settings",
+      "sections": [
+        {
+          "kind": "form",
+          "items": [
+            "appName",
+            "defaultCurrency",
+            "allowAnonymousJoin"
+          ],
+          "label": "General"
+        },
+        {
+          "kind": "form",
+          "items": [
+            "sessionLifetimeDays",
+            "maxReceiptSizeMb"
+          ],
+          "label": "Limits"
+        }
+      ]
+    }
+  ],
+  "state": [
+    {
+      "key": "groups",
+      "label": "Groups",
+      "widget": "number",
+      "icon": "folder"
+    },
+    {
+      "key": "people",
+      "label": "People with an account",
+      "widget": "number",
+      "icon": "users"
+    },
+    {
+      "key": "guests",
+      "label": "Guests by invite link",
+      "widget": "number",
+      "icon": "link"
+    },
+    {
+      "key": "expenses30d",
+      "label": "Expenses in the last 30 days",
+      "widget": "number",
+      "icon": "dollar"
+    },
+    {
+      "key": "openSettlements",
+      "label": "Open settlements",
+      "widget": "number",
+      "icon": "arrow-right"
+    },
+    {
+      "key": "receipts",
+      "label": "Receipts",
+      "widget": "number",
+      "icon": "image",
+      "unit": "bytes"
+    },
+    {
+      "key": "lastActivity",
+      "label": "Last entry",
+      "widget": "time",
+      "icon": "clock"
+    }
+  ],
+  "configure": [
+    {
+      "key": "appName",
+      "label": "Application name",
+      "type": "text",
+      "required": true,
+      "max": 60,
+      "hint": "Shown in the menu and on the sign-in page."
+    },
+    {
+      "key": "defaultCurrency",
+      "label": "Default currency",
+      "type": "text",
+      "required": true,
+      "min": 3,
+      "max": 3,
+      "pattern": "^[A-Za-z]{3}$",
+      "placeholder": "EUR",
+      "hint": "Three-letter code for new groups, e.g. EUR."
+    },
+    {
+      "key": "allowAnonymousJoin",
+      "label": "Allow joining by invite link",
+      "type": "bool",
+      "hint": "Off: invite links stop working."
+    },
+    {
+      "key": "sessionLifetimeDays",
+      "label": "Stay signed in (days)",
+      "type": "number",
+      "required": true,
+      "min": 1,
+      "max": 365,
+      "hint": "New sessions at once, the cookie after a restart.",
+      "restart": true
+    },
+    {
+      "key": "maxReceiptSizeMb",
+      "label": "Largest receipt (MB)",
+      "type": "number",
+      "required": true,
+      "min": 1,
+      "max": 100
+    }
+  ],
+  "actions": [
+    {
+      "id": "openAdmin",
+      "label": "Open admin",
+      "icon": "external",
+      "kind": "link",
+      "url": "/Admin"
+    },
+    {
+      "id": "openSettings",
+      "label": "All settings",
+      "icon": "settings",
+      "kind": "link",
+      "url": "/Admin/Settings"
+    },
+    {
+      "id": "cleanupSessions",
+      "label": "Remove expired sessions",
+      "icon": "broom",
+      "kind": "post"
+    }
+  ],
+  "provides": [],
+  "consumes": [],
+  "roles": [
+    {
+      "key": "admin",
+      "label": "Administrator"
+    },
+    {
+      "key": "user",
+      "label": "User"
+    }
+  ],
+  "endpoints": [
+    "/api/health",
+    "/api/state",
+    "/api/configure",
+    "/api/actions"
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "contract": 1,
+  "app": {
+    "id": "matsplit",
+    "name": "MatSplit",
+    "description": "Geteilte Ausgaben für Urlaube und WGs",
+    "version": "<version>",
+    "icon": "/img/favicon.svg",
+    "accent": "#bf5610",
+    "home": "/"
+  },
+  "auth": {
+    "apiKey": true
+  },
+  "pages": [
+    {
+      "id": "overview",
+      "label": "Übersicht",
+      "icon": "dashboard",
+      "sections": [
+        {
+          "kind": "tiles",
+          "items": [
+            "groups",
+            "people",
+            "guests",
+            "expenses30d",
+            "openSettlements",
+            "receipts",
+            "lastActivity"
+          ]
+        },
+        {
+          "kind": "actions",
+          "items": [
+            "openAdmin",
+            "openSettings",
+            "cleanupSessions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "label": "Einstellungen",
+      "icon": "settings",
+      "sections": [
+        {
+          "kind": "form",
+          "items": [
+            "appName",
+            "defaultCurrency",
+            "allowAnonymousJoin"
+          ],
+          "label": "Allgemein"
+        },
+        {
+          "kind": "form",
+          "items": [
+            "sessionLifetimeDays",
+            "maxReceiptSizeMb"
+          ],
+          "label": "Grenzen"
+        }
+      ]
+    }
+  ],
+  "state": [
+    {
+      "key": "groups",
+      "label": "Gruppen",
+      "widget": "number",
+      "icon": "folder"
+    },
+    {
+      "key": "people",
+      "label": "Personen mit Konto",
+      "widget": "number",
+      "icon": "users"
+    },
+    {
+      "key": "guests",
+      "label": "Gäste über Einladungslink",
+      "widget": "number",
+      "icon": "link"
+    },
+    {
+      "key": "expenses30d",
+      "label": "Ausgaben der letzten 30 Tage",
+      "widget": "number",
+      "icon": "dollar"
+    },
+    {
+      "key": "openSettlements",
+      "label": "Offene Ausgleichszahlungen",
+      "widget": "number",
+      "icon": "arrow-right"
+    },
+    {
+      "key": "receipts",
+      "label": "Belege",
+      "widget": "number",
+      "icon": "image",
+      "unit": "bytes"
+    },
+    {
+      "key": "lastActivity",
+      "label": "Letzte Buchung",
+      "widget": "time",
+      "icon": "clock"
+    }
+  ],
+  "configure": [
+    {
+      "key": "appName",
+      "label": "Anwendungsname",
+      "type": "text",
+      "required": true,
+      "max": 60,
+      "hint": "Erscheint im Menü und auf der Anmeldeseite."
+    },
+    {
+      "key": "defaultCurrency",
+      "label": "Standardwährung",
+      "type": "text",
+      "required": true,
+      "min": 3,
+      "max": 3,
+      "pattern": "^[A-Za-z]{3}$",
+      "placeholder": "EUR",
+      "hint": "Dreistelliger Code für neue Gruppen, z. B. EUR."
+    },
+    {
+      "key": "allowAnonymousJoin",
+      "label": "Beitritt über Einladungslinks erlauben",
+      "type": "bool",
+      "hint": "Aus: Einladungslinks funktionieren nicht mehr."
+    },
+    {
+      "key": "sessionLifetimeDays",
+      "label": "Sitzungsdauer in Tagen",
+      "type": "number",
+      "required": true,
+      "min": 1,
+      "max": 365,
+      "hint": "Gilt sofort für neue Sitzungen, für das Cookie nach einem Neustart.",
+      "restart": true
+    },
+    {
+      "key": "maxReceiptSizeMb",
+      "label": "Maximale Beleggröße in MB",
+      "type": "number",
+      "required": true,
+      "min": 1,
+      "max": 100
+    }
+  ],
+  "actions": [
+    {
+      "id": "openAdmin",
+      "label": "Administration öffnen",
+      "icon": "external",
+      "kind": "link",
+      "url": "/Admin"
+    },
+    {
+      "id": "openSettings",
+      "label": "Alle Einstellungen",
+      "icon": "settings",
+      "kind": "link",
+      "url": "/Admin/Settings"
+    },
+    {
+      "id": "cleanupSessions",
+      "label": "Abgelaufene Sitzungen löschen",
+      "icon": "broom",
+      "kind": "post"
+    }
+  ],
+  "provides": [],
+  "consumes": [],
+  "roles": [
+    {
+      "key": "admin",
+      "label": "Administrator"
+    },
+    {
+      "key": "user",
+      "label": "User"
+    }
+  ],
+  "endpoints": [
+    "/api/health",
+    "/api/state",
+    "/api/configure",
+    "/api/actions"
+  ]
+}
