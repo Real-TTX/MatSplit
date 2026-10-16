@@ -59,10 +59,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         entity.Property(x => x.IsAnonymous).HasColumnName("IsAnonymous").IsRequired();
         entity.Property(x => x.MergedIntoUserId).HasColumnName("MergedIntoUserId");
         entity.Property(x => x.ThemePreference).HasColumnName("ThemePreference").HasConversion<int>().IsRequired();
+        entity.Property(x => x.ExternalSubject).HasColumnName("ExternalSubject").HasMaxLength(200);
 
         entity.HasIndex(x => x.Token).IsUnique().HasDatabaseName("IX_Users_Token");
         entity.HasIndex(x => x.Email).HasDatabaseName("IX_Users_Email");
         entity.HasIndex(x => x.MergedIntoUserId).HasDatabaseName("IX_Users_MergedIntoUserId");
+        entity.HasIndex(x => x.ExternalSubject)
+            .IsUnique()
+            .HasFilter("\"ExternalSubject\" IS NOT NULL")
+            .HasDatabaseName("IX_Users_ExternalSubject");
 
         entity.HasOne(x => x.MergedIntoUser)
             .WithMany()

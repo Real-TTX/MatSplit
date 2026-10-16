@@ -2,23 +2,54 @@
 @model MatSplit.Web.Pages.Account.LoginModel
 
 <div class="mat-stack">
-    <ms-card id="login-card">
-        <ms-form id="login-form" autocomplete="on">
-            <ms-field id="lf-login" for="Input.EmailOrName" autofocus="true"
-                      autocomplete="username" placeholder="z. B. admin"></ms-field>
-            <ms-field id="lf-password" for="Input.Password" type="password"
-                      autocomplete="current-password"></ms-field>
-            <ms-field id="lf-remember" for="Input.RememberMe" type="checkbox"
-                      hint="@("Die Anmeldung bleibt auf diesem Ger\u00e4t erhalten.")"></ms-field>
-            <ms-field id="lf-return" name="ReturnUrl" type="hidden" value="@Model.ReturnUrl"></ms-field>
+    @if (Model.SsoError)
+    {
+        <ms-alert id="login-sso-error" tone="danger" title="Anmeldung &#252;ber MatIdentity fehlgeschlagen">
+            MatIdentity hat die Anmeldung nicht best&#228;tigt oder ist gerade nicht erreichbar. Versuche es
+            erneut oder melde dich hier mit deinem lokalen Konto an.
+        </ms-alert>
+    }
 
-            <ms-button-row id="lf-buttons" divider="false">
-                <ms-button id="lf-submit" kind="primary" icon="check" label="Anmelden" full-width="true"></ms-button>
-            </ms-button-row>
-        </ms-form>
-    </ms-card>
+    @if (Model.IdentityEnabled)
+    {
+        <ms-card id="login-sso" title="Anmelden mit MatIdentity" icon="key">
+            <div class="mat-stack">
+                @if (Model.SignedOut)
+                {
+                    <p class="mat-muted">Du bist abgemeldet &#8211; hier und bei MatIdentity.</p>
+                }
+                <ms-button-row id="lf-sso-buttons" divider="false">
+                    <ms-button id="lf-sso" kind="primary" icon="login" label="Mit MatIdentity anmelden"
+                               type="button" href="@Model.IdentitySignInUrl" full-width="true"></ms-button>
+                </ms-button-row>
+                @if (!Model.ShowLocalForm)
+                {
+                    <p class="mat-muted"><a href="@Model.LocalSignInUrl">Mit lokalem Konto anmelden</a></p>
+                }
+            </div>
+        </ms-card>
+    }
 
-    @if (Model.ShowDevelopmentHint)
+    @if (Model.ShowLocalForm)
+    {
+        <ms-card id="login-card">
+            <ms-form id="login-form" autocomplete="on">
+                <ms-field id="lf-login" for="Input.EmailOrName" autofocus="true"
+                          autocomplete="username" placeholder="z. B. admin"></ms-field>
+                <ms-field id="lf-password" for="Input.Password" type="password"
+                          autocomplete="current-password"></ms-field>
+                <ms-field id="lf-remember" for="Input.RememberMe" type="checkbox"
+                          hint="@("Die Anmeldung bleibt auf diesem Gerät erhalten.")"></ms-field>
+                <ms-field id="lf-return" name="ReturnUrl" type="hidden" value="@Model.ReturnUrl"></ms-field>
+
+                <ms-button-row id="lf-buttons" divider="false">
+                    <ms-button id="lf-submit" kind="primary" icon="check" label="Anmelden" full-width="true"></ms-button>
+                </ms-button-row>
+            </ms-form>
+        </ms-card>
+    }
+
+    @if (Model.ShowDevelopmentHint && Model.ShowLocalForm)
     {
         <ms-alert id="login-dev" tone="info" title="Entwicklungsmodus">
             Seed-Zugang: Benutzer <strong>admin</strong>, Passwort <strong>admin</strong>

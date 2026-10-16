@@ -130,9 +130,10 @@ public sealed class CurrentUserService(
 
     /// <summary>
     /// Creates a session row and issues the auth cookie. Used by
-    /// /Account/Login and /Join.
+    /// /Account/Login, /Join and the sign-in through MatIdentity, which passes
+    /// the ID token along (kept in the cookie for the sign-out at MatIdentity).
     /// </summary>
-    public async Task SignInAsync(User user, bool isPersistent = true, CancellationToken cancellationToken = default)
+    public async Task SignInAsync(User user, bool isPersistent = true, CancellationToken cancellationToken = default, string? identityToken = null)
     {
         ArgumentNullException.ThrowIfNull(user);
 
@@ -147,6 +148,11 @@ public sealed class CurrentUserService(
             IsPersistent = isPersistent,
             IssuedUtc = DateTimeOffset.UtcNow
         };
+
+        if (!string.IsNullOrEmpty(identityToken))
+        {
+            properties.StoreTokens([new AuthenticationToken { Name = IdentityTokenName, Value = identityToken }]);
+        }
 
         await context.SignInAsync(MatSplitClaims.AuthenticationScheme, principal, properties);
 
@@ -195,15 +201,42 @@ public sealed class CurrentUserService(
         }
 
         var principal = MatSplitClaims.CreatePrincipal(user, sessionToken);
-        await context.SignInAsync(MatSplitClaims.AuthenticationScheme, principal, new AuthenticationProperties
+        var properties = new AuthenticationProperties
         {
             IsPersistent = true,
             IssuedUtc = DateTimeOffset.UtcNow
-        });
+        };
+
+        // Keep the ID token of a sign-in through MatIdentity, so the sign-out still ends the session there.
+        if (await GetIdentityTokenAsync() is { } identityToken)
+        {
+            properties.StoreTokens([new AuthenticationToken { Name = IdentityTokenName, Value = identityToken }]);
+        }
+
+        await context.SignInAsync(MatSplitClaims.AuthenticationScheme, principal, properties);
 
         context.User = principal;
         context.Items[MatSplitHttpItems.CurrentUser] = user;
     }
+
+    /// <summary>
+    /// The ID token of MatIdentity in the cookie of this request, or null when
+    /// the user signed in locally (password, invite link).
+    /// </summary>
+    public async Task<string?> GetIdentityTokenAsync()
+    {
+        var context = Context;
+        if (context is null)
+        {
+            return null;
+        }
+
+        var result = await context.AuthenticateAsync(MatSplitClaims.AuthenticationScheme);
+        return result.Succeeded ? result.Properties?.GetTokenValue(IdentityTokenName) : null;
+    }
+
+    /// <summary>The name of the ID token of MatIdentity in the cookie properties (the name the OpenID Connect handler looks for at sign-out).</summary>
+    public const string IdentityTokenName = "id_token";
 
     /// <summary>Convenience for the theme switcher in the left menu.</summary>
     public static string ToThemeAttribute(ThemeMode theme) => theme switch

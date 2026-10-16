@@ -67,7 +67,9 @@ builder.Services.AddAuthentication(MatSplitClaims.AuthenticationScheme)
             context, StatusCodes.Status401Unauthorized);
         options.Events.OnRedirectToAccessDenied = context => WriteApiStatusOrRedirect(
             context, StatusCodes.Status403Forbidden);
-    });
+    })
+    // Sign-in through MatIdentity, only when MATIDENTITY_AUTHORITY is set (nothing changes without it).
+    .AddMatIdentity(platformSettings);
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(MatSplitClaims.AdminOnlyPolicy, policy => policy
@@ -259,6 +261,7 @@ static async Task InitializeDatabaseAsync(WebApplication app)
     DataVolumeGuard.EnsureDatabaseIsWritable(scope.ServiceProvider.GetRequiredService<MatSplitPaths>(), logger);
 
     await db.Database.EnsureCreatedAsync();
+    await SchemaUpgrader.UpgradeAsync(db, logger);
 
     try
     {

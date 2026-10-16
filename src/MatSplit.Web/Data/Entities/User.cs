@@ -25,6 +25,12 @@ public class User : AuditableEntity
 
     public ThemeMode ThemePreference { get; set; } = ThemeMode.System;
 
+    /// <summary>
+    /// The claim <c>sub</c> of the person at MatIdentity, set at the first sign-in through MatIdentity
+    /// (single sign-on); null for users who never signed in that way.
+    /// </summary>
+    public string? ExternalSubject { get; set; }
+
     public User? MergedIntoUser { get; set; }
 
     public ICollection<UserSession> Sessions { get; set; } = new List<UserSession>();

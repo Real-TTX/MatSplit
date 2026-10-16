@@ -450,6 +450,144 @@ public sealed class UserService(AppDbContext db, HistoryService history, ILogger
     }
 
     /// <summary>
+    /// Finds or creates the local user of a person that MatIdentity signed in (single sign-on):
+    /// (1) the user with this <c>sub</c> (a merged one leads to the user it was merged into),
+    /// (2) else the one active user with the same e-mail address, which is linked to the <c>sub</c>,
+    /// (3) else a new local user without password. A deleted (disabled) user stays out: the result is a failure.
+    /// When <see cref="ExternalIdentity.Role"/> is <c>admin</c> or <c>user</c> the global role follows it at every sign-in;
+    /// without it the local role stays (the app manages its roles). A link guest becomes a regular user.
+    /// </summary>
+    public async Task<Result<User>> SignInExternalAsync(ExternalIdentity identity, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+
+        if (string.IsNullOrWhiteSpace(identity.Subject))
+        {
+            return Result.Fail<User>("MatIdentity hat keine Kennung (sub) geliefert.");
+        }
+
+        var subject = identity.Subject.Trim();
+        var email = NormalizeEmail(identity.Email);
+        var disabled = Result.Fail<User>("Dein Konto ist in MatSplit gesperrt. Bitte wende dich an einen Administrator.");
+
+        var user = await db.Users.FirstOrDefaultAsync(x => x.ExternalSubject == subject, cancellationToken);
+
+        if (user?.MergedIntoUserId is not null)
+        {
+            var effective = await ResolveEffectiveUserAsync(user.Id, cancellationToken);
+            user = effective is null ? null : await db.Users.FirstOrDefaultAsync(x => x.Id == effective.Id, cancellationToken);
+            if (user is null || user.UpdateState == UpdateState.Deleted)
+            {
+                return disabled;
+            }
+        }
+        else if (user is not null && user.UpdateState == UpdateState.Deleted)
+        {
+            return disabled;
+        }
+
+        var created = false;
+        var linked = false;
+
+        if (user is null && email is not null)
+        {
+            var sameEmail = await db.Users
+                .Where(x => x.Email != null && x.Email.ToLower() == email && x.MergedIntoUserId == null)
+                .ToListAsync(cancellationToken);
+
+            var active = sameEmail.Where(x => x.UpdateState != UpdateState.Deleted).ToList();
+
+            if (active.Count == 1 && active[0].ExternalSubject is null)
+            {
+                user = active[0];
+                user.ExternalSubject = subject;
+                linked = true;
+            }
+            else if (active.Count == 0 && sameEmail.Count > 0)
+            {
+                // The only account with this address was deleted by an administrator: no new one behind its back.
+                return disabled;
+            }
+        }
+
+        if (user is null)
+        {
+            var emailTaken = email is not null && await EmailExistsAsync(email, null, cancellationToken);
+            var name = FirstNonEmpty(identity.Name, identity.PreferredUsername, email) ?? "MatIdentity";
+
+            user = new User
+            {
+                Token = Guid.NewGuid().ToString(),
+                DisplayName = name.Length > 200 ? name[..200] : name,
+                // Two accounts with one address would break the sign-in by e-mail; the address stays with the existing one.
+                Email = emailTaken ? null : email,
+                Role = UserRole.User,
+                IsAnonymous = false,
+                ThemePreference = ThemeMode.System,
+                ExternalSubject = subject,
+                UpdateState = UpdateState.Created
+            };
+
+            db.Users.Add(user);
+            created = true;
+        }
+
+        var role = identity.Role?.Trim().ToLowerInvariant() switch
+        {
+            "admin" => UserRole.Admin,
+            "user" => UserRole.User,
+            _ => (UserRole?)null
+        };
+
+        if (role is { } wanted && user.Role != wanted)
+        {
+            if (!created && user.Role == UserRole.Admin && await IsLastAdminAsync(user.Id, cancellationToken))
+            {
+                logger.LogWarning("MatIdentity asks for role {Role} for user {UserId}, who is the last administrator; the role stays", wanted, user.Id);
+            }
+            else
+            {
+                user.Role = wanted;
+            }
+        }
+
+        if (user.Role == UserRole.Anonymous || user.IsAnonymous)
+        {
+            // Whoever comes through MatIdentity is a real person, not a link guest.
+            user.Role = user.Role == UserRole.Anonymous ? UserRole.User : user.Role;
+            user.IsAnonymous = false;
+        }
+
+        if (user.Email is null && email is not null && !created && !await EmailExistsAsync(email, user.Id, cancellationToken))
+        {
+            user.Email = email;
+        }
+
+        if (!created && db.Entry(user).State == EntityState.Modified)
+        {
+            user.UpdateState = UpdateState.Updated;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (created || linked)
+        {
+            await history.LogAsync(
+                null,
+                user.Id,
+                HistoryService.EntityTypes.User,
+                user.Id,
+                created ? HistoryService.Actions.Created : HistoryService.Actions.Updated,
+                created
+                    ? $"Benutzer \"{user.DisplayName}\" wurde bei der ersten Anmeldung über MatIdentity angelegt."
+                    : $"Benutzer \"{user.DisplayName}\" wurde über die E-Mail-Adresse mit MatIdentity verknüpft.",
+                cancellationToken: cancellationToken);
+        }
+
+        return Result.Ok(user);
+    }
+
+    /// <summary>
     /// Follows the MergedIntoUserId chain to the surviving user.
     /// </summary>
     public async Task<User?> ResolveEffectiveUserAsync(long userId, CancellationToken cancellationToken = default)
@@ -613,6 +751,9 @@ public sealed class UserService(AppDbContext db, HistoryService history, ILogger
                  && (exceptUserId == null || x.Id != exceptUserId),
             cancellationToken);
     }
+
+    private static string? FirstNonEmpty(params string?[] values)
+        => values.Select(x => x?.Trim()).FirstOrDefault(x => !string.IsNullOrEmpty(x));
 
     private static string? NormalizeEmail(string? email)
         => string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant();

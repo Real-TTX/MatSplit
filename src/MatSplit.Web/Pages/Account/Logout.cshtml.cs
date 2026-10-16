@@ -1,3 +1,4 @@
+using MatSplit.Web.Infrastructure;
 using MatSplit.Web.Services;
 using MatSplit.Web.Ui;
 using Microsoft.AspNetCore.Mvc;
@@ -9,12 +10,13 @@ namespace MatSplit.Web.Pages.Account;
 /// Confirms and performs the sign out. The confirmation step keeps the sign out
 /// a POST (no CSRF driven logout through a prefetched link) and is the last
 /// chance to warn link guests that their account is only reachable through the
-/// invite link.
+/// invite link. After a sign-in through MatIdentity the session there ends too.
 /// </summary>
 public class LogoutModel(
     CurrentUserService currentUser,
     GroupService groups,
-    HistoryService history) : PageModel
+    HistoryService history,
+    MatPlatformSettings platform) : PageModel
 {
     /// <summary>Name shown in the confirmation text.</summary>
     public string DisplayName { get; private set; } = "Gast";
@@ -52,7 +54,16 @@ public class LogoutModel(
             $"\"{name}\" hat sich abgemeldet.",
             cancellationToken: cancellationToken);
 
+        // Read before the local sign-out removes the cookie: only a sign-in through MatIdentity carries it.
+        var identityToken = platform.IdentityEnabled ? await currentUser.GetIdentityTokenAsync() : null;
+
         await currentUser.SignOutAsync(cancellationToken);
+
+        if (identityToken is not null)
+        {
+            // Then at MatIdentity as well; it sends the browser back to /signout-callback-oidc.
+            return MatIdentityAuthentication.SignOutAtIdentity(identityToken);
+        }
 
         this.Flash("Du bist jetzt abgemeldet.");
         return RedirectToPage("/Account/Login");
