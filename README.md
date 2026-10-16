@@ -281,8 +281,12 @@ curl -H "X-Api-Key: $MAT_API_KEY" http://localhost:4774/api/state
   (updated from MatDesign, never loaded from elsewhere); what is only MatSplit's lives in
   `wwwroot/css/app.css`
 - Non-root container (`app`, uid `1654`) with a `HEALTHCHECK` on `/api/health`
-- The platform contract lives in `Platform/` (`MatApiDefinition.cs` and `PlatformEndpoints.cs` are copies
-  of MatIdentity's until the shared package MatPlatform exists; `SplitPlatform.cs` is MatSplit's part)
+- The platform contract comes from **MatPlatform**, the shared package of MatDesign (`src/MatPlatform`), as a copy
+  in `src/MatSplit.Web/MatPlatform/` (never edited here; updated from MatDesign with
+  `node tools/matplatform-copy.js <path to>/MatSplit/src/MatSplit.Web`; the version is in `MatPlatform/matplatform.version`). It serves the endpoints, checks the key and the
+  tokens and wires the sign-in through MatIdentity. MatSplit's part is in `Platform/`: `SplitPlatform.cs` (the
+  description and the values; the settings are checked by `AppConfigRules`, not by the package) and
+  `SplitIdentityUsers.cs` (a person of MatIdentity becomes a local user and is signed in with MatSplit's cookie)
 - Tests: `dotnet test` runs `tests/MatSplit.Tests` (xUnit, the whole app in memory)
 - The interface is German; the code and its comments are English
 

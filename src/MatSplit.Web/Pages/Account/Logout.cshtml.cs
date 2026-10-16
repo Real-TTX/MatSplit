@@ -1,4 +1,4 @@
-using MatSplit.Web.Infrastructure;
+using MatPlatform;
 using MatSplit.Web.Services;
 using MatSplit.Web.Ui;
 using Microsoft.AspNetCore.Mvc;
@@ -62,7 +62,7 @@ public class LogoutModel(
         if (identityToken is not null)
         {
             // Then at MatIdentity as well; it sends the browser back to /signout-callback-oidc.
-            return MatIdentityAuthentication.SignOutAtIdentity(identityToken);
+            return MatIdentitySignIn.SignOutAtIdentity(HttpContext, identityToken);
         }
 
         this.Flash("Du bist jetzt abgemeldet.");

@@ -1,13 +1,12 @@
-// A copy of MatIdentity's src/MatIdentity.Web/Platform/MatApiDefinition.cs (only the namespace differs), until the shared package MatPlatform
-// exists (MatDesign docs/PLATFORM.md, "Shared code"). Change it there first and copy it back, so the apps stay in step.
-
+// MatPlatform 1.0.0 – a copy from MatDesign, do not edit here
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Unicode;
 
-namespace MatSplit.Web.Platform;
+namespace MatPlatform;
 
-// The types of the platform contract (MatDesign docs/PLATFORM.md, contract version 1). MatIdentity is the first app that implements it; these types are
-// meant to move into the shared package MatPlatform once a second app uses them, so they know nothing about MatIdentity.
+// The types of the platform contract (MatDesign docs/PLATFORM.md, contract version 1). The same types are served by an app and read by a consumer.
 
 /// <summary>The answer of <c>GET /api</c>: what the app is and how a consumer draws it. The values are never in it.</summary>
 public sealed record MatApiDefinition
@@ -38,11 +37,15 @@ public sealed record MatApiDefinition
     /// <summary>The paths the app implements (for the list in <c>GET /api</c>).</summary>
     public IReadOnlyList<string> Endpoints { get; init; } = [];
 
-    /// <summary>How the contract is written: camelCase, nulls left out, enums as their names in lower case.</summary>
+    /// <summary>
+    /// How the contract is written: camelCase, nulls left out (except <see cref="MatStateValue.Value"/>), enums as their names in lower case,
+    /// letters as they are (<c>ü</c>, not <c>ü</c>; HTML-sensitive characters stay escaped).
+    /// </summary>
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
     };
 }
 
@@ -53,7 +56,20 @@ public sealed record MatAuthInfo(bool ApiKey, string? Identity);
 public sealed record MatPage(string Id, string Label, string Icon, IReadOnlyList<MatSection> Sections);
 
 /// <summary>A part of a page: <c>tiles</c>, <c>form</c>, <c>actions</c> or <c>link</c>.</summary>
-public sealed record MatSection(string Kind, IReadOnlyList<string> Items, string? Label = null, string? Url = null);
+public sealed record MatSection(string Kind, IReadOnlyList<string> Items, string? Label = null, string? Url = null)
+{
+    /// <summary>A grid of tiles: keys of <see cref="MatApiDefinition.State"/>.</summary>
+    public static MatSection Tiles(params string[] keys) => new("tiles", keys);
+
+    /// <summary>A form with an optional heading: keys of <see cref="MatApiDefinition.Configure"/>.</summary>
+    public static MatSection Form(string? label, params string[] keys) => new("form", keys, label);
+
+    /// <summary>A row of buttons: ids of <see cref="MatApiDefinition.Actions"/>.</summary>
+    public static MatSection Actions(params string[] ids) => new("actions", ids);
+
+    /// <summary>A link that opens the app at <paramref name="url"/>.</summary>
+    public static MatSection Link(string label, string url) => new("link", [], label, url);
+}
 
 /// <summary>A tile: what a value is and how it is shown (<c>number</c>, <c>text</c>, <c>bool</c>, <c>time</c>, <c>meter</c>, <c>status</c>).</summary>
 public sealed record MatStateItem(string Key, string Label, string Widget = "number")
@@ -83,6 +99,10 @@ public sealed record MatField(string Key, string Label, string Type)
 
     /// <summary>The value takes effect after a restart.</summary>
     public bool? Restart { get; init; }
+
+    /// <summary>A <see cref="ShowIf"/>: the field is shown only when every named field has the value given here.</summary>
+    public static IReadOnlyDictionary<string, JsonElement> When(params (string Key, object? Value)[] conditions)
+        => conditions.ToDictionary(c => c.Key, c => JsonSerializer.SerializeToElement(c.Value, MatApiDefinition.Json));
 }
 
 public sealed record MatOption(string Value, string Label);
@@ -102,6 +122,16 @@ public sealed record MatRole(string Key, string Label);
 
 /// <summary>A value of <c>GET /api/state</c>. The value is always written, also when it is null (a time that has not happened yet).</summary>
 public sealed record MatStateValue([property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] object? Value, string? Level = null, string? Text = null);
+
+/// <summary>The answer of <c>GET /api/state/{key}</c>: one value with its key. The value is always written, also when it is null.</summary>
+public sealed record MatStateEntry(string Key, [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] object? Value, string? Level = null, string? Text = null);
+
+/// <summary>The value of a setting of the type <c>secret</c> as <c>GET /api/configure</c> sends it: whether it is set, never the secret itself.</summary>
+public sealed record MatSecret(bool IsSet)
+{
+    /// <summary>Set when <paramref name="value"/> is not empty.</summary>
+    public static MatSecret Of(string? value) => new(!string.IsNullOrEmpty(value));
+}
 
 /// <summary>The answer of <c>GET /api/health</c>.</summary>
 public sealed record MatHealth(string Status, string App, string Version, DateTimeOffset Time, IReadOnlyList<MatHealthCheck> Checks);

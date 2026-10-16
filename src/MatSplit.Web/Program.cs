@@ -1,4 +1,5 @@
 using System.Globalization;
+using MatPlatform;
 using MatSplit.Web.Api;
 using MatSplit.Web.Data;
 using MatSplit.Web.Infrastructure;
@@ -31,8 +32,9 @@ var bootstrapConfig = await new AppConfigService(paths, NullLogger<AppConfigServ
 builder.Services.AddMatSplitServices();
 
 // The Mat platform contract (MatDesign docs/PLATFORM.md): MAT_API_KEY and the optional MATIDENTITY_* variables.
-var platformSettings = MatPlatformSettings.From(builder.Configuration);
-builder.Services.AddMatSplitPlatform(platformSettings);
+// The package MatPlatform (a copy in MatPlatform/) serves the endpoints; SplitPlatform describes MatSplit and supplies the values. The settings are
+// checked by SplitPlatform itself with AppConfigRules (the rules and messages of the settings page), not by the platform.
+var platformSettings = builder.AddMatPlatform<SplitPlatform>(SplitPlatform.Describe, options => options.CheckValues = false);
 
 builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 {
@@ -69,7 +71,7 @@ builder.Services.AddAuthentication(MatSplitClaims.AuthenticationScheme)
             context, StatusCodes.Status403Forbidden);
     })
     // Sign-in through MatIdentity, only when MATIDENTITY_AUTHORITY is set (nothing changes without it).
-    .AddMatIdentity(platformSettings);
+    .AddMatIdentitySignIn<SplitIdentityUsers>(platformSettings, options => options.CookieScheme = MatSplitClaims.AuthenticationScheme);
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(MatSplitClaims.AdminOnlyPolicy, policy => policy
@@ -185,7 +187,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapSyncApi();
-app.MapMatSplitPlatform();
+app.MapMatPlatform();
 
 // Container health probe of the first releases, must stay anonymous (the Mattiverse catalog still
 // calls it). The platform health with its checks is /api/health.

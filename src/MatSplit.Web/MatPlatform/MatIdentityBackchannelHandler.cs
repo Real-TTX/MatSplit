@@ -1,7 +1,8 @@
-namespace MatSplit.Web.Infrastructure;
+// MatPlatform 1.0.0 – a copy from MatDesign, do not edit here
+namespace MatPlatform;
 
 /// <summary>
-/// The server-to-server calls to MatIdentity (discovery document, JWKS, token endpoint, user info) when MatSplit reaches it at
+/// The server-to-server calls to MatIdentity (discovery document, JWKS, token endpoint, user info) when the app reaches it at
 /// another address than the browser does (inside Docker, <c>MATIDENTITY_INTERNAL_URL</c>): every request whose address starts with
 /// the public authority goes to the internal base instead (scheme, host and port replaced, the rest of the path kept). The browser
 /// redirects and the expected issuer stay public; MatIdentity runs with a fixed issuer, so tokens fetched internally carry it too.

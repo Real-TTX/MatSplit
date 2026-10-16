@@ -1,4 +1,4 @@
-using MatSplit.Web.Infrastructure;
+using MatPlatform;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting;
@@ -60,12 +60,12 @@ public class SplitFactory : WebApplicationFactory<Program>
 
             builder.ConfigureTestServices(services =>
             {
-                services.PostConfigure<OpenIdConnectOptions>(MatIdentityAuthentication.Scheme, options =>
+                services.PostConfigure<OpenIdConnectOptions>(MatIdentitySignIn.Scheme, options =>
                 {
                     options.Configuration = configuration;
                     options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration);
                 });
-                services.PostConfigure<JwtBearerOptions>(ApiAccess.BearerScheme, options =>
+                services.PostConfigure<JwtBearerOptions>(MatApiAccess.BearerScheme, options =>
                 {
                     options.Configuration = configuration;
                     options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration);

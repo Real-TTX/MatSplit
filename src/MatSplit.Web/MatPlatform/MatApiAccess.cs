@@ -1,19 +1,24 @@
+// MatPlatform 1.0.0 – a copy from MatDesign, do not edit here
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace MatSplit.Web.Infrastructure;
+namespace MatPlatform;
 
 /// <summary>
 /// Who may call the protected part of <c>/api</c> (MatDesign docs/PLATFORM.md, "Access"): a caller with the key <c>MAT_API_KEY</c> in the
 /// header <c>X-Api-Key</c> (compared in constant time; no key configured = the key is off), or, when MatIdentity is configured, a caller
-/// with an access token of MatIdentity for the audience of this app (the client id), checked by <see cref="BearerScheme"/>.
+/// with an access token of MatIdentity for the audience of this app (the client id), checked by the scheme <see cref="BearerScheme"/>
+/// that <c>AddMatIdentitySignIn</c> registers.
 /// </summary>
-public sealed class ApiAccess
+public sealed class MatApiAccess
 {
     public const string HeaderName = "X-Api-Key";
 
-    public const string CallerKey = "matsplit:api-caller";
+    /// <summary>Where the name of the caller is kept in <see cref="HttpContext.Items"/>.</summary>
+    public const string CallerKey = "matplatform:api-caller";
 
     /// <summary>The JWT bearer scheme that validates tokens of MatIdentity (registered only when MatIdentity is configured).</summary>
     public const string BearerScheme = "MatIdentityBearer";
@@ -21,7 +26,7 @@ public sealed class ApiAccess
     private readonly byte[]? _key;
     private readonly bool _bearer;
 
-    public ApiAccess(MatPlatformSettings settings)
+    public MatApiAccess(MatPlatformSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
         _key = settings.ApiKey is null ? null : Encoding.UTF8.GetBytes(settings.ApiKey);
@@ -30,9 +35,11 @@ public sealed class ApiAccess
 
     public bool KeyEnabled => _key is not null;
 
-    /// <summary>The name of the caller for the history, or null when it may not call.</summary>
+    /// <summary>The name of the caller for the activity log (<c>api-key</c>, the subject or the client of a token), or null when it may not call.</summary>
     public async Task<string?> AuthenticateAsync(HttpContext http)
     {
+        ArgumentNullException.ThrowIfNull(http);
+
         if (_key is not null && http.Request.Headers.TryGetValue(HeaderName, out var sent) && sent.Count == 1)
         {
             var given = Encoding.UTF8.GetBytes(sent.ToString());
@@ -42,7 +49,9 @@ public sealed class ApiAccess
             }
         }
 
-        if (_bearer && http.Request.Headers.Authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        if (_bearer
+            && http.Request.Headers.Authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            && await http.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>().GetSchemeAsync(BearerScheme) is not null)
         {
             // Issuer, signature (JWKS of MatIdentity), lifetime and audience are checked by the scheme.
             var result = await http.AuthenticateAsync(BearerScheme);
@@ -57,11 +66,14 @@ public sealed class ApiAccess
         return null;
     }
 
-    /// <summary>An endpoint filter: <c>401</c> unless <see cref="AuthenticateAsync"/> knows the caller; the name lands in <c>HttpContext.Items</c>.</summary>
+    /// <summary>An endpoint filter: <c>401</c> unless <see cref="AuthenticateAsync"/> knows the caller; the name lands in <see cref="HttpContext.Items"/> under <see cref="CallerKey"/>.</summary>
     public static async ValueTask<object?> RequireAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(next);
+
         var http = context.HttpContext;
-        var caller = await http.RequestServices.GetRequiredService<ApiAccess>().AuthenticateAsync(http);
+        var caller = await http.RequestServices.GetRequiredService<MatApiAccess>().AuthenticateAsync(http);
         if (caller is null)
         {
             http.Response.Headers.WWWAuthenticate = "Bearer";
@@ -73,4 +85,7 @@ public sealed class ApiAccess
         http.Items[CallerKey] = caller;
         return await next(context);
     }
+
+    /// <summary>The caller that <see cref="RequireAsync"/> let in, or <paramref name="fallback"/>.</summary>
+    public static string CallerOf(HttpContext http, string fallback = "api") => http?.Items[CallerKey] as string ?? fallback;
 }

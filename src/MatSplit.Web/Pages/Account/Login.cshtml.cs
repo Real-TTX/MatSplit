@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MatPlatform;
 using MatSplit.Web.Infrastructure;
 using MatSplit.Web.Services;
 using MatSplit.Web.Ui;
@@ -96,7 +97,7 @@ public class LoginModel(
             try
             {
                 await HttpContext.ChallengeAsync(
-                    MatIdentityAuthentication.Scheme,
+                    MatIdentitySignIn.Scheme,
                     new AuthenticationProperties { RedirectUri = ResolveReturnUrl() });
                 return new EmptyResult();
             }

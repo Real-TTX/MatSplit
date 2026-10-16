@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MatPlatform;
 using MatSplit.Web.Infrastructure;
 using MatSplit.Web.Services;
 using MatSplit.Web.Services.Models;
@@ -6,19 +7,19 @@ using MatSplit.Web.Services.Models;
 namespace MatSplit.Web.Platform;
 
 /// <summary>
-/// MatSplit as an app of the platform contract (MatDesign docs/PLATFORM.md): how Mattiverse shows it (tiles, settings, buttons), what its
-/// values are and what the buttons do. The settings are a few of /Admin/Settings, checked by the same <see cref="AppConfigRules"/>.
-/// Texts are German, or English when the caller asks for it with <c>Accept-Language</c>.
+/// MatSplit as an app of the platform contract (MatDesign docs/PLATFORM.md), on the shared package MatPlatform (the folder <c>MatPlatform/</c>, a copy):
+/// how Mattiverse shows it (<see cref="Describe"/>: tiles, settings, buttons), what its values are and what the buttons do. The settings are a few of
+/// /Admin/Settings, checked by the same <see cref="AppConfigRules"/>. Texts are German, or English when the caller asks for it with <c>Accept-Language</c>.
 /// </summary>
 public sealed class SplitPlatform(
     AppConfigService appConfig,
     InstanceStatusService status,
     SessionService sessions,
-    HistoryService history,
-    ApiAccess access,
-    MatPlatformSettings settings,
-    IHttpContextAccessor httpContextAccessor) : IMatPlatformApp
+    HistoryService history) : IMatPlatformState, IMatPlatformConfiguration, IMatPlatformActions, IMatPlatformHealth
 {
+    /// <summary>The id of MatSplit in the platform (and the default client id in MatIdentity).</summary>
+    public const string AppId = "matsplit";
+
     public const string Accent = "#bf5610";
 
     /// <summary>The fields of the platform form and the property of <see cref="AppConfig"/> each one is.</summary>
@@ -31,119 +32,93 @@ public sealed class SplitPlatform(
         ["maxReceiptSizeMb"] = nameof(AppConfig.MaxReceiptSizeMb),
     };
 
-    public MatApiDefinition Definition(HttpContext http)
+    /// <summary>The MatApiDefinition of MatSplit (<c>GET /api</c>); <c>auth</c> and <c>endpoints</c> are filled in by MatPlatform.</summary>
+    public static void Describe(MatPlatformBuilder o)
     {
-        var en = IsEnglish(http);
-        string T(string de, string english) => en ? english : de;
+        var T = o.T;
 
-        return new MatApiDefinition
+        o.App(
+            AppId,
+            "MatSplit",
+            T("Geteilte Ausgaben für Urlaube und WGs", "Shared expenses for holidays and shared flats"),
+            AppVersion.Current,
+            "/img/favicon.svg",
+            Accent);
+
+        o.Page("overview", T("Übersicht", "Overview"), "dashboard",
+            MatSection.Tiles("groups", "people", "guests", "expenses30d", "openSettlements", "receipts", "lastActivity"),
+            MatSection.Actions("openAdmin", "openSettings", "cleanupSessions"));
+        o.Page("settings", T("Einstellungen", "Settings"), "settings",
+            MatSection.Form(T("Allgemein", "General"), "appName", "defaultCurrency", "allowAnonymousJoin"),
+            MatSection.Form(T("Grenzen", "Limits"), "sessionLifetimeDays", "maxReceiptSizeMb"));
+
+        o.Tile("groups", T("Gruppen", "Groups"), icon: "folder");
+        o.Tile("people", T("Personen mit Konto", "People with an account"), icon: "users");
+        o.Tile("guests", T("Gäste über Einladungslink", "Guests by invite link"), icon: "link");
+        o.Tile("expenses30d", T("Ausgaben der letzten 30 Tage", "Expenses in the last 30 days"), icon: "dollar");
+        o.Tile("openSettlements", T("Offene Ausgleichszahlungen", "Open settlements"), icon: "arrow-right");
+        o.Tile("receipts", T("Belege", "Receipts"), icon: "image", unit: "bytes");
+        o.Tile("lastActivity", T("Letzte Buchung", "Last entry"), "time", icon: "clock");
+
+        o.Field(new MatField("appName", T("Anwendungsname", "Application name"), "text")
         {
-            App = new MatAppInfo(
-                MatPlatformSettings.AppId,
-                "MatSplit",
-                T("Geteilte Ausgaben für Urlaube und WGs", "Shared expenses for holidays and shared flats"),
-                AppVersion.Current,
-                "/img/favicon.svg",
-                Accent),
-            Auth = new MatAuthInfo(access.KeyEnabled, settings.Authority),
-            Pages =
-            [
-                new MatPage("overview", T("Übersicht", "Overview"), "dashboard",
-                [
-                    new MatSection("tiles", ["groups", "people", "guests", "expenses30d", "openSettlements", "receipts", "lastActivity"]),
-                    new MatSection("actions", ["openAdmin", "openSettings", "cleanupSessions"]),
-                ]),
-                new MatPage("settings", T("Einstellungen", "Settings"), "settings",
-                [
-                    new MatSection("form", ["appName", "defaultCurrency", "allowAnonymousJoin"], Label: T("Allgemein", "General")),
-                    new MatSection("form", ["sessionLifetimeDays", "maxReceiptSizeMb"], Label: T("Grenzen", "Limits")),
-                ]),
-            ],
-            State =
-            [
-                new MatStateItem("groups", T("Gruppen", "Groups"), "number") { Icon = "folder" },
-                new MatStateItem("people", T("Personen mit Konto", "People with an account"), "number") { Icon = "users" },
-                new MatStateItem("guests", T("Gäste über Einladungslink", "Guests by invite link"), "number") { Icon = "link" },
-                new MatStateItem("expenses30d", T("Ausgaben der letzten 30 Tage", "Expenses in the last 30 days"), "number") { Icon = "dollar" },
-                new MatStateItem("openSettlements", T("Offene Ausgleichszahlungen", "Open settlements"), "number") { Icon = "arrow-right" },
-                new MatStateItem("receipts", T("Belege", "Receipts"), "number") { Icon = "image", Unit = "bytes" },
-                new MatStateItem("lastActivity", T("Letzte Buchung", "Last entry"), "time") { Icon = "clock" },
-            ],
-            Configure =
-            [
-                new MatField("appName", T("Anwendungsname", "Application name"), "text")
-                {
-                    Required = true,
-                    Max = AppConfigRules.AppNameMaxLength,
-                    Hint = T("Erscheint im Menü und auf der Anmeldeseite.", "Shown in the menu and on the sign-in page."),
-                },
-                new MatField("defaultCurrency", T("Standardwährung", "Default currency"), "text")
-                {
-                    Required = true,
-                    Min = 3,
-                    Max = 3,
-                    Pattern = AppConfigRules.CurrencyPattern,
-                    Placeholder = "EUR",
-                    Hint = T("Dreistelliger Code für neue Gruppen, z. B. EUR.", "Three-letter code for new groups, e.g. EUR."),
-                },
-                new MatField("allowAnonymousJoin", T("Beitritt über Einladungslinks erlauben", "Allow joining by invite link"), "bool")
-                {
-                    Hint = T("Aus: Einladungslinks funktionieren nicht mehr.", "Off: invite links stop working."),
-                },
-                new MatField("sessionLifetimeDays", T("Sitzungsdauer in Tagen", "Stay signed in (days)"), "number")
-                {
-                    Required = true,
-                    Min = AppConfigRules.MinSessionLifetimeDays,
-                    Max = AppConfigRules.MaxSessionLifetimeDays,
-                    Hint = T("Gilt sofort für neue Sitzungen, für das Cookie nach einem Neustart.", "New sessions at once, the cookie after a restart."),
-                    Restart = true,
-                },
-                new MatField("maxReceiptSizeMb", T("Maximale Beleggröße in MB", "Largest receipt (MB)"), "number")
-                {
-                    Required = true,
-                    Min = AppConfigRules.MinReceiptSizeMb,
-                    Max = AppConfigRules.MaxReceiptSizeMb,
-                },
-            ],
-            Actions =
-            [
-                new MatAction("openAdmin", T("Administration öffnen", "Open admin"), "external", "link") { Url = "/Admin" },
-                new MatAction("openSettings", T("Alle Einstellungen", "All settings"), "settings", "link") { Url = "/Admin/Settings" },
-                new MatAction("cleanupSessions", T("Abgelaufene Sitzungen löschen", "Remove expired sessions"), "broom", "post"),
-            ],
-            Roles =
-            [
-                new MatRole("admin", "Administrator"),
-                new MatRole("user", "User"),
-            ],
-            Endpoints = ["/api/health", "/api/state", "/api/configure", "/api/actions"],
-        };
+            Required = true,
+            Max = AppConfigRules.AppNameMaxLength,
+            Hint = T("Erscheint im Menü und auf der Anmeldeseite.", "Shown in the menu and on the sign-in page."),
+        });
+        o.Field(new MatField("defaultCurrency", T("Standardwährung", "Default currency"), "text")
+        {
+            Required = true,
+            Min = 3,
+            Max = 3,
+            Pattern = AppConfigRules.CurrencyPattern,
+            Placeholder = "EUR",
+            Hint = T("Dreistelliger Code für neue Gruppen, z. B. EUR.", "Three-letter code for new groups, e.g. EUR."),
+        });
+        o.Field(new MatField("allowAnonymousJoin", T("Beitritt über Einladungslinks erlauben", "Allow joining by invite link"), "bool")
+        {
+            Hint = T("Aus: Einladungslinks funktionieren nicht mehr.", "Off: invite links stop working."),
+        });
+        o.Field(new MatField("sessionLifetimeDays", T("Sitzungsdauer in Tagen", "Stay signed in (days)"), "number")
+        {
+            Required = true,
+            Min = AppConfigRules.MinSessionLifetimeDays,
+            Max = AppConfigRules.MaxSessionLifetimeDays,
+            Hint = T("Gilt sofort für neue Sitzungen, für das Cookie nach einem Neustart.", "New sessions at once, the cookie after a restart."),
+            Restart = true,
+        });
+        o.Field(new MatField("maxReceiptSizeMb", T("Maximale Beleggröße in MB", "Largest receipt (MB)"), "number")
+        {
+            Required = true,
+            Min = AppConfigRules.MinReceiptSizeMb,
+            Max = AppConfigRules.MaxReceiptSizeMb,
+        });
+
+        o.LinkAction("openAdmin", T("Administration öffnen", "Open admin"), "external", "/Admin");
+        o.LinkAction("openSettings", T("Alle Einstellungen", "All settings"), "settings", "/Admin/Settings");
+        o.PostAction("cleanupSessions", T("Abgelaufene Sitzungen löschen", "Remove expired sessions"), "broom");
+
+        o.Role("admin", "Administrator");
+        o.Role("user", "User");
     }
 
-    public async Task<MatHealth> HealthAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<MatHealthCheck>> CheckHealthAsync(MatPlatformCall call, CancellationToken ct)
     {
-        var checks = new List<MatHealthCheck>();
-        var en = IsEnglish(httpContextAccessor.HttpContext);
-
-        if (await status.CanReadDatabaseAsync(ct))
+        if (!await status.CanReadDatabaseAsync(ct))
         {
-            checks.Add(new MatHealthCheck("database", "ok"));
-
-            if (await status.CountActiveAdminsAsync(ct) == 0)
-            {
-                checks.Add(new MatHealthCheck("administrators", "degraded", en ? "No active administrator." : "Kein aktiver Administrator."));
-            }
-        }
-        else
-        {
-            checks.Add(new MatHealthCheck("database", "down", en ? "The database cannot be read." : "Die Datenbank kann nicht gelesen werden."));
+            return [new MatHealthCheck("database", "down", call.T("Die Datenbank kann nicht gelesen werden.", "The database cannot be read."))];
         }
 
-        var state = checks.Any(c => c.Status == "down") ? "down" : checks.Any(c => c.Status == "degraded") ? "degraded" : "ok";
-        return new MatHealth(state, MatPlatformSettings.AppId, AppVersion.Current, DateTimeOffset.Now, checks);
+        var checks = new List<MatHealthCheck> { new("database", "ok") };
+        if (await status.CountActiveAdminsAsync(ct) == 0)
+        {
+            checks.Add(new MatHealthCheck("administrators", "degraded", call.T("Kein aktiver Administrator.", "No active administrator.")));
+        }
+
+        return checks;
     }
 
-    public async Task<IReadOnlyDictionary<string, MatStateValue>> StateAsync(CancellationToken ct)
+    public async Task<IReadOnlyDictionary<string, MatStateValue>> GetStateAsync(MatPlatformCall call, CancellationToken ct)
     {
         var snapshot = await status.GetSnapshotAsync(ct);
         return new Dictionary<string, MatStateValue>
@@ -160,7 +135,7 @@ public sealed class SplitPlatform(
         };
     }
 
-    public async Task<IReadOnlyDictionary<string, object?>> ConfigurationAsync(CancellationToken ct)
+    public async Task<IReadOnlyDictionary<string, object?>> GetConfigurationAsync(MatPlatformCall call, CancellationToken ct)
     {
         var config = await appConfig.GetAsync(ct);
         return new Dictionary<string, object?>
@@ -173,7 +148,7 @@ public sealed class SplitPlatform(
         };
     }
 
-    public async Task<IReadOnlyDictionary<string, string>> ConfigureAsync(IReadOnlyDictionary<string, JsonElement> values, string caller, CancellationToken ct)
+    public async Task<IReadOnlyDictionary<string, string>> ConfigureAsync(IReadOnlyDictionary<string, JsonElement> values, MatPlatformCall call, CancellationToken ct)
     {
         var previous = await appConfig.GetAsync(ct);
         var config = Copy(previous);
@@ -237,20 +212,20 @@ public sealed class SplitPlatform(
             HistoryService.EntityTypes.AppConfig,
             null,
             HistoryService.Actions.Updated,
-            $"Anwendungseinstellungen wurden über die Plattform-API geändert ({caller}).",
-            JsonSerializer.Serialize(new { Before = previous, After = appConfig.Current, Caller = caller }),
+            $"Anwendungseinstellungen wurden über die Plattform-API geändert ({call.Caller}).",
+            JsonSerializer.Serialize(new { Before = previous, After = appConfig.Current, call.Caller }),
             cancellationToken: ct);
 
         return new Dictionary<string, string>();
     }
 
-    public async Task<(bool Ok, string Message)?> RunActionAsync(string id, string caller, CancellationToken ct)
+    public async Task<MatActionResult?> RunActionAsync(string id, MatPlatformCall call, CancellationToken ct)
     {
         switch (id)
         {
             case "cleanupSessions":
                 var removed = await sessions.CleanupExpiredAsync(ct);
-                return (true, removed == 1 ? "1 abgelaufene Sitzung gelöscht." : $"{removed} abgelaufene Sitzungen gelöscht.");
+                return new MatActionResult(true, removed == 1 ? "1 abgelaufene Sitzung gelöscht." : $"{removed} abgelaufene Sitzungen gelöscht.");
             default:
                 return null;
         }
@@ -266,7 +241,4 @@ public sealed class SplitPlatform(
         CompressReceipts = config.CompressReceipts,
         ReceiptTargetKb = config.ReceiptTargetKb,
     };
-
-    private static bool IsEnglish(HttpContext? http)
-        => http?.Request.Headers.AcceptLanguage.ToString().TrimStart().StartsWith("en", StringComparison.OrdinalIgnoreCase) == true;
 }
