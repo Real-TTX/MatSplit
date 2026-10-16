@@ -2,6 +2,7 @@ using System.Globalization;
 using MatSplit.Web.Api;
 using MatSplit.Web.Data;
 using MatSplit.Web.Infrastructure;
+using MatSplit.Web.Platform;
 using MatSplit.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -28,6 +29,10 @@ var bootstrapConfig = await new AppConfigService(paths, NullLogger<AppConfigServ
 // Services
 // ---------------------------------------------------------------------------
 builder.Services.AddMatSplitServices();
+
+// The Mat platform contract (MatDesign docs/PLATFORM.md): MAT_API_KEY and the optional MATIDENTITY_* variables.
+var platformSettings = MatPlatformSettings.From(builder.Configuration);
+builder.Services.AddMatSplitPlatform(platformSettings);
 
 builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 {
@@ -171,14 +176,17 @@ app.UseWhen(
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMatSplitSessionValidation();
 app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapSyncApi();
+app.MapMatSplitPlatform();
 
-// Container health probe, must stay anonymous.
+// Container health probe of the first releases, must stay anonymous (the Mattiverse catalog still
+// calls it). The platform health with its checks is /api/health.
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "ok",

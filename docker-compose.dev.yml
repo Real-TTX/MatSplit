@@ -31,7 +31,7 @@ services:
     volumes:
       - matsplit-dev-data:/data
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5

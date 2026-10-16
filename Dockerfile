@@ -63,7 +63,8 @@ ENV ASPNETCORE_URLS=http://+:8080 \
     MATSPLIT_DATA_DIR=/data \
     TZ=Europe/Berlin
 
-# curl is required for the container HEALTHCHECK (aspnet image ships without it)
+# curl is required for the container HEALTHCHECK (aspnet image ships without it).
+# The check calls the platform health /api/health: 200 for ok/degraded, 503 for down.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
@@ -84,6 +85,6 @@ EXPOSE 8080
 VOLUME ["/data"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -fsS http://127.0.0.1:8080/health || exit 1
+    CMD curl -fsS http://127.0.0.1:8080/api/health || exit 1
 
 ENTRYPOINT ["dotnet", "MatSplit.Web.dll"]

@@ -47,14 +47,6 @@ public sealed class SettingsModel(
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-        {
-            await PrepareLayoutAsync(cancellationToken);
-            return Page();
-        }
-
-        var previous = await appConfig.GetAsync(cancellationToken);
-
         var config = new AppConfig
         {
             AppName = Input.AppName,
@@ -65,6 +57,23 @@ public sealed class SettingsModel(
             CompressReceipts = Input.CompressReceipts,
             ReceiptTargetKb = Input.ReceiptTargetKb
         };
+
+        // The same rules as PUT /api/configure; the attributes below drive the check in the browser.
+        if (ModelState.IsValid)
+        {
+            foreach (var (property, error) in AppConfigRules.Validate(config))
+            {
+                ModelState.AddModelError($"{nameof(Input)}.{property}", error);
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await PrepareLayoutAsync(cancellationToken);
+            return Page();
+        }
+
+        var previous = await appConfig.GetAsync(cancellationToken);
 
         var result = await appConfig.SaveAsync(config, cancellationToken);
 
@@ -108,13 +117,13 @@ public sealed class SettingsModel(
     /// <summary>Form values of the settings editor.</summary>
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte einen Namen angeben.")]
-        [StringLength(60, ErrorMessage = "Maximal 60 Zeichen.")]
+        [Required(ErrorMessage = AppConfigRules.AppNameRequired)]
+        [StringLength(AppConfigRules.AppNameMaxLength, ErrorMessage = AppConfigRules.AppNameTooLong)]
         [Display(Name = "Anwendungsname")]
         public string AppName { get; set; } = "MatSplit";
 
-        [Required(ErrorMessage = "Bitte eine Währung angeben.")]
-        [RegularExpression("^[A-Za-z]{3}$", ErrorMessage = "Bitte einen dreistelligen Währungscode angeben, z. B. EUR.")]
+        [Required(ErrorMessage = AppConfigRules.CurrencyRequired)]
+        [RegularExpression(AppConfigRules.CurrencyPattern, ErrorMessage = AppConfigRules.CurrencyInvalid)]
         [Display(Name = "Standardwährung")]
         public string DefaultCurrency { get; set; } = "EUR";
 
@@ -122,12 +131,12 @@ public sealed class SettingsModel(
         public bool AllowAnonymousJoin { get; set; } = true;
 
         [Required(ErrorMessage = "Bitte die Sitzungsdauer in Tagen angeben.")]
-        [Range(1, 365, ErrorMessage = "Bitte einen Wert zwischen 1 und 365 Tagen angeben.")]
+        [Range(AppConfigRules.MinSessionLifetimeDays, AppConfigRules.MaxSessionLifetimeDays, ErrorMessage = AppConfigRules.SessionLifetimeRange)]
         [Display(Name = "Sitzungsdauer in Tagen")]
         public int SessionLifetimeDays { get; set; } = 30;
 
         [Required(ErrorMessage = "Bitte die maximale Beleggröße angeben.")]
-        [Range(1, 100, ErrorMessage = "Bitte einen Wert zwischen 1 und 100 MB angeben.")]
+        [Range(AppConfigRules.MinReceiptSizeMb, AppConfigRules.MaxReceiptSizeMb, ErrorMessage = AppConfigRules.ReceiptSizeRange)]
         [Display(Name = "Maximale Beleggröße in MB")]
         public int MaxReceiptSizeMb { get; set; } = 10;
 
@@ -135,7 +144,7 @@ public sealed class SettingsModel(
         public bool CompressReceipts { get; set; } = true;
 
         [Required(ErrorMessage = "Bitte die Ziel-Beleggröße angeben.")]
-        [Range(50, 5000, ErrorMessage = "Bitte einen Wert zwischen 50 und 5000 KB angeben.")]
+        [Range(AppConfigRules.MinReceiptTargetKb, AppConfigRules.MaxReceiptTargetKb, ErrorMessage = AppConfigRules.ReceiptTargetRange)]
         [Display(Name = "Ziel-Beleggröße in KB")]
         public int ReceiptTargetKb { get; set; } = 500;
     }

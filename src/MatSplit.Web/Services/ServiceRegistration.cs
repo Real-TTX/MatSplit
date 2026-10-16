@@ -35,6 +35,7 @@ public static class ServiceRegistration
         services.AddScoped<TransactionService>();
         services.AddScoped<BalanceService>();
         services.AddScoped<CurrentUserService>();
+        services.AddScoped<InstanceStatusService>();
 
         return services;
     }
