@@ -57,16 +57,13 @@ public class LoginModel(
     }
 
     /// <summary><c>?local=1</c>: the local form even when MatIdentity is configured.</summary>
-    [BindProperty(SupportsGet = true)]
     public bool Local { get; set; }
 
     /// <summary><c>?signedOut=1</c>: back from the sign-out at MatIdentity, no automatic sign-in.</summary>
-    [BindProperty(SupportsGet = true)]
-    public bool SignedOut { get; set; }
+    public bool SignedOut { get; private set; }
 
-    /// <summary><c>?ssoError=1</c>: the sign-in at MatIdentity failed.</summary>
-    [BindProperty(SupportsGet = true)]
-    public bool SsoError { get; set; }
+    /// <summary><c>?ssoError=1</c>: the sign-in at MatIdentity failed or MatIdentity is not reachable.</summary>
+    public bool SsoError { get; private set; }
 
     /// <summary>True when the sign-in through MatIdentity is configured.</summary>
     public bool IdentityEnabled => platform.IdentityEnabled;
@@ -96,13 +93,28 @@ public class LoginModel(
         // Auto login: straight on to MatIdentity, no local form in the way.
         if (IdentityEnabled && !Local && !SignedOut && !SsoError)
         {
-            return Challenge(
-                new AuthenticationProperties { RedirectUri = ResolveReturnUrl() },
-                MatIdentityAuthentication.Scheme);
+            try
+            {
+                await HttpContext.ChallengeAsync(
+                    MatIdentityAuthentication.Scheme,
+                    new AuthenticationProperties { RedirectUri = ResolveReturnUrl() });
+                return new EmptyResult();
+            }
+            catch (InvalidOperationException ex)
+            {
+                // MatIdentity cannot be reached (its configuration cannot be read): the local form is the way in.
+                logger.LogWarning(ex, "MatIdentity is not reachable, showing the local sign-in");
+                Local = true;
+                SsoError = true;
+            }
         }
 
         return Page();
     }
+
+    /// <summary>A flag in the query: <c>1</c> or <c>true</c>.</summary>
+    private bool QueryFlag(string name)
+        => Request.Query[name].ToString() is "1" or "true" or "True";
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
@@ -144,6 +156,10 @@ public class LoginModel(
 
     private async Task PreparePageAsync(CancellationToken cancellationToken)
     {
+        Local = Local || QueryFlag("local");
+        SignedOut = QueryFlag("signedOut");
+        SsoError = QueryFlag("ssoError");
+
         var config = await appConfig.GetAsync(cancellationToken);
 
         AppName = config.AppName;

@@ -41,6 +41,9 @@ Dockerfile
 docker-compose*.yml
 scripts/
 
+# tests (built and run outside the image)
+tests/
+
 # docs
 README.md
 CHANGELOG.md
