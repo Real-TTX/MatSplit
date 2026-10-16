@@ -162,6 +162,21 @@ dem Core-Agenten.
    sofort ausgeloggt.
 4. `/Account/Logout` ruft `CurrentUserService.SignOutAsync()`.
 
+### Anmeldung ueber MatIdentity (optional)
+Nur mit `MATIDENTITY_AUTHORITY` (`Infrastructure/MatIdentityAuthentication.cs`):
+`/Account/Login` fordert das OpenID-Connect-Schema `MatIdentity` an (ausser `?local=1`,
+`?signedOut=1`, `?ssoError=1`). Im Callback `/signin-oidc` ordnet
+`UserService.SignInExternalAsync(ExternalIdentity)` die Person zu (`sub` -> `Users.ExternalSubject`,
+sonst genau ein Konto mit gleicher E-Mail, sonst neu; Rolle aus dem Claim `role`), danach
+`CurrentUserService.SignInAsync(user, ..., identityToken)` wie bei der lokalen Anmeldung. Das
+ID-Token liegt in den Cookie-Properties; `/Account/Logout` meldet damit auch bei MatIdentity ab.
+
+### Plattform-API
+`Platform/` (`MatApiDefinition.cs`, `PlatformEndpoints.cs` = Kopien aus MatIdentity bis zum Paket
+MatPlatform; `SplitPlatform.cs` = MatSplits Teil). Zugriff: `Infrastructure/ApiAccess.cs`
+(`X-Api-Key` = `MAT_API_KEY`, sonst Bearer-Token von MatIdentity). Abfragen nur ueber Services
+(`InstanceStatusService`, `AppConfigService`, `SessionService`), Einstellungsregeln in `AppConfigRules`.
+
 ### Zugriff aus einer Razor Page
 ```csharp
 public class ExpensesModel(

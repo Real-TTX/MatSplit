@@ -25,6 +25,12 @@ services:
       ASPNETCORE_URLS: http://+:8080
       MATSPLIT_DATA_DIR: /data
       TZ: ${TZ:-Europe/Berlin}
+      # Mat platform (optional, see README "Platform API" / "Sign-in with MatIdentity"):
+      # MAT_API_KEY: change-me                          # X-Api-Key for /api/state, /api/configure, /api/actions
+      # MATIDENTITY_AUTHORITY: https://id.example.com   # set = sign-in through MatIdentity
+      # MATIDENTITY_CLIENT_ID: matsplit
+      # MATIDENTITY_CLIENT_SECRET: change-me
+      # MATIDENTITY_INTERNAL_URL: http://matidentity:2300  # only when MatSplit reaches MatIdentity at another address
     volumes:
       # /data/db, /data/config, /data/receipts, /data/keys, /data/logs
       - matsplit-data:/data

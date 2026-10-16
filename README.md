@@ -152,7 +152,7 @@ docker compose up -d
 ```
 
 Open **http://localhost:4774** and sign in with **`admin` / `admin`** (health check:
-`/health`). The first start also seeds a small demo group so the app is not empty. The
+`/api/health`). The first start also seeds a small demo group so the app is not empty. The
 `matsplit-data` volume keeps the database, the configuration, the receipts and the session
 keys, so an update is just `docker compose pull && docker compose up -d`.
 
@@ -187,6 +187,11 @@ dotnet run --project src/MatSplit.Web/MatSplit.Web.csproj
 | `ASPNETCORE_URLS` | `http://+:8080` | Internal listener |
 | `MATSPLIT_DATA_DIR` | `/data` | Root for db, config, receipts, keys and logs |
 | `TZ` | `Europe/Berlin` | Container time zone |
+| `MAT_API_KEY` | – | Key for the protected part of the [platform API](#platform-api) (header `X-Api-Key`). Not set = only MatIdentity tokens are accepted there |
+| `MATIDENTITY_AUTHORITY` | – | Public address of [MatIdentity](#sign-in-with-matidentity) (`https://id.example.com`). Set = sign-in through MatIdentity |
+| `MATIDENTITY_CLIENT_ID` | `matsplit` | The client of MatSplit in MatIdentity (also the audience of API tokens) |
+| `MATIDENTITY_CLIENT_SECRET` | – | Its secret |
+| `MATIDENTITY_INTERNAL_URL` | – | Where MatSplit itself reaches MatIdentity when that differs from the public address (inside Docker, e.g. `http://matidentity:2300`): discovery, keys and token requests go there, the browser and the expected issuer stay public |
 
 TLS and the domain belong to a reverse proxy in front (nginx, Traefik, Caddy): forward to
 `http://<host>:4774` and set `X-Forwarded-Proto` / `X-Forwarded-For` for correct redirects.
@@ -214,10 +219,58 @@ The directories are created inside the image and owned by the `app` user (uid/gi
 fresh Docker volume inherits those permissions. For a **bind mount** the host directory must
 belong to that user: `sudo chown -R 1654:1654 /srv/matsplit`.
 
+### Sign-in with MatIdentity
+
+Optional single sign-on through **MatIdentity**, the identity app of the Mat family. Without
+`MATIDENTITY_AUTHORITY` nothing changes. With it:
+
+- Register MatSplit as a client in MatIdentity with the redirect address
+  `https://<matsplit>/signin-oidc` and the sign-out address `https://<matsplit>/signout-callback-oidc`
+  (roles `admin` / `user`), and pass its id and secret as `MATIDENTITY_CLIENT_ID` /
+  `MATIDENTITY_CLIENT_SECRET`. MatSplit signs in with OpenID Connect (authorization code + PKCE,
+  scopes `openid profile email roles offline_access`).
+- **Automatic sign-in:** whoever opens a page that needs a sign-in goes straight to MatIdentity.
+  The local form stays reachable at **`/Account/Login?local=1`** – the way in for the
+  administrator when MatIdentity is down (an unreachable MatIdentity also falls back to it).
+  Invite links, link guests and the read-only link work exactly as before, without MatIdentity.
+- **The person:** found by the claim `sub` (stored in `Users.ExternalSubject`); on the first
+  sign-in an existing account with the same e-mail address is linked (only if there is exactly
+  one), otherwise a new user is created from `name` / `preferred_username` and `email`. Then the
+  normal MatSplit session starts. Deleted accounts stay locked out.
+- **The role:** when MatIdentity sends the claim `role` (`admin` or `user`), MatSplit sets
+  Admin / User at every sign-in (the last administrator is never demoted); without the claim
+  MatSplit keeps managing the roles itself.
+- **Sign-out** ends the session in MatSplit and at MatIdentity.
+- Over plain `http` the authority is accepted only for development (`http://localhost:2300`).
+
+### Platform API
+
+MatSplit implements the platform contract of the Mat apps
+([MatDesign `docs/PLATFORM.md`](https://github.com/real-ttx/matdesign/blob/main/docs/PLATFORM.md)),
+so Mattiverse and other apps can show, watch and set it up without knowing it beforehand:
+
+| Endpoint | Access | Answer |
+|---|---|---|
+| `GET /api` | anonymous | the **MatApiDefinition** (pages, tiles, fields, actions, roles), with `ETag` |
+| `GET /api/health` | anonymous | `ok` / `degraded` (200) or `down` (503), with a database check; the Docker `HEALTHCHECK` uses it |
+| `GET /api/state`, `GET /api/state/{key}` | key or token | tiles: groups, people, guests, expenses of the last 30 days, open settlements, receipt storage, last entry |
+| `GET /api/configure`, `PUT /api/configure` | key or token | application name, default currency, invite links, session lifetime, maximum receipt size – checked by the same rules as *Administration → Einstellungen* |
+| `POST /api/actions/{id}` | key or token | `cleanupSessions` (remove expired sessions); `openAdmin` / `openSettings` are links |
+
+*Key* is the header `X-Api-Key` with the value of `MAT_API_KEY` (no key set = the key is off);
+*token* is a bearer token of MatIdentity for the audience `MATIDENTITY_CLIENT_ID`. The old
+`/health` stays for existing health checks.
+
+```bash
+curl http://localhost:4774/api
+curl -H "X-Api-Key: $MAT_API_KEY" http://localhost:4774/api/state
+```
+
 ## How it is built
 
 - **ASP.NET Core 10** (Razor Pages), **EF Core** with SQLite; the schema is created on start
-  via `EnsureCreated()` (no migrations yet)
+  via `EnsureCreated()` (no migrations yet); columns added later get an idempotent step in
+  `Data/SchemaUpgrader.cs`
 - Cookie authentication with its own `UserSessions` table; sessions survive restarts because
   the DataProtection keys live on the `/data` volume
 - **Money is always a `long` in cents** (`…Cents`) – never floating point
@@ -227,7 +280,10 @@ belong to that user: `sudo chown -R 1654:1654 /srv/matsplit`.
   framework, no build step, no CDN, works offline. The toolkit is a copy under `wwwroot/matui/`
   (updated from MatDesign, never loaded from elsewhere); what is only MatSplit's lives in
   `wwwroot/css/app.css`
-- Non-root container (`app`, uid `1654`) with a `HEALTHCHECK` on `/health`
+- Non-root container (`app`, uid `1654`) with a `HEALTHCHECK` on `/api/health`
+- The platform contract lives in `Platform/` (`MatApiDefinition.cs` and `PlatformEndpoints.cs` are copies
+  of MatIdentity's until the shared package MatPlatform exists; `SplitPlatform.cs` is MatSplit's part)
+- Tests: `dotnet test` runs `tests/MatSplit.Tests` (xUnit, the whole app in memory)
 - The interface is German; the code and its comments are English
 
 ## Branches & versioning

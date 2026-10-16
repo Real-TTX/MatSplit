@@ -7,6 +7,28 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **Plattform-Vertrag der Mat-Apps** (MatDesign `docs/PLATFORM.md`): `GET /api` (MatApiDefinition mit
+  Kacheln, Einstellungen, Aktionen und den Rollen `admin` / `user`), `GET /api/health` (Datenbank-Pruefung,
+  503 bei `down`), `GET /api/state`, `GET|PUT /api/configure` und `POST /api/actions/{id}`, geschuetzt mit
+  `X-Api-Key` = `MAT_API_KEY` oder einem Bearer-Token von MatIdentity. Die Einstellungen prueft dieselbe
+  Regel wie *Administration → Einstellungen* (`AppConfigRules`).
+- **Anmeldung ueber MatIdentity** (optional, `MATIDENTITY_AUTHORITY`, `MATIDENTITY_CLIENT_ID`,
+  `MATIDENTITY_CLIENT_SECRET`, `MATIDENTITY_INTERNAL_URL`): automatische Weiterleitung, lokale Anmeldung unter
+  `/Account/Login?local=1`, Zuordnung per `sub` bzw. E-Mail, Rolle aus dem Claim `role`, Abmelden auch bei
+  MatIdentity. Einladungslinks, Gaeste und der Nur-Lese-Link bleiben unveraendert.
+- Testprojekt `tests/MatSplit.Tests`.
+
+### Geaendert
+
+- Der Docker-`HEALTHCHECK` ruft `/api/health` auf; `/health` bleibt erhalten.
+
+### Hinweise
+
+- Neue Spalte `Users.ExternalSubject`. Sie wird beim Start in bestehenden Datenbanken automatisch
+  ergaenzt (`Data/SchemaUpgrader.cs`, idempotent) – kein manueller Eingriff noetig.
+
 ### Geplant
 
 - Bestehende Benutzer per E-Mail in Gruppen einladen (aktuell: Einladungslink).
