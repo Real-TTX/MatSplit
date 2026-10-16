@@ -46,7 +46,7 @@ public sealed class ExternalSignInTests : IAsyncLifetime
         var result = await _users.SignInExternalAsync(new ExternalIdentity("sub-1", "Neu@Example.com", "Nora Neu", "nora", "admin"));
 
         Assert.True(result.IsSuccess, result.Error);
-        var user = result.Value;
+        var user = result.Value.User!;
         Assert.Equal("sub-1", user.ExternalSubject);
         Assert.Equal("Nora Neu", user.DisplayName);
         Assert.Equal("neu@example.com", user.Email);
@@ -56,28 +56,71 @@ public sealed class ExternalSignInTests : IAsyncLifetime
 
         // The second time the same user, found by sub.
         var again = await _users.SignInExternalAsync(new ExternalIdentity("sub-1", "other@example.com", "Other", null, "admin"));
-        Assert.Equal(user.Id, again.Value.Id);
+        Assert.Equal(user.Id, again.Value.User!.Id);
     }
 
     [Fact]
     public async Task Without_a_name_the_preferred_username_is_used_and_without_role_claim_the_user_is_a_user()
     {
         var result = await _users.SignInExternalAsync(new ExternalIdentity("sub-2", null, null, "bert", null));
-        Assert.Equal("bert", result.Value.DisplayName);
-        Assert.Equal(UserRole.User, result.Value.Role);
+        Assert.Equal("bert", result.Value.User!.DisplayName);
+        Assert.Equal(UserRole.User, result.Value.User!.Role);
     }
 
     [Fact]
-    public async Task An_existing_user_with_the_same_email_is_linked()
+    public async Task An_existing_user_with_the_same_email_is_not_linked_but_asks_for_its_password()
     {
-        var anna = await _db.Users.SingleAsync(x => x.DisplayName == "Anna");
+        var anna = await WithPasswordAsync("Anna");
+        var users = await _db.Users.CountAsync();
 
-        var result = await _users.SignInExternalAsync(new ExternalIdentity("sub-anna", "ANNA@matsplit.local", "Anna Example", null, null));
+        var result = await _users.SignInExternalAsync(new ExternalIdentity("sub-anna", "ANNA@matsplit.local", "Anna Example", null, "admin"));
 
-        Assert.Equal(anna.Id, result.Value.Id);
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Null(result.Value.User);
+        Assert.Equal(anna.Id, result.Value.LinkUserId);
+        var stored = await _db.Users.AsNoTracking().SingleAsync(x => x.Id == anna.Id);
+        Assert.Null(stored.ExternalSubject);
+        Assert.Equal(UserRole.User, stored.Role);
+        Assert.Equal(users, await _db.Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task After_its_password_the_account_is_linked_with_the_role_of_the_claim()
+    {
+        var anna = await WithPasswordAsync("Anna");
+
+        var result = await _users.LinkExternalAsync(anna.Id, new ExternalIdentity("sub-anna", "anna@matsplit.local", "Anna Example", null, "admin"));
+
+        Assert.True(result.IsSuccess, result.Error);
         Assert.Equal("Anna", result.Value.DisplayName);
+        Assert.Equal(UserRole.Admin, result.Value.Role);
         Assert.Equal("sub-anna", (await _db.Users.AsNoTracking().SingleAsync(x => x.Id == anna.Id)).ExternalSubject);
-        Assert.Equal(UserRole.User, result.Value.Role);
+        Assert.Contains(await _db.HistoryEntries.AsNoTracking().Select(x => x.Summary).ToListAsync(), x => x.Contains("linked with MatIdentity", StringComparison.Ordinal));
+
+        // From now on the account is found by sub.
+        var again = await _users.SignInExternalAsync(new ExternalIdentity("sub-anna", "anna@matsplit.local", "Anna", null, null));
+        Assert.Equal(anna.Id, again.Value.User!.Id);
+    }
+
+    [Fact]
+    public async Task An_account_that_is_linked_meanwhile_or_a_subject_that_is_taken_is_not_linked()
+    {
+        var anna = await WithPasswordAsync("Anna");
+        var admin = await _db.Users.SingleAsync(x => x.Role == UserRole.Admin);
+
+        Assert.True((await _users.LinkExternalAsync(anna.Id, new ExternalIdentity("sub-1", null, null, null, null))).IsSuccess);
+        Assert.True((await _users.LinkExternalAsync(anna.Id, new ExternalIdentity("sub-2", null, null, null, null))).IsFailure);
+        Assert.True((await _users.LinkExternalAsync(admin.Id, new ExternalIdentity("sub-1", null, null, null, null))).IsFailure);
+        Assert.Null((await _db.Users.AsNoTracking().SingleAsync(x => x.Id == admin.Id)).ExternalSubject);
+    }
+
+    [Fact]
+    public async Task A_deleted_account_is_not_linked()
+    {
+        var anna = await WithPasswordAsync("Anna");
+        Assert.True((await _users.SoftDeleteUserAsync(anna.Id)).IsSuccess);
+
+        Assert.True((await _users.LinkExternalAsync(anna.Id, new ExternalIdentity("sub-anna", null, null, null, null))).IsFailure);
     }
 
     [Fact]
@@ -89,8 +132,8 @@ public sealed class ExternalSignInTests : IAsyncLifetime
         var result = await _users.SignInExternalAsync(new ExternalIdentity("sub-x", "anna@matsplit.local", "Anna X", null, null));
 
         Assert.True(result.IsSuccess);
-        Assert.Equal("Anna X", result.Value.DisplayName);
-        Assert.Null(result.Value.Email);
+        Assert.Equal("Anna X", result.Value.User!.DisplayName);
+        Assert.Null(result.Value.User!.Email);
         Assert.Equal(2, await _db.Users.CountAsync(x => x.Email == "anna@matsplit.local" && x.ExternalSubject == null));
     }
 
@@ -98,12 +141,12 @@ public sealed class ExternalSignInTests : IAsyncLifetime
     public async Task The_role_claim_wins_at_every_sign_in_and_without_it_the_local_role_stays()
     {
         var first = await _users.SignInExternalAsync(new ExternalIdentity("sub-r", "r@example.com", "R", null, "user"));
-        Assert.Equal(UserRole.User, first.Value.Role);
+        Assert.Equal(UserRole.User, first.Value.User!.Role);
 
-        Assert.Equal(UserRole.Admin, (await _users.SignInExternalAsync(new ExternalIdentity("sub-r", null, "R", null, "admin"))).Value.Role);
-        Assert.Equal(UserRole.Admin, (await _users.SignInExternalAsync(new ExternalIdentity("sub-r", null, "R", null, null))).Value.Role);
-        Assert.Equal(UserRole.Admin, (await _users.SignInExternalAsync(new ExternalIdentity("sub-r", null, "R", null, "something-else"))).Value.Role);
-        Assert.Equal(UserRole.User, (await _users.SignInExternalAsync(new ExternalIdentity("sub-r", null, "R", null, "user"))).Value.Role);
+        Assert.Equal(UserRole.Admin, (await _users.SignInExternalAsync(new ExternalIdentity("sub-r", null, "R", null, "admin"))).Value.User!.Role);
+        Assert.Equal(UserRole.Admin, (await _users.SignInExternalAsync(new ExternalIdentity("sub-r", null, "R", null, null))).Value.User!.Role);
+        Assert.Equal(UserRole.Admin, (await _users.SignInExternalAsync(new ExternalIdentity("sub-r", null, "R", null, "something-else"))).Value.User!.Role);
+        Assert.Equal(UserRole.User, (await _users.SignInExternalAsync(new ExternalIdentity("sub-r", null, "R", null, "user"))).Value.User!.Role);
     }
 
     [Fact]
@@ -112,16 +155,18 @@ public sealed class ExternalSignInTests : IAsyncLifetime
         var admin = await _db.Users.SingleAsync(x => x.Role == UserRole.Admin);
 
         var result = await _users.SignInExternalAsync(new ExternalIdentity("sub-admin", DbInitializer.DefaultAdminEmail, "admin", null, "user"));
+        Assert.Equal(admin.Id, result.Value.LinkUserId);
 
-        Assert.Equal(admin.Id, result.Value.Id);
-        Assert.Equal(UserRole.Admin, result.Value.Role);
+        var linked = await _users.LinkExternalAsync(admin.Id, new ExternalIdentity("sub-admin", DbInitializer.DefaultAdminEmail, "admin", null, "user"));
+        Assert.Equal(UserRole.Admin, linked.Value.Role);
+        Assert.Equal(UserRole.Admin, (await _users.SignInExternalAsync(new ExternalIdentity("sub-admin", null, "admin", null, "user"))).Value.User!.Role);
     }
 
     [Fact]
     public async Task A_deleted_user_stays_out()
     {
         var created = await _users.SignInExternalAsync(new ExternalIdentity("sub-d", "d@example.com", "D", null, null));
-        Assert.True((await _users.SoftDeleteUserAsync(created.Value.Id)).IsSuccess);
+        Assert.True((await _users.SoftDeleteUserAsync(created.Value.User!.Id)).IsSuccess);
 
         Assert.True((await _users.SignInExternalAsync(new ExternalIdentity("sub-d", "d@example.com", "D", null, "admin"))).IsFailure);
         // Nor through the address of the deleted account with another sub.
@@ -129,20 +174,47 @@ public sealed class ExternalSignInTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_link_guest_with_the_same_email_becomes_a_regular_user()
+    public async Task An_account_without_a_password_cannot_prove_itself_and_a_new_user_is_made_without_the_address()
     {
-        _db.Users.Add(new User { DisplayName = "Gast", Email = "gast@example.com", Role = UserRole.Anonymous, IsAnonymous = true, UpdateState = UpdateState.Created });
+        // A link guest (or a demo member) has no password: nobody can sign in as it, so it is never linked by its address.
+        var guest = new User { DisplayName = "Gast", Email = "gast@example.com", Role = UserRole.Anonymous, IsAnonymous = true, UpdateState = UpdateState.Created };
+        _db.Users.Add(guest);
         await _db.SaveChangesAsync();
 
         var result = await _users.SignInExternalAsync(new ExternalIdentity("sub-g", "gast@example.com", "Gast", null, null));
 
-        Assert.Equal(UserRole.User, result.Value.Role);
-        Assert.False(result.Value.IsAnonymous);
+        Assert.NotEqual(guest.Id, result.Value.User!.Id);
+        Assert.Equal(UserRole.User, result.Value.User!.Role);
+        Assert.False(result.Value.User!.IsAnonymous);
+        Assert.Null(result.Value.User!.Email);
+        Assert.Null((await _db.Users.AsNoTracking().SingleAsync(x => x.Id == guest.Id)).ExternalSubject);
+    }
+
+    [Fact]
+    public async Task A_match_linked_to_another_subject_is_left_alone()
+    {
+        var anna = await WithPasswordAsync("Anna");
+        Assert.True((await _users.LinkExternalAsync(anna.Id, new ExternalIdentity("sub-anna", null, null, null, null))).IsSuccess);
+
+        var result = await _users.SignInExternalAsync(new ExternalIdentity("sub-other", "anna@matsplit.local", "Other", null, null));
+
+        Assert.NotEqual(anna.Id, result.Value.User!.Id);
+        Assert.Null(result.Value.User!.Email);
+        Assert.Equal("sub-anna", (await _db.Users.AsNoTracking().SingleAsync(x => x.Id == anna.Id)).ExternalSubject);
     }
 
     [Fact]
     public async Task No_subject_is_refused()
         => Assert.True((await _users.SignInExternalAsync(new ExternalIdentity(" ", "x@example.com", "X", null, null))).IsFailure);
+
+    /// <summary>The demo user <paramref name="name"/> with a password, so that it can prove itself.</summary>
+    private async Task<User> WithPasswordAsync(string name)
+    {
+        var user = await _db.Users.SingleAsync(x => x.DisplayName == name);
+        user.PasswordHash = PasswordHasher.Hash("anna-password");
+        await _db.SaveChangesAsync();
+        return user;
+    }
 }
 
 /// <summary>The schema upgrade adds the column of MatIdentity to a database of an older version, and runs twice without harm.</summary>

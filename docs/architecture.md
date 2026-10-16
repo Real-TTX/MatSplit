@@ -167,8 +167,16 @@ Nur mit `MATIDENTITY_AUTHORITY` (`Infrastructure/MatIdentityAuthentication.cs`):
 `/Account/Login` fordert das OpenID-Connect-Schema `MatIdentity` an (ausser `?local=1`,
 `?signedOut=1`, `?ssoError=1`). Im Callback `/signin-oidc` ordnet
 `UserService.SignInExternalAsync(ExternalIdentity)` die Person zu (`sub` -> `Users.ExternalSubject`,
-sonst genau ein Konto mit gleicher E-Mail, sonst neu; Rolle aus dem Claim `role`), danach
-`CurrentUserService.SignInAsync(user, ..., identityToken)` wie bei der lokalen Anmeldung. Das
+sonst neu; Rolle aus dem Claim `role`), danach
+`CurrentUserService.SignInAsync(user, ..., identityToken)` wie bei der lokalen Anmeldung. Hat genau ein
+aktives, nicht verknuepftes Konto mit Passwort die gleiche E-Mail, wird es **nicht** verknuepft (die Adresse
+in MatSplit beweist nichts): `SplitIdentityUsers` antwortet `MatIdentitySignInResult.LinkRequired(id)`,
+MatPlatform legt einen `MatIdentityPendingLink` ab (geschuetztes Cookie, 10 Minuten) und leitet auf
+`/Account/Login?local=1&link=1`. Meldet sich dort genau dieses Konto mit Passwort an, verknuepft
+`UserService.LinkExternalAsync` es (Rolle aus dem Claim, Verlaufseintrag "linked with MatIdentity") und die
+Sitzung behaelt das ID-Token; ein anderes Konto verknuepft nichts, *Abbrechen* loescht den Link. Ein Konto
+ohne Passwort (Link-Gast) kann sich nicht ausweisen: dann wie bei mehreren Treffern ein neuer Benutzer ohne
+die Adresse. Das
 ID-Token liegt in den Cookie-Properties; `/Account/Logout` meldet damit auch bei MatIdentity ab.
 
 ### Plattform-API

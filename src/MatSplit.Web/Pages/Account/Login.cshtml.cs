@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using MatPlatform;
 using MatSplit.Web.Infrastructure;
 using MatSplit.Web.Services;
+using MatSplit.Web.Services.Models;
 using MatSplit.Web.Ui;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +18,9 @@ namespace MatSplit.Web.Pages.Account;
 /// With MatIdentity configured (MATIDENTITY_AUTHORITY) a visit goes straight on
 /// to MatIdentity; the local form stays reachable with <c>?local=1</c> (a way in
 /// for the administrator when MatIdentity is down).
+/// After a sign-in through MatIdentity whose e-mail address matches an account that is not linked yet, the page shows
+/// <c>?local=1&amp;link=1</c>: a successful sign-in of exactly that account links it (<see cref="MatIdentityPendingLink"/>,
+/// <see cref="UserService.LinkExternalAsync"/>); another account signs in without linking anything; Cancel deletes the pending link.
 /// </summary>
 public class LoginModel(
     UserService users,
@@ -65,6 +70,12 @@ public class LoginModel(
 
     /// <summary><c>?ssoError=1</c>: the sign-in at MatIdentity failed or MatIdentity is not reachable.</summary>
     public bool SsoError { get; private set; }
+
+    /// <summary>The pending link to an account of this address, when MatIdentity sent the person here to prove it (<c>?link=1</c>).</summary>
+    public MatIdentityPendingLink? PendingLink { get; private set; }
+
+    /// <summary><c>?link=1</c> without a pending link: it expired (10 minutes) or was cancelled.</summary>
+    public bool LinkExpired { get; private set; }
 
     /// <summary>True when the sign-in through MatIdentity is configured.</summary>
     public bool IdentityEnabled => platform.IdentityEnabled;
@@ -140,7 +151,29 @@ public class LoginModel(
             return Page();
         }
 
-        await currentUser.SignInAsync(user, Input.RememberMe, cancellationToken);
+        // A pending link of MatIdentity is only ever for the account that matched; it is deleted either way.
+        string? identityToken = null;
+        var linked = false;
+        if (MatIdentityPendingLink.TakeFor(HttpContext, user.Id.ToString(CultureInfo.InvariantCulture)) is { } pending)
+        {
+            var link = await users.LinkExternalAsync(
+                user.Id,
+                new ExternalIdentity(pending.Subject, pending.Email, pending.Name, pending.PreferredUserName, pending.Role),
+                cancellationToken);
+
+            if (link.IsSuccess)
+            {
+                user = link.Value;
+                identityToken = pending.IdToken;
+                linked = true;
+            }
+            else
+            {
+                logger.LogWarning("User {UserId} signed in, but was not linked with MatIdentity: {Error}", user.Id, link.Error);
+            }
+        }
+
+        await currentUser.SignInAsync(user, Input.RememberMe, cancellationToken, identityToken);
 
         await history.LogAsync(
             null,
@@ -151,8 +184,17 @@ public class LoginModel(
             $"\"{user.DisplayName}\" hat sich angemeldet.",
             cancellationToken: cancellationToken);
 
-        this.Flash($"Willkommen zur\u00fcck, {user.DisplayName}!");
+        this.Flash(linked
+            ? $"Willkommen zur\u00fcck, {user.DisplayName}! Dein Konto ist jetzt mit MatIdentity verbunden."
+            : $"Willkommen zur\u00fcck, {user.DisplayName}!");
         return Redirect(ResolveReturnUrl());
+    }
+
+    /// <summary>Cancel on <c>?link=1</c>: the account is not linked, the pending link is deleted.</summary>
+    public IActionResult OnPostCancelLink()
+    {
+        MatIdentityPendingLink.Clear(HttpContext);
+        return Redirect(LocalSignInUrl);
     }
 
     private async Task PreparePageAsync(CancellationToken cancellationToken)
@@ -160,6 +202,13 @@ public class LoginModel(
         Local = Local || QueryFlag("local");
         SignedOut = QueryFlag("signedOut");
         SsoError = QueryFlag("ssoError");
+        PendingLink = MatIdentityPendingLink.Peek(HttpContext);
+        LinkExpired = PendingLink is null && QueryFlag("link");
+
+        if (PendingLink is not null && string.IsNullOrEmpty(Input.EmailOrName))
+        {
+            Input.EmailOrName = PendingLink.Email ?? string.Empty;
+        }
 
         var config = await appConfig.GetAsync(cancellationToken);
 

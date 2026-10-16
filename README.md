@@ -233,10 +233,17 @@ Optional single sign-on through **MatIdentity**, the identity app of the Mat fam
   The local form stays reachable at **`/Account/Login?local=1`** – the way in for the
   administrator when MatIdentity is down (an unreachable MatIdentity also falls back to it).
   Invite links, link guests and the read-only link work exactly as before, without MatIdentity.
-- **The person:** found by the claim `sub` (stored in `Users.ExternalSubject`); on the first
-  sign-in an existing account with the same e-mail address is linked (only if there is exactly
-  one), otherwise a new user is created from `name` / `preferred_username` and `email`. Then the
-  normal MatSplit session starts. Deleted accounts stay locked out.
+- **The person:** found by the claim `sub` (stored in `Users.ExternalSubject`). An existing account
+  with the same e-mail address is **not linked by the address alone** – anyone can type any address
+  into their own profile, so whoever pre-claimed an address would otherwise receive its owner at the
+  first sign-in. When exactly one active, unlinked account with a password has the address, MatSplit
+  keeps a pending link (MatPlatform `MatIdentityPendingLink`: a protected cookie, 10 minutes) and shows
+  `/Account/Login?local=1&link=1`: sign in once with that account's password and it is linked (the
+  claim `role` applies, the history says "linked with MatIdentity"); another account signing in links
+  nothing; *Abbrechen* deletes the pending link. Otherwise (no match, several matches, a match linked to
+  another `sub`, or a match without a password such as a link guest) a new user is created from
+  `name` / `preferred_username` and `email` (without the address when another account has it). Then
+  the normal MatSplit session starts. Deleted accounts stay locked out.
 - **The role:** when MatIdentity sends the claim `role` (`admin` or `user`), MatSplit sets
   Admin / User at every sign-in (the last administrator is never demoted); without the claim
   MatSplit keeps managing the roles itself.

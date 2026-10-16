@@ -23,12 +23,21 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 ### Geaendert
 
 - Der Docker-`HEALTHCHECK` ruft `/api/health` auf; `/health` bleibt erhalten.
-- Plattform-Vertrag und Anmeldung ueber MatIdentity kommen aus dem gemeinsamen Paket **MatPlatform 1.0.0** von
+- Plattform-Vertrag und Anmeldung ueber MatIdentity kommen aus dem gemeinsamen Paket **MatPlatform 1.1.0** von
   MatDesign (Kopie unter `src/MatSplit.Web/MatPlatform/`); die eigenen Kopien (`MatApiDefinition.cs`,
   `PlatformEndpoints.cs`, `ApiAccess.cs`, `MatIdentityAuthentication.cs`, ...) sind entfernt. Das JSON von `/api`,
   `/api/state` und `/api/configure` bleibt gleich (ein Test haelt es fest); Umlaute stehen jetzt unmaskiert im JSON,
   `GET /api/state/{key}` schreibt `"value": null` statt es wegzulassen, und die Meldungen von 404 folgen
   `Accept-Language`.
+
+### Sicherheit
+
+- **Anmeldung ueber MatIdentity verknuepft ein Konto nicht mehr allein ueber die E-Mail-Adresse.** Wer die
+  Adresse eines anderen in sein eigenes Profil schrieb, haette dessen erste Anmeldung ueber MatIdentity in
+  sein Konto bekommen. Jetzt fuehrt ein Treffer per E-Mail auf `/Account/Login?local=1&link=1`: erst die
+  Anmeldung genau dieses Kontos mit seinem Passwort verknuepft es; ein anderes Konto verknuepft nichts,
+  *Abbrechen* verwirft die Anfrage (10 Minuten gueltig). Ein Konto ohne Passwort (Link-Gast) wird nie
+  verknuepft. MatPlatform **1.1.0** (`MatIdentityPendingLink`, `MatIdentitySignInResult.LinkRequired`).
 
 ### Hinweise
 

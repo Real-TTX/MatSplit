@@ -452,23 +452,27 @@ public sealed class UserService(AppDbContext db, HistoryService history, ILogger
     /// <summary>
     /// Finds or creates the local user of a person that MatIdentity signed in (single sign-on):
     /// (1) the user with this <c>sub</c> (a merged one leads to the user it was merged into),
-    /// (2) else the one active user with the same e-mail address, which is linked to the <c>sub</c>,
-    /// (3) else a new local user without password. A deleted (disabled) user stays out: the result is a failure.
+    /// (2) else, when exactly one active, unlinked user with a password has the same e-mail address: nothing is changed and the outcome
+    /// asks for the link (<see cref="ExternalSignIn.LinkUserId"/>). The address in MatSplit proves nothing (anyone may type any address into
+    /// their own profile), so the account is linked only after its password (<see cref="LinkExternalAsync"/>),
+    /// (3) else a new local user without password; it gets the address only when no other account has it (several matches, a match linked to
+    /// another <c>sub</c>, or a match without a password such as a link guest, which cannot prove itself).
+    /// A deleted (disabled) user stays out: the result is a failure.
     /// When <see cref="ExternalIdentity.Role"/> is <c>admin</c> or <c>user</c> the global role follows it at every sign-in;
-    /// without it the local role stays (the app manages its roles). A link guest becomes a regular user.
+    /// without it the local role stays (the app manages its roles).
     /// </summary>
-    public async Task<Result<User>> SignInExternalAsync(ExternalIdentity identity, CancellationToken cancellationToken = default)
+    public async Task<Result<ExternalSignIn>> SignInExternalAsync(ExternalIdentity identity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(identity);
 
         if (string.IsNullOrWhiteSpace(identity.Subject))
         {
-            return Result.Fail<User>("MatIdentity hat keine Kennung (sub) geliefert.");
+            return Result.Fail<ExternalSignIn>("MatIdentity hat keine Kennung (sub) geliefert.");
         }
 
         var subject = identity.Subject.Trim();
         var email = NormalizeEmail(identity.Email);
-        var disabled = Result.Fail<User>("Dein Konto ist in MatSplit gesperrt. Bitte wende dich an einen Administrator.");
+        var disabled = Result.Fail<ExternalSignIn>(DisabledMessage);
 
         var user = await db.Users.FirstOrDefaultAsync(x => x.ExternalSubject == subject, cancellationToken);
 
@@ -487,23 +491,24 @@ public sealed class UserService(AppDbContext db, HistoryService history, ILogger
         }
 
         var created = false;
-        var linked = false;
 
         if (user is null && email is not null)
         {
             var sameEmail = await db.Users
+                .AsNoTracking()
                 .Where(x => x.Email != null && x.Email.ToLower() == email && x.MergedIntoUserId == null)
                 .ToListAsync(cancellationToken);
 
             var active = sameEmail.Where(x => x.UpdateState != UpdateState.Deleted).ToList();
 
-            if (active.Count == 1 && active[0].ExternalSubject is null)
+            if (active.Count == 1 && active[0].ExternalSubject is null && active[0].PasswordHash is not null)
             {
-                user = active[0];
-                user.ExternalSubject = subject;
-                linked = true;
+                // Not linked by the address alone: the person proves the account with its password first.
+                logger.LogInformation("MatIdentity subject {Subject} matches user {UserId} by e-mail; the link waits for its password", subject, active[0].Id);
+                return Result.Ok(ExternalSignIn.LinkRequired(active[0].Id));
             }
-            else if (active.Count == 0 && sameEmail.Count > 0)
+
+            if (active.Count == 0 && sameEmail.Count > 0)
             {
                 // The only account with this address was deleted by an administrator: no new one behind its back.
                 return disabled;
@@ -532,7 +537,91 @@ public sealed class UserService(AppDbContext db, HistoryService history, ILogger
             created = true;
         }
 
-        var role = identity.Role?.Trim().ToLowerInvariant() switch
+        await ApplyExternalRoleAsync(user, identity.Role, created, cancellationToken);
+
+        if (user.Email is null && email is not null && !created && !await EmailExistsAsync(email, user.Id, cancellationToken))
+        {
+            user.Email = email;
+        }
+
+        if (!created && db.Entry(user).State == EntityState.Modified)
+        {
+            user.UpdateState = UpdateState.Updated;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (created)
+        {
+            await history.LogAsync(
+                null,
+                user.Id,
+                HistoryService.EntityTypes.User,
+                user.Id,
+                HistoryService.Actions.Created,
+                $"Benutzer \"{user.DisplayName}\" wurde bei der ersten Anmeldung über MatIdentity angelegt.",
+                cancellationToken: cancellationToken);
+        }
+
+        return Result.Ok(ExternalSignIn.SignedIn(user));
+    }
+
+    /// <summary>
+    /// Links the user <paramref name="userId"/> with the person of <paramref name="identity"/> after the user proved the account with its
+    /// password (the pending link of <see cref="SignInExternalAsync"/>): sets the external subject, follows the role claim like a sign-in
+    /// through MatIdentity and writes "linked with MatIdentity" to the history. Refused when the account is gone, merged, deleted or linked
+    /// meanwhile, or when another user has the subject by now.
+    /// </summary>
+    public async Task<Result<User>> LinkExternalAsync(long userId, ExternalIdentity identity, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+
+        if (string.IsNullOrWhiteSpace(identity.Subject))
+        {
+            return Result.Fail<User>("MatIdentity hat keine Kennung (sub) geliefert.");
+        }
+
+        var subject = identity.Subject.Trim();
+        var user = await db.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+
+        if (user is null || user.UpdateState == UpdateState.Deleted || user.MergedIntoUserId is not null)
+        {
+            return Result.Fail<User>(DisabledMessage);
+        }
+
+        if (user.ExternalSubject is not null || await db.Users.AnyAsync(x => x.ExternalSubject == subject, cancellationToken))
+        {
+            logger.LogWarning("User {UserId} was not linked with MatIdentity subject {Subject}: one of them is linked already", userId, subject);
+            return Result.Fail<User>("Das Konto ist schon mit MatIdentity verknüpft.");
+        }
+
+        user.ExternalSubject = subject;
+        await ApplyExternalRoleAsync(user, identity.Role, false, cancellationToken);
+        user.UpdateState = UpdateState.Updated;
+        await db.SaveChangesAsync(cancellationToken);
+
+        await history.LogAsync(
+            null,
+            user.Id,
+            HistoryService.EntityTypes.User,
+            user.Id,
+            HistoryService.Actions.Updated,
+            $"Benutzer \"{user.DisplayName}\" wurde nach der Anmeldung mit Passwort mit MatIdentity verknüpft (linked with MatIdentity).",
+            cancellationToken: cancellationToken);
+
+        logger.LogInformation("User {UserId} linked with MatIdentity subject {Subject} after its password", user.Id, subject);
+        return Result.Ok(user);
+    }
+
+    private const string DisabledMessage = "Dein Konto ist in MatSplit gesperrt. Bitte wende dich an einen Administrator.";
+
+    /// <summary>
+    /// The role claim of MatIdentity: <c>admin</c> or <c>user</c> sets the global role (never demoting the last administrator); anything else leaves it.
+    /// Whoever comes through MatIdentity is a real person, not a link guest.
+    /// </summary>
+    private async Task ApplyExternalRoleAsync(User user, string? claim, bool created, CancellationToken cancellationToken)
+    {
+        var role = claim?.Trim().ToLowerInvariant() switch
         {
             "admin" => UserRole.Admin,
             "user" => UserRole.User,
@@ -553,38 +642,9 @@ public sealed class UserService(AppDbContext db, HistoryService history, ILogger
 
         if (user.Role == UserRole.Anonymous || user.IsAnonymous)
         {
-            // Whoever comes through MatIdentity is a real person, not a link guest.
             user.Role = user.Role == UserRole.Anonymous ? UserRole.User : user.Role;
             user.IsAnonymous = false;
         }
-
-        if (user.Email is null && email is not null && !created && !await EmailExistsAsync(email, user.Id, cancellationToken))
-        {
-            user.Email = email;
-        }
-
-        if (!created && db.Entry(user).State == EntityState.Modified)
-        {
-            user.UpdateState = UpdateState.Updated;
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
-
-        if (created || linked)
-        {
-            await history.LogAsync(
-                null,
-                user.Id,
-                HistoryService.EntityTypes.User,
-                user.Id,
-                created ? HistoryService.Actions.Created : HistoryService.Actions.Updated,
-                created
-                    ? $"Benutzer \"{user.DisplayName}\" wurde bei der ersten Anmeldung über MatIdentity angelegt."
-                    : $"Benutzer \"{user.DisplayName}\" wurde über die E-Mail-Adresse mit MatIdentity verknüpft.",
-                cancellationToken: cancellationToken);
-        }
-
-        return Result.Ok(user);
     }
 
     /// <summary>

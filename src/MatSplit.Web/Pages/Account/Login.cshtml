@@ -10,6 +10,36 @@
         </ms-alert>
     }
 
+    @if (Model.PendingLink is not null)
+    {
+        <ms-card id="login-link" title="Konto mit MatIdentity verbinden" icon="link">
+            <div class="mat-stack">
+                <p>
+                    Hier gibt es schon ein Konto mit der Adresse <strong>@(Model.PendingLink.Email ?? Model.PendingLink.PreferredUserName)</strong>.
+                    Melde dich einmal mit seinem Passwort an, um es mit MatIdentity zu verbinden; danach geht die Anmeldung
+                    &#252;ber MatIdentity direkt in dieses Konto.
+                </p>
+                <p class="mat-muted">
+                    Ist das nicht dein Konto, brich ab: es wird nichts verbunden. Melde dich nicht mit einem anderen Konto an,
+                    um dieses zu verbinden: das geht nur mit dem Passwort genau dieses Kontos.
+                </p>
+                <ms-form id="link-cancel-form" handler="CancelLink" validation-summary="none">
+                    <ms-field id="lc-return" name="ReturnUrl" type="hidden" value="@Model.ReturnUrl"></ms-field>
+                    <ms-button-row id="lc-buttons" divider="false">
+                        <ms-button id="lc-cancel" kind="secondary" icon="close" label="Abbrechen"></ms-button>
+                    </ms-button-row>
+                </ms-form>
+            </div>
+        </ms-card>
+    }
+    else if (Model.LinkExpired)
+    {
+        <ms-alert id="login-link-expired" tone="info" title="Verbindung mit MatIdentity abgelaufen">
+            Die Anfrage, ein Konto mit MatIdentity zu verbinden, gilt nur zehn Minuten. Melde dich erneut &#252;ber
+            MatIdentity an, um es noch einmal zu versuchen.
+        </ms-alert>
+    }
+
     @if (Model.IdentityEnabled)
     {
         <ms-card id="login-sso" title="Anmelden mit MatIdentity" icon="key">
