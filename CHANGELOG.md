@@ -23,12 +23,15 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 ### Geaendert
 
 - Der Docker-`HEALTHCHECK` ruft `/api/health` auf; `/health` bleibt erhalten.
-- Plattform-Vertrag und Anmeldung ueber MatIdentity kommen aus dem gemeinsamen Paket **MatPlatform 1.1.0** von
+- Plattform-Vertrag und Anmeldung ueber MatIdentity kommen aus dem gemeinsamen Paket **MatPlatform 1.2.0** von
   MatDesign (Kopie unter `src/MatSplit.Web/MatPlatform/`); die eigenen Kopien (`MatApiDefinition.cs`,
   `PlatformEndpoints.cs`, `ApiAccess.cs`, `MatIdentityAuthentication.cs`, ...) sind entfernt. Das JSON von `/api`,
   `/api/state` und `/api/configure` bleibt gleich (ein Test haelt es fest); Umlaute stehen jetzt unmaskiert im JSON,
   `GET /api/state/{key}` schreibt `"value": null` statt es wegzulassen, und die Meldungen von 404 folgen
   `Accept-Language`.
+- Hinter einem TLS-Proxy (Matcad) kommt das Schema bei der Anmeldung ueber MatIdentity aus `X-Forwarded-Proto`
+  (MatPlatform **1.2.0**): die `redirect_uri` ist `https://...` und die Correlation-Cookies sind `Secure`. Nur das
+  Schema; Client-Adresse und Host bleiben bei der eigenen Proxy-Regel.
 
 ### Sicherheit
 
