@@ -9,9 +9,11 @@ namespace MatSplit.Web.Pages;
 /// <summary>
 /// Anonymous error page. Program.cs points UseExceptionHandler here in
 /// non development environments; the optional ?code= parameter allows other
-/// pages to show a plain status code error.
+/// pages to show a plain status code error. A POST that failed (e.g. to an unknown address) is re-executed as a POST:
+/// it shows the same page with its own status code, without the anti-forgery check (which would turn every such 404 into a 400).
 /// </summary>
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+[IgnoreAntiforgeryToken]
 public class ErrorModel(ILogger<ErrorModel> logger) : PageModel
 {
     /// <summary>Correlation id, helps to find the entry in the container log.</summary>
@@ -28,6 +30,8 @@ public class ErrorModel(ILogger<ErrorModel> logger) : PageModel
 
     /// <summary>Path that produced the error, null when unknown.</summary>
     public string? OriginalPath { get; private set; }
+
+    public void OnPost(int? code) => OnGet(code);
 
     public void OnGet(int? code)
     {

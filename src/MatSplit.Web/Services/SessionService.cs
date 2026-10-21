@@ -15,7 +15,8 @@ public sealed class SessionService(AppDbContext db, AppConfigService appConfig, 
     /// Creates a new session for the user and returns its token, which belongs
     /// into the auth cookie via <see cref="MatSplitClaims.CreatePrincipal"/>.
     /// </summary>
-    public async Task<string> CreateSessionAsync(long userId, string? userAgent, CancellationToken cancellationToken = default)
+    /// <param name="identitySessionId">The claim <c>sid</c> of a sign-in through MatIdentity (ends the session at a back-channel logout), else null.</param>
+    public async Task<string> CreateSessionAsync(long userId, string? userAgent, CancellationToken cancellationToken = default, string? identitySessionId = null)
     {
         var config = await appConfig.GetAsync(cancellationToken);
         var now = DateTime.UtcNow;
@@ -28,6 +29,7 @@ public sealed class SessionService(AppDbContext db, AppConfigService appConfig, 
             ExpiresUtc = now.AddDays(config.SessionLifetimeDays),
             LastSeenUtc = now,
             UserAgent = Truncate(userAgent, 512),
+            IdentitySessionId = Truncate(identitySessionId, 256),
             UpdateState = UpdateState.Created
         };
 
@@ -132,6 +134,55 @@ public sealed class SessionService(AppDbContext db, AppConfigService appConfig, 
         }
 
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The back-channel logout of MatIdentity (MatPlatform <c>IMatIdentitySessions</c>): with <paramref name="identitySessionId"/> the sessions
+    /// that started with that <c>sid</c> end, with <paramref name="subject"/> alone every session of the local user linked to it. The rows are
+    /// soft deleted like at a logout, so the next request of such a cookie is signed out (<see cref="SessionAuthenticationMiddleware"/>).
+    /// An unknown subject or sid ends nothing. Returns the users whose sessions ended, with the number of sessions.
+    /// </summary>
+    public async Task<IReadOnlyList<(User User, int Sessions)>> EndIdentitySessionsAsync(string? subject, string? identitySessionId, CancellationToken cancellationToken = default)
+    {
+        IQueryable<UserSession> query = db.UserSessions
+            .Include(x => x.User)
+            .Where(x => x.UpdateState != UpdateState.Deleted);
+
+        if (!string.IsNullOrEmpty(identitySessionId))
+        {
+            query = query.Where(x => x.IdentitySessionId == identitySessionId);
+        }
+        else if (!string.IsNullOrEmpty(subject))
+        {
+            query = query.Where(x => x.User != null && x.User.ExternalSubject == subject);
+        }
+        else
+        {
+            return [];
+        }
+
+        var sessions = await query.ToListAsync(cancellationToken);
+        if (sessions.Count == 0)
+        {
+            logger.LogInformation("Back-channel logout of {Subject} (sid {SessionId}): no session to end", subject, identitySessionId);
+            return [];
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var session in sessions)
+        {
+            session.UpdateState = UpdateState.Deleted;
+            session.ExpiresUtc = now;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Back-channel logout of {Subject} (sid {SessionId}): ended {Count} sessions", subject, identitySessionId, sessions.Count);
+
+        return sessions
+            .Where(x => x.User is not null)
+            .GroupBy(x => x.UserId)
+            .Select(g => (g.First().User!, g.Count()))
+            .ToList();
     }
 
     /// <summary>

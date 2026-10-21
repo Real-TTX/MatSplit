@@ -24,6 +24,17 @@ public static class SchemaUpgrader
         await db.Database.ExecuteSqlRawAsync(
             "CREATE UNIQUE INDEX IF NOT EXISTS \"IX_Users_ExternalSubject\" ON \"Users\" (\"ExternalSubject\") WHERE \"ExternalSubject\" IS NOT NULL;",
             cancellationToken);
+
+        // The session at MatIdentity a session started with (back-channel logout, MatPlatform 1.4.0).
+        if (!await ColumnExistsAsync(db, "UserSessions", "IdentitySessionId", cancellationToken))
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"UserSessions\" ADD COLUMN \"IdentitySessionId\" TEXT NULL;", cancellationToken);
+            logger.LogInformation("Schema upgrade: added UserSessions.IdentitySessionId");
+        }
+
+        await db.Database.ExecuteSqlRawAsync(
+            "CREATE INDEX IF NOT EXISTS \"IX_UserSessions_IdentitySessionId\" ON \"UserSessions\" (\"IdentitySessionId\");",
+            cancellationToken);
     }
 
     private static async Task<bool> ColumnExistsAsync(AppDbContext db, string table, string column, CancellationToken cancellationToken)

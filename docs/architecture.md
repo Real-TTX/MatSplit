@@ -178,6 +178,11 @@ Sitzung behaelt das ID-Token; ein anderes Konto verknuepft nichts, *Abbrechen* l
 ohne Passwort (Link-Gast) kann sich nicht ausweisen: dann wie bei mehreren Treffern ein neuer Benutzer ohne
 die Adresse. Das
 ID-Token liegt in den Cookie-Properties; `/Account/Logout` meldet damit auch bei MatIdentity ab.
+Die Session merkt sich den `sid` von MatIdentity (`UserSessions.IdentitySessionId`). Ein Back-Channel-Logout
+(`POST /signout-backchannel`, MatPlatform 1.4.0) ruft `SplitIdentityUsers.EndSessionsAsync` ->
+`SessionService.EndIdentitySessionsAsync`: mit `sid` werden diese Sessions beendet, mit `sub` allein alle
+Sessions des Benutzers (soft delete wie beim Logout, die Middleware meldet das Cookie beim naechsten Request ab);
+Verlaufseintrag `SignedOut`.
 
 ### Plattform-API
 `Platform/` (`MatApiDefinition.cs`, `PlatformEndpoints.cs` = Kopien aus MatIdentity bis zum Paket

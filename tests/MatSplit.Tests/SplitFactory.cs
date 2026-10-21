@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 
 // The factories hand their settings to Program through environment variables (Program reads them before the host is built),
 // so the test classes run one after another.
@@ -22,6 +23,11 @@ namespace MatSplit.Tests;
 public class SplitFactory : WebApplicationFactory<Program>
 {
     public const string ApiKey = "test-key-0123456789";
+
+    /// <summary>The key "MatIdentity" signs with (in the fixed OpenID configuration): the tests sign logout tokens with it.</summary>
+    public static readonly SigningCredentials IdentitySigning = new(
+        new RsaSecurityKey(System.Security.Cryptography.RSA.Create(2048)) { KeyId = "test-identity-key" },
+        SecurityAlgorithms.RsaSha256);
 
     private readonly string _data = Path.Combine(Path.GetTempPath(), "matsplit-tests-" + Guid.NewGuid().ToString("N"));
     private readonly string? _authority;
@@ -57,6 +63,7 @@ public class SplitFactory : WebApplicationFactory<Program>
                 TokenEndpoint = _authority + "/connect/token",
                 EndSessionEndpoint = _authority + "/connect/logout",
             };
+            configuration.SigningKeys.Add(IdentitySigning.Key);
 
             builder.ConfigureTestServices(services =>
             {

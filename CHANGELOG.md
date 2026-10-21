@@ -22,8 +22,12 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 
 ### Geaendert
 
+- **Back-Channel-Logout** (MatPlatform **1.4.0**): `POST /signout-backchannel` nimmt das Logout-Token von
+  MatIdentity an. Mit `sid` endet die MatSplit-Sitzung, die damit begann (neue Spalte
+  `UserSessions.IdentitySessionId`, per `SchemaUpgrader`), mit `sub` allein jede Sitzung des Benutzers; der
+  naechste Request dieses Browsers ist abgemeldet. Verlaufseintrag "Abgemeldet".
 - Der Docker-`HEALTHCHECK` ruft `/api/health` auf; `/health` bleibt erhalten.
-- Plattform-Vertrag und Anmeldung ueber MatIdentity kommen aus dem gemeinsamen Paket **MatPlatform 1.2.0** von
+- Plattform-Vertrag und Anmeldung ueber MatIdentity kommen aus dem gemeinsamen Paket **MatPlatform 1.4.0** von
   MatDesign (Kopie unter `src/MatSplit.Web/MatPlatform/`); die eigenen Kopien (`MatApiDefinition.cs`,
   `PlatformEndpoints.cs`, `ApiAccess.cs`, `MatIdentityAuthentication.cs`, ...) sind entfernt. Das JSON von `/api`,
   `/api/state` und `/api/configure` bleibt gleich (ein Test haelt es fest); Umlaute stehen jetzt unmaskiert im JSON,

@@ -18,5 +18,11 @@ public class UserSession : AuditableEntity
 
     public string? UserAgent { get; set; }
 
+    /// <summary>
+    /// The session at MatIdentity this session started with (the claim <c>sid</c>), null for a local sign-in. A back-channel logout
+    /// that names it ends this session (<see cref="Services.SessionService.EndIdentitySessionsAsync"/>).
+    /// </summary>
+    public string? IdentitySessionId { get; set; }
+
     public User? User { get; set; }
 }

@@ -87,10 +87,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         entity.Property(x => x.ExpiresUtc).HasColumnName("ExpiresUtc").IsRequired();
         entity.Property(x => x.LastSeenUtc).HasColumnName("LastSeenUtc").IsRequired();
         entity.Property(x => x.UserAgent).HasColumnName("UserAgent").HasMaxLength(512);
+        entity.Property(x => x.IdentitySessionId).HasColumnName("IdentitySessionId").HasMaxLength(256);
 
         entity.HasIndex(x => x.Token).IsUnique().HasDatabaseName("IX_UserSessions_Token");
         entity.HasIndex(x => x.UserId).HasDatabaseName("IX_UserSessions_UserId");
         entity.HasIndex(x => x.ExpiresUtc).HasDatabaseName("IX_UserSessions_ExpiresUtc");
+        entity.HasIndex(x => x.IdentitySessionId).HasDatabaseName("IX_UserSessions_IdentitySessionId");
 
         entity.HasOne(x => x.User)
             .WithMany(x => x.Sessions)

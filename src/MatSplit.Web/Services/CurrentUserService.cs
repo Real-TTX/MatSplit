@@ -133,14 +133,15 @@ public sealed class CurrentUserService(
     /// /Account/Login, /Join and the sign-in through MatIdentity, which passes
     /// the ID token along (kept in the cookie for the sign-out at MatIdentity).
     /// </summary>
-    public async Task SignInAsync(User user, bool isPersistent = true, CancellationToken cancellationToken = default, string? identityToken = null)
+    /// <param name="identitySessionId">The claim <c>sid</c> of a sign-in through MatIdentity, kept with the session for the back-channel logout.</param>
+    public async Task SignInAsync(User user, bool isPersistent = true, CancellationToken cancellationToken = default, string? identityToken = null, string? identitySessionId = null)
     {
         ArgumentNullException.ThrowIfNull(user);
 
         var context = Context ?? throw new InvalidOperationException("No HttpContext available for sign in.");
 
         var userAgent = context.Request.Headers.UserAgent.ToString();
-        var sessionToken = await sessions.CreateSessionAsync(user.Id, userAgent, cancellationToken);
+        var sessionToken = await sessions.CreateSessionAsync(user.Id, userAgent, cancellationToken, identitySessionId);
         var principal = MatSplitClaims.CreatePrincipal(user, sessionToken);
 
         var properties = new AuthenticationProperties

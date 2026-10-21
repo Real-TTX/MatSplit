@@ -225,7 +225,8 @@ Optional single sign-on through **MatIdentity**, the identity app of the Mat fam
 `MATIDENTITY_AUTHORITY` nothing changes. With it:
 
 - Register MatSplit as a client in MatIdentity with the redirect address
-  `https://<matsplit>/signin-oidc` and the sign-out address `https://<matsplit>/signout-callback-oidc`
+  `https://<matsplit>/signin-oidc`, the sign-out address `https://<matsplit>/signout-callback-oidc` and the
+  back-channel logout address `https://<matsplit>/signout-backchannel`
   (roles `admin` / `user`), and pass its id and secret as `MATIDENTITY_CLIENT_ID` /
   `MATIDENTITY_CLIENT_SECRET`. MatSplit signs in with OpenID Connect (authorization code + PKCE,
   scopes `openid profile email roles offline_access`).
@@ -248,6 +249,11 @@ Optional single sign-on through **MatIdentity**, the identity app of the Mat fam
   Admin / User at every sign-in (the last administrator is never demoted); without the claim
   MatSplit keeps managing the roles itself.
 - **Sign-out** ends the session in MatSplit and at MatIdentity.
+- **Back-channel logout** (MatPlatform 1.4.0): when the person signs out at MatIdentity (or an
+  administrator ends their sessions there), MatIdentity posts a signed logout token to
+  `POST /signout-backchannel`. A token with a `sid` ends the MatSplit sessions that started with it
+  (`UserSessions.IdentitySessionId`), one with the `sub` alone every session of that user; the next
+  request of such a browser is signed out. It is written to the history ("Abgemeldet").
 - Over plain `http` the authority is accepted only for development (`http://localhost:2300`).
 
 ### Platform API

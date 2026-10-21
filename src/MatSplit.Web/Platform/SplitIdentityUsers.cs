@@ -11,8 +11,11 @@ namespace MatSplit.Web.Platform;
 /// and then signed in with MatSplit's own cookie and session, like a local sign-in, keeping the ID token for the sign-out.
 /// An account with the same e-mail address is not linked by the address: the answer is <see cref="MatIdentitySignInResult.LinkRequired"/>,
 /// and the sign-in page links it after its password (<see cref="MatIdentityPendingLink"/>).
+/// The session keeps the <c>sid</c> of MatIdentity: a back-channel logout (<see cref="IMatIdentitySessions"/>) ends it through
+/// <see cref="SessionService.EndIdentitySessionsAsync"/>.
 /// </summary>
-public sealed class SplitIdentityUsers(UserService users, CurrentUserService currentUser, HistoryService history) : IMatIdentityUsers
+public sealed class SplitIdentityUsers(UserService users, CurrentUserService currentUser, SessionService sessions, HistoryService history)
+    : IMatIdentityUsers, IMatIdentitySessions
 {
     public async Task<MatIdentitySignInResult> SignInAsync(MatIdentityPerson person, HttpContext http, CancellationToken ct)
     {
@@ -30,7 +33,7 @@ public sealed class SplitIdentityUsers(UserService users, CurrentUserService cur
         }
 
         var user = result.Value.User!;
-        await currentUser.SignInAsync(user, true, ct, person.IdToken);
+        await currentUser.SignInAsync(user, true, ct, person.IdToken, person.SessionId);
 
         await history.LogAsync(
             null,
@@ -42,5 +45,24 @@ public sealed class SplitIdentityUsers(UserService users, CurrentUserService cur
             cancellationToken: ct);
 
         return MatIdentitySignInResult.Success();
+    }
+
+    public async Task EndSessionsAsync(string? subject, string? sessionId, CancellationToken ct)
+    {
+        var ended = await sessions.EndIdentitySessionsAsync(subject, sessionId, ct);
+
+        foreach (var (user, count) in ended)
+        {
+            await history.LogAsync(
+                null,
+                user.Id,
+                HistoryService.EntityTypes.User,
+                user.Id,
+                HistoryService.Actions.SignedOut,
+                count == 1
+                    ? $"\"{user.DisplayName}\" wurde über MatIdentity abgemeldet."
+                    : $"\"{user.DisplayName}\" wurde über MatIdentity abgemeldet ({count} Sitzungen).",
+                cancellationToken: ct);
+        }
     }
 }
