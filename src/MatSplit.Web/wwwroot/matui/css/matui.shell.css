@@ -1,0 +1,534 @@
+/* ==========================================================================
+   MatUi · shell
+   The frame of every Mat app (rules SHELL-01 .. SHELL-12):
+     - the menu is on the LEFT, the logo ABOVE it
+     - at the bottom of the menu: the 3-state theme button, the user (click = context menu), and below that the version
+     - the menu scrolls SEPARATELY from the content on the right
+     - a main action may be the first item of the menu, filled with the accent (SHELL-19); the switcher of several menus sits under the logo or at the end of the menu (SHELL-15)
+     - the content always has a BREADCRUMB above it
+     - on a phone the menu is a drawer
+   ========================================================================== */
+
+.mat-app {
+  display: grid;
+  grid-template-columns: var(--mat-nav-w) minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--mat-bg);
+}
+
+/* ---- The menu ---- */
+.mat-nav {
+  position: relative;
+  z-index: var(--mat-z-nav);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--mat-nav-bg);
+  border-right: 1px solid var(--mat-border);
+  padding-top: var(--mat-safe-top);
+  padding-left: var(--mat-safe-left);
+}
+
+.mat-nav__brand {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--mat-space-3);
+  padding: var(--mat-space-5) var(--mat-space-5) var(--mat-space-4);
+}
+.mat-nav__brand a { display: flex; align-items: center; gap: var(--mat-space-3); color: var(--mat-text); text-decoration: none; min-width: 0; }
+/* More specific than .mat-btn (controls.css comes later in the bundle and would show it everywhere). */
+.mat-nav__brand > .mat-nav__close { display: none; margin-left: auto; flex: none; }
+.mat-logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  border-radius: 22%;
+  background: var(--mat-accent);
+  color: var(--mat-on-accent);
+  overflow: hidden;
+}
+.mat-logo img { width: 100%; height: 100%; display: block; }
+.mat-logo .mat-icon { width: 56%; height: 56%; }
+.mat-logo--sm { width: 28px; height: 28px; }
+.mat-logo--lg { width: 56px; height: 56px; }
+.mat-logo--xl { width: 88px; height: 88px; }
+.mat-nav__name { font-size: var(--mat-fs-lg); font-weight: 650; line-height: 1.1; }
+.mat-nav__brand a > span:last-child { min-width: 0; }
+/* The logo and the word mark of a brand (IDENT-08): a picture from the company's own files instead of the tile with a glyph, or instead of the name. A variant for dark surfaces is a second image;
+   the theme shows one of the two (the dark set is written twice, like in the tokens). A wide logo carries the name itself, so the name and tagline stay for screen readers only. */
+.mat-brandmark { display: block; flex: none; height: 38px; width: auto; max-width: 100%; }
+.mat-brandmark--word { height: 22px; }
+.mat-brandmark--dark { display: none; }
+:root[data-theme="dark"] .mat-brandmark--light { display: none; }
+:root[data-theme="dark"] .mat-brandmark--dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .mat-brandmark--light { display: none; }
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .mat-brandmark--dark { display: block; }
+}
+.mat-nav__brand-link--logo-only > span:last-child { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.mat-nav__tagline { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--mat-fs-xs); font-weight: 500; color: var(--mat-text-muted); margin-top: 2px; }
+
+/* The part of the menu that scrolls; the brand above and the foot below stay in place. */
+.mat-nav__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--mat-space-1) var(--mat-space-3) var(--mat-space-3);
+}
+.mat-nav__list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.mat-nav__group {
+  padding: var(--mat-space-5) var(--mat-space-3) var(--mat-space-1);
+  font-size: var(--mat-fs-sm);
+  font-weight: 600;
+  color: var(--mat-text-muted);
+}
+/* A group heading with one small icon action at its right end (SHELL-02): the title takes the room, the action is a compact square that adds no height to the row
+   (a touch screen gets 44 px by a negative margin, the row stays as it is). */
+.mat-nav__group--action { display: flex; align-items: center; gap: var(--mat-space-2); padding-right: var(--mat-space-1); }
+.mat-nav__group-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-nav__group-action {
+  flex: none; display: inline-grid; place-items: center;
+  width: 1.75rem; height: 1.75rem; margin-block: -.25rem;
+  padding: 0; border: 0; border-radius: var(--mat-radius-sm);
+  background: transparent; color: var(--mat-text-muted); cursor: pointer; text-decoration: none;
+  transition: background var(--mat-dur-fast) var(--mat-ease), color var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-nav__group-action .mat-icon { font-size: 1.1rem; }
+.mat-nav__group-action:hover, .mat-nav__group-action[aria-expanded="true"] { background: var(--mat-surface-3); color: var(--mat-text); text-decoration: none; }
+/* An action that is a link to the current page is marked like a current item: a tint of the accent behind it and the accent on its icon (SHELL-02, COLOR-08). After the hover rule, so it wins. */
+.mat-nav__group-action.is-active, .mat-nav__group-action[aria-current="page"] { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); }
+.mat-nav__group-action:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--mat-accent) 70%, transparent); }
+@media (pointer: coarse) { .mat-nav__group-action { width: 2.75rem; height: 2.75rem; margin-block: -.75rem; } }
+/* @prop nav | --mat-nav-item-radius | length | var(--mat-radius) | Corner radius of an item of the menu (the focus ring of an item follows it). */
+/* @prop nav | --mat-nav-item-height | length | var(--mat-control-h) | Least height of an item of the menu. A floor: on a touch screen keep it at 44 px or more (MOBILE-04). */
+/* @prop nav | --mat-nav-item-pad-x | length | var(--mat-space-3) | Space between the edge of an item of the menu and its icon and label. */
+/* @prop nav | --mat-nav-item-gap | length | var(--mat-space-3) | Space between the icon of an item of the menu and its label. */
+/* @prop nav | --mat-nav-item-font-weight | number | 500 | Weight of the label of an item of the menu (the current item and the main action keep their own). */
+.mat-nav__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--mat-nav-item-gap, var(--mat-space-3));
+  min-height: var(--mat-nav-item-height, var(--mat-control-h));
+  padding: 0 var(--mat-nav-item-pad-x, var(--mat-space-3));
+  border-radius: var(--mat-nav-item-radius, var(--mat-radius));
+  color: var(--mat-text);
+  font-weight: var(--mat-nav-item-font-weight, 500);
+  text-decoration: none;
+  transition: background var(--mat-dur-fast) var(--mat-ease), color var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-nav__item .mat-icon { font-size: 1.2rem; color: var(--mat-text-muted); }
+.mat-nav__item:hover { background: var(--mat-surface-3); text-decoration: none; }
+/* The current page: a tint of the accent behind the whole item and the accent on its icon. Never a bar at one edge of a rounded item (SHELL-02). */
+.mat-nav__item.is-active,
+.mat-nav__item[aria-current="page"] { background: var(--mat-accent-soft-strong); font-weight: 600; }
+.mat-nav__item.is-active .mat-icon,
+.mat-nav__item[aria-current="page"] .mat-icon { color: var(--mat-accent-text); }
+/* Keyboard focus: inside the menu the ring is drawn inward (the submenu clips what is outside its box). */
+.mat-nav__item:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--mat-accent) 70%, transparent); border-radius: var(--mat-nav-item-radius, var(--mat-radius)); }
+.mat-switcher:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--mat-accent) 70%, transparent); border-radius: var(--mat-radius); }
+
+/* ---- A main action (SHELL-19): the first item of the menu, filled with the accent, for the one thing the app is mostly used for ---- */
+.mat-nav__item--primary {
+  min-height: var(--mat-control-h-lg);
+  margin-bottom: var(--mat-space-2);
+  background: var(--mat-accent);
+  color: var(--mat-on-accent);
+  font-weight: 620;
+}
+.mat-nav__item--primary .mat-icon { color: inherit; }
+.mat-nav__item--primary:hover { background: var(--mat-accent-hover); }
+.mat-nav__item--primary:active { background: var(--mat-accent-active); }
+/* On its own page it stays filled, a step darker, like the current item of the menu (SHELL-02). */
+.mat-nav__item--primary.is-active,
+.mat-nav__item--primary[aria-current="page"] { background: var(--mat-accent-active); font-weight: 650; }
+.mat-nav__item--primary.is-active .mat-icon,
+.mat-nav__item--primary[aria-current="page"] .mat-icon { color: inherit; }
+/* The ring of the other items is the accent; on an item that is filled with it the ring has the colour of the text. */
+.mat-nav__item--primary:focus-visible { box-shadow: inset 0 0 0 2px var(--mat-on-accent); }
+
+/* ---- Badges in the menu (SHELL-14): a count at the right end of the item, or a dot for "something new" ---- */
+.mat-nav__badge {
+  margin-left: auto;
+  flex: none;
+  min-width: 22px; height: 22px;
+  padding: 0 7px;
+  display: inline-grid; place-items: center;
+  border-radius: var(--mat-radius-pill);
+  background: var(--mat-accent);
+  color: var(--mat-on-accent);
+  font-size: var(--mat-fs-xs);
+  font-weight: 650;
+  line-height: 1;
+}
+.mat-nav__badge--ok { background: var(--mat-success-bg); color: var(--mat-success-text); }
+.mat-nav__badge--warn { background: var(--mat-warning-bg); color: var(--mat-warning-text); }
+.mat-nav__badge--error { background: var(--mat-danger); color: var(--mat-on-danger); }
+.mat-nav__badge--info { background: var(--mat-info-bg); color: var(--mat-info-text); }
+.mat-nav__badge--plain { background: var(--mat-surface-3); color: var(--mat-text-muted); }
+.mat-nav__badge--dot { min-width: 0; width: 9px; height: 9px; padding: 0; }
+.mat-nav__badge--dot.mat-nav__badge--ok { background: var(--mat-success); }
+.mat-nav__badge--dot.mat-nav__badge--warn { background: var(--mat-warning); }
+.mat-nav__badge--dot.mat-nav__badge--info { background: var(--mat-info); }
+.mat-nav__badge--dot.mat-nav__badge--plain { background: var(--mat-text-faint); }
+
+/* ---- Submenus (SHELL-13): a parent opens its children; the branch with the current page is open ---- */
+button.mat-nav__item { width: 100%; border: 0; background: transparent; font: inherit; font-weight: var(--mat-nav-item-font-weight, 560); text-align: left; cursor: pointer; }
+button.mat-nav__item:hover { background: var(--mat-surface-3); }
+.mat-nav__chev { margin-left: auto; flex: none; color: var(--mat-text-muted); font-size: 1rem; transition: transform var(--mat-dur) var(--mat-ease); }
+.mat-nav__badge + .mat-nav__chev { margin-left: var(--mat-space-2); }
+.mat-nav__branch.is-open > .mat-nav__parent .mat-nav__chev { transform: rotate(180deg); }
+.mat-nav__branch.is-current > .mat-nav__parent { color: var(--mat-accent-text); }
+/* the sum of the children's badges stands in for them while the branch is closed */
+.mat-nav__branch.is-open > .mat-nav__parent .mat-nav__badge--sum { display: none; }
+.mat-nav__sub {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows var(--mat-dur) var(--mat-ease), visibility 0s linear var(--mat-dur);
+}
+.mat-nav__branch.is-open > .mat-nav__sub { grid-template-rows: 1fr; visibility: visible; transition-delay: 0s; }
+.mat-nav-init .mat-nav__sub, .mat-nav-init .mat-nav__chev { transition: none; }
+.mat-nav__sub > .mat-nav__list {
+  min-height: 0;
+  overflow: hidden;
+  margin: 2px 0 0 calc(var(--mat-space-3) + .6rem);
+  padding-left: var(--mat-space-2);
+  border-left: 1px solid var(--mat-border-strong);
+}
+.mat-nav__item--sub { min-height: var(--mat-control-h-sm); font-size: var(--mat-fs-sm); padding-left: var(--mat-space-3); }
+
+/* ---- More than one menu (SHELL-15): the switcher under the logo; only the current menu's items are shown ---- */
+.mat-nav__switch { flex: none; padding: 0 var(--mat-space-3) var(--mat-space-2); }
+/* At the end of the menu, directly above the foot: for an app whose menu starts with a main action (SHELL-19). Its popup opens upwards (data-menu-place="top"). */
+.mat-nav__switch--end { padding: var(--mat-space-2) var(--mat-space-3) var(--mat-space-3); }
+.mat-switcher {
+  position: relative;
+  width: 100%;
+  display: flex; align-items: center; gap: var(--mat-space-3);
+  min-height: var(--mat-control-h-lg);
+  padding: var(--mat-space-2) var(--mat-space-3);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-radius);
+  color: var(--mat-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--mat-dur-fast) var(--mat-ease), border-color var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-switcher:hover, .mat-switcher[aria-expanded="true"] { background: var(--mat-surface-2); border-color: var(--mat-text-faint); }
+.mat-switcher__icon { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: var(--mat-radius-sm); background: var(--mat-surface-3); color: var(--mat-accent-text); }
+.mat-switcher__icon .mat-icon { font-size: 1.1rem; }
+.mat-switcher__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.mat-switcher__text small { font-size: var(--mat-fs-xs); color: var(--mat-text-muted); }
+.mat-switcher__name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-switcher__chev { flex: none; color: var(--mat-text-muted); font-size: 1rem; }
+.mat-switcher__dot { position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--mat-warning); box-shadow: 0 0 0 2px var(--mat-surface); }
+.mat-switcher__dot[hidden] { display: none; }
+.mat-nav__scroll[hidden] { display: none; }
+.mat-menu__item .mat-nav__badge { margin-left: auto; }
+.mat-menu__item[aria-checked="true"] { font-weight: 650; color: var(--mat-accent-text); }
+.mat-menu__check { margin-left: var(--mat-space-2); flex: none; visibility: hidden; }
+.mat-menu__item[aria-checked="true"] .mat-menu__check { visibility: visible; }
+.mat-menu__item .mat-nav__badge + .mat-menu__check { margin-left: var(--mat-space-2); }
+.mat-menu__item > span:not([class]) { flex: 1 1 auto; }
+
+/* The switcher at the foot of the menu (SHELL-15), directly above the user; the foot keeps its order whatever order the markup has. */
+.mat-nav__switch--foot { padding: 0; }
+.mat-nav__foot > .mat-nav__switch { order: 0; }
+.mat-nav__foot > .mat-nav__account { order: 1; }
+.mat-nav__foot > .mat-nav__version { order: 2; }
+
+/* Menus in groups (SHELL-15): a parent entry in the popup opens the menus below it, one level deep. The group with the current menu is open; a closed parent
+   carries the dot of the menus inside it that ask for attention (the sum, as in a submenu of the items). */
+.mat-menu__parent .mat-nav__badge[hidden] { display: none; }
+.mat-menu__chev { flex: none; margin-left: var(--mat-space-2); color: var(--mat-text-muted); font-size: 1rem; transition: transform var(--mat-dur) var(--mat-ease); }
+.mat-menu__parent[aria-expanded="true"] .mat-menu__chev { transform: rotate(180deg); }
+.mat-menu__parent[aria-expanded="true"] .mat-nav__badge--sum { display: none; }
+.mat-menu__sub { margin: 2px 0 var(--mat-space-1) calc(var(--mat-space-3) + .6rem); padding-left: var(--mat-space-2); border-left: 1px solid var(--mat-border-strong); }
+/* A choice in the popup of the switcher (the tenant) is a button of a small form: the form takes no room of its own, the button is the entry. */
+.mat-menu__form { display: contents; }
+.mat-menu .mat-menu__item--sub { min-height: var(--mat-control-h-sm); font-size: var(--mat-fs-sm); }
+
+/* ---- The foot of the menu: theme button + user (context menu) + version ---- */
+.mat-nav__foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mat-space-2);
+  padding: var(--mat-space-3) var(--mat-space-3) calc(var(--mat-space-3) + var(--mat-safe-bottom));
+  border-top: 1px solid var(--mat-border);
+}
+.mat-nav__account { display: flex; align-items: center; gap: var(--mat-space-2); }
+
+.mat-user {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--mat-space-3);
+  padding: var(--mat-space-2) var(--mat-space-3);
+  min-height: var(--mat-control-h-lg);
+  background: transparent;
+  border: 0;
+  border-radius: var(--mat-radius);
+  text-align: left;
+  cursor: pointer;
+  color: var(--mat-text);
+  transition: background var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-user:hover, .mat-user[aria-expanded="true"] { background: var(--mat-surface-3); }
+.mat-avatar {
+  flex: none;
+  display: grid; place-items: center;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--mat-accent);
+  color: var(--mat-on-accent);
+  font-size: var(--mat-fs-sm);
+  font-weight: 650;
+}
+.mat-avatar--lg { width: 56px; height: 56px; font-size: var(--mat-fs-xl); }
+.mat-user__text { min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.mat-user__name { font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-user__role { font-size: var(--mat-fs-xs); color: var(--mat-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-user__chev { margin-left: auto; color: var(--mat-text-muted); font-size: 1rem; }
+
+/* The 3-state button: system -> light -> dark. It shows the icon of the current state. */
+.mat-theme {
+  flex: none;
+  display: grid; place-items: center;
+  width: var(--mat-control-h); height: var(--mat-control-h);
+  border: 1px solid var(--mat-border);
+  border-radius: var(--mat-radius);
+  background: var(--mat-surface);
+  color: var(--mat-text-muted);
+  cursor: pointer;
+  transition: background var(--mat-dur-fast) var(--mat-ease), color var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-theme:hover { background: var(--mat-surface-3); color: var(--mat-text); }
+.mat-theme .mat-icon { font-size: 1.15rem; }
+.mat-theme [data-theme-icon] { display: none; }
+.mat-theme[data-theme-state="system"] [data-theme-icon="system"],
+.mat-theme[data-theme-state="light"] [data-theme-icon="light"],
+.mat-theme[data-theme-state="dark"] [data-theme-icon="dark"] { display: inline-block; }
+
+.mat-nav__version {
+  font-size: var(--mat-fs-xs);
+  color: var(--mat-text-muted);
+  padding: 0 var(--mat-space-3);
+  font-family: var(--mat-mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ---- The content side ---- */
+.mat-main {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+
+/* @prop topbar | --mat-topbar-pad-x | length | var(--mat-content-pad) | Space between the sides of the window and the content of the header bar (its height is the token for the height of the bar). */
+/* @prop topbar | --mat-topbar-gap | length | var(--mat-space-3) | Space between the burger button, the breadcrumb and the actions of the header bar. */
+/* @prop topbar | --mat-topbar-border-width | length | 1px | Thickness of the line under the header bar. */
+.mat-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--mat-z-topbar);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--mat-topbar-gap, var(--mat-space-3));
+  min-height: var(--mat-topbar-h);
+  padding: 0 var(--mat-topbar-pad-x, var(--mat-content-pad));
+  background: var(--mat-glass);
+  border-bottom: var(--mat-topbar-border-width, 1px) solid var(--mat-border);
+}
+.mat-burger {
+  display: none;
+  flex: none;
+  place-items: center;
+  width: var(--mat-control-h); height: var(--mat-control-h);
+  margin-left: calc(var(--mat-space-2) * -1);
+  border: 0;
+  border-radius: var(--mat-radius);
+  background: transparent;
+  color: var(--mat-text);
+  cursor: pointer;
+}
+.mat-burger:hover { background: var(--mat-surface-3); }
+.mat-burger .mat-icon { font-size: 1.35rem; }
+
+/* The breadcrumb: the last item is the current page and is not a link. */
+.mat-crumbs { min-width: 0; flex: 1 1 auto; }
+.mat-crumbs ol { list-style: none; display: flex; align-items: center; flex-wrap: nowrap; gap: var(--mat-space-2); min-width: 0; }
+/* @prop topbar | --mat-topbar-crumb-font-size | length | var(--mat-fs-sm) | Size of the text of the breadcrumb. */
+.mat-crumbs li { display: flex; align-items: center; gap: var(--mat-space-2); min-width: 0; font-size: var(--mat-topbar-crumb-font-size, var(--mat-fs-sm)); color: var(--mat-text-muted); white-space: nowrap; }
+.mat-crumbs li + li::before { content: "/"; color: var(--mat-text-faint); flex: none; }
+.mat-crumbs a { color: var(--mat-text-muted); overflow: hidden; text-overflow: ellipsis; }
+.mat-crumbs a:hover { color: var(--mat-accent-text); }
+.mat-crumbs li[aria-current="page"] { color: var(--mat-text); font-weight: 620; overflow: hidden; text-overflow: ellipsis; }
+.mat-crumbs .mat-icon { font-size: 1rem; }
+
+/* Icons at the right end of the bar (SHELL-17): things of the whole app (search, notifications, help), icons only. */
+.mat-topbar__actions {
+  flex: none;
+  display: flex; align-items: center; gap: var(--mat-space-1);
+  margin-left: auto;
+  margin-right: calc(var(--mat-space-2) * -1);
+}
+.mat-topbar__actions .mat-btn { position: relative; }
+/* The main action of the app (scan, add) is highlighted: a filled accent button instead of a ghost one, at the right end; a second action that should be seen but is not the main
+   one is a secondary icon button (a surface with a line), so that one icon only has the accent colour. A button with a fill or a line needs room around it and lines up with the edge of the content. */
+.mat-topbar__actions:has(> .mat-btn--primary, > .mat-btn--secondary) { gap: var(--mat-space-2); margin-right: 0; }
+.mat-topbar__badge {
+  position: absolute; top: 3px; right: 3px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  display: inline-grid; place-items: center;
+  border-radius: var(--mat-radius-pill);
+  background: var(--mat-accent);
+  color: var(--mat-on-accent);
+  font-size: var(--mat-fs-xs);
+  font-weight: 650;
+  line-height: 1;
+  pointer-events: none;
+}
+.mat-topbar__badge--warn { background: var(--mat-warning-bg); color: var(--mat-warning-text); }
+.mat-topbar__badge--error { background: var(--mat-danger); color: var(--mat-on-danger); }
+.mat-topbar__badge--dot { top: 9px; right: 9px; min-width: 0; width: 8px; height: 8px; padding: 0; }
+.mat-topbar__badge--dot.mat-topbar__badge--warn { background: var(--mat-warning); }
+
+/* Search in the header bar (SHELL-20): an inline field after the breadcrumb and before the icons, whatever the order of the markup (the order is enforced here: the breadcrumb and the burger keep
+   the order 0 they always had, the search is 1, the icons 2). It is a search with suggestions (FORM-23, matui.pickers.css). Below 640 px it is one icon button that opens the full-screen
+   panel, so the breadcrumb and the icons keep their room. */
+.mat-topbar > .mat-topbar__actions { order: 2; }
+/* @prop search | --mat-search-width | length | 18rem | Width of the search field in the header bar; it gets narrower when the bar has no room for it. */
+.mat-topbar > .mat-topbar__search { order: 1; flex: 0 1 var(--mat-search-width, 18rem); min-width: 0; }
+@media (max-width: 640px) {
+  .mat-topbar > .mat-topbar__search { flex: none; margin-right: calc(var(--mat-space-2) * -1); }
+  .mat-topbar__search .mat-search { width: auto; }
+  .mat-topbar__search .mat-search:not(.is-full) .mat-search__bar { display: none; }
+  .mat-topbar__search .mat-search:not(.is-full) .mat-search__open { display: inline-flex; }
+}
+
+.mat-page {
+  width: 100%;
+  max-width: var(--mat-content-max);
+  margin: 0 auto;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mat-space-6);
+  padding: var(--mat-space-6) var(--mat-content-pad) calc(var(--mat-space-12) + var(--mat-safe-bottom));
+}
+.mat-page--narrow { max-width: 780px; }
+.mat-page--wide { max-width: none; }
+
+.mat-page__head { display: flex; align-items: flex-start; gap: var(--mat-space-4); }
+.mat-page__title { min-width: 0; }
+.mat-page__sub { margin-top: var(--mat-space-1); color: var(--mat-text-muted); }
+
+/* Section inside a page: a title with an optional lead, then content. */
+.mat-section { display: flex; flex-direction: column; gap: var(--mat-space-4); }
+.mat-section__head { display: flex; flex-direction: column; gap: var(--mat-space-1); }
+.mat-section__lead { color: var(--mat-text-muted); max-width: 70ch; }
+
+/* ---- Footer (SHELL-18): after the content, in the scrolling area; legal links on one side, who made it on the other ---- */
+.mat-footer {
+  flex: none;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--mat-space-2) var(--mat-space-6);
+  padding: var(--mat-space-4) max(var(--mat-content-pad), calc((100% - var(--mat-content-max)) / 2 + var(--mat-content-pad)));
+  padding-bottom: calc(var(--mat-space-4) + var(--mat-safe-bottom));
+  border-top: 1px solid var(--mat-border);
+  color: var(--mat-text-muted);
+  font-size: var(--mat-fs-sm);
+}
+.mat-footer__text { margin: 0; }
+.mat-footer__links { display: flex; flex-wrap: wrap; gap: var(--mat-space-1) var(--mat-space-4); margin: 0; padding: 0; list-style: none; }
+.mat-footer a { color: inherit; text-decoration: none; }
+.mat-footer a:hover { color: var(--mat-accent-text); text-decoration: underline; }
+.mat-footer--center { justify-content: center; text-align: center; }
+.mat-footer--plain { border-top: 0; }
+/* A page that is followed by a footer needs less room at its end, and the footer follows the width of the page. */
+.mat-page:has(+ .mat-footer) { padding-bottom: var(--mat-space-6); }
+.mat-page--narrow + .mat-footer { --mat-content-max: 780px; }
+.mat-page--wide + .mat-footer { padding-left: var(--mat-content-pad); padding-right: var(--mat-content-pad); }
+
+/* ---- Drawer: below 900 px the menu slides in over the content ---- */
+.mat-backdrop {
+  position: fixed; inset: 0;
+  z-index: calc(var(--mat-z-nav) - 1);
+  background: var(--mat-overlay);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--mat-dur-slow) var(--mat-ease);
+}
+
+@media (max-width: 900px) {
+  .mat-app { grid-template-columns: minmax(0, 1fr); }
+  /* The drawer and its backdrop cover the top bar (which has the burger): the logo stays visible above the items, and the X closes it. */
+  .mat-backdrop { z-index: calc(var(--mat-z-topbar) + 1); }
+  .mat-nav__brand > .mat-nav__close { display: inline-flex; }
+  .mat-nav {
+    position: fixed;
+    z-index: calc(var(--mat-z-topbar) + 2);
+    inset: 0 auto 0 0;
+    width: min(86vw, 320px);
+    transform: translateX(-102%);
+    transition: transform var(--mat-dur-slow) var(--mat-ease), visibility 0s linear var(--mat-dur-slow);
+    visibility: hidden;
+    box-shadow: var(--mat-shadow-3);
+  }
+  .mat-app.is-nav-open .mat-nav { transform: none; visibility: visible; transition-delay: 0s; }
+  .mat-app.is-nav-open .mat-backdrop { opacity: 1; pointer-events: auto; }
+  .mat-burger { display: inline-grid; }
+  .mat-topbar { padding-top: var(--mat-safe-top); padding-left: calc(var(--mat-topbar-pad-x, var(--mat-content-pad)) + var(--mat-safe-left)); padding-right: calc(var(--mat-topbar-pad-x, var(--mat-content-pad)) + var(--mat-safe-right)); }
+}
+
+/* Phones: of the breadcrumb only the last two items stay. */
+@media (max-width: 600px) {
+  .mat-crumbs li:not(:nth-last-child(-n+2)) { display: none; }
+  .mat-crumbs li:nth-last-child(2)::before { content: none; }
+  .mat-page { padding-top: var(--mat-space-5); gap: var(--mat-space-5); }
+}
+
+html.mat-lock { overflow: hidden; }
+
+/* ---- Sign-in and other pages without a menu ---- */
+.mat-auth {
+  min-height: 100vh; min-height: 100dvh;
+  display: grid; place-items: center;
+  padding: var(--mat-space-6) var(--mat-space-4);
+  background: var(--mat-bg);
+}
+/* A footer under the card of a page without a menu (SHELL-11): the card stays centred, the footer sits at the bottom. */
+.mat-auth:has(> .mat-footer) { grid-template-rows: minmax(0, 1fr) auto; padding-bottom: 0; }
+.mat-auth > .mat-footer { justify-self: stretch; width: 100%; }
+.mat-auth__card {
+  width: min(420px, 100%);
+  display: flex; flex-direction: column; gap: var(--mat-space-5);
+  padding: var(--mat-space-8) var(--mat-space-6);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border);
+  border-radius: var(--mat-radius-lg);
+}
+.mat-auth__brand { display: flex; flex-direction: column; align-items: center; gap: var(--mat-space-3); text-align: center; }
+.mat-auth__brand .mat-logo { width: 56px; height: 56px; }
+
+/* ---- Touch targets (MOBILE-04): what the shell has that is smaller than 44 px with a mouse is 44 px on a touch screen. The look is the same, there is more room around it. ---- */
+@media (pointer: coarse) {
+  .mat-nav__item--sub, .mat-menu .mat-menu__item--sub { min-height: 44px; }
+  .mat-crumbs a { display: block; min-width: 44px; line-height: 44px; text-align: center; }
+  .mat-footer__links { row-gap: 0; }
+  .mat-footer__links a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+}

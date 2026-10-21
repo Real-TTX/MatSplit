@@ -36,6 +36,18 @@ Versionierung nach dem in der [README](README.md#versionierungsschema) beschrieb
 - Hinter einem TLS-Proxy (Matcad) kommt das Schema bei der Anmeldung ueber MatIdentity aus `X-Forwarded-Proto`
   (MatPlatform **1.2.0**): die `redirect_uri` ist `https://...` und die Correlation-Cookies sind `Secure`. Nur das
   Schema; Client-Adresse und Host bleiben bei der eigenen Proxy-Regel.
+- **MatUi 0.7.0** (vorher 0.1.0): die ganze Kopie unter `wwwroot/matui/` samt `matui.manifest.json` und
+  `CHANGELOG.md`, damit `tools/matui-check.js` von MatDesign den Stand pruefen kann. Mit dabei u. a. Tabellen als
+  Datensatz-Karten auf dem Handy, Toasts, die nicht mehr im Weg stehen, und 16 px in allen Feldern auf
+  Touch-Geraeten (die eigene Regel in `app.css` dafuer ist entfernt). Service-Worker-Cache `v9`.
+- **Eingabefelder sind durchgehend MatUi-Controls** (`ms-field`): Datum im Datums-Picker (`data-picker="date"`,
+  Kalender auf Deutsch, Leeren bei optionalen Feldern), Zahlen im Stepper mit Minus/Plus (Einstellungen,
+  Personenzahl, Anteile je Mitglied), Passwoerter mit Auge zum Anzeigen, das Belegfoto im Datei-Upload mit
+  Ablagezone, Vorschaubild, Entfernen, Einfuegen aus der Zwischenablage und der Groessengrenze in Worten. Die
+  gesendeten Werte sind unveraendert (ISO-Datum, Zahl, Datei).
+- Belegfoto: `receipt-capture.js` verkleinert nur noch und oeffnet die Kamera, jetzt in einem MatUi-Dialog;
+  ein Handyfoto ueber der Groessengrenze wird verkleinert und dann doch angenommen. Die nicht benutzte zweite
+  Kamera in `site.js` ist entfernt.
 
 ### Sicherheit
 

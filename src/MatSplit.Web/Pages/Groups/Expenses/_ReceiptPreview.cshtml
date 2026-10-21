@@ -9,9 +9,9 @@
 
     <ms-form id="receipt-upload-form" action="@Model.UploadUrl" has-files="true" validation-summary="none">
         <ms-field id="rc-file" name="Receipt" type="file" label="Beleg aufnehmen oder auswählen"
-                  accept="image/*,application/pdf" capture="environment" full-width="true"
-                  data-ms-receipt="true" data-ms-max-mb="@Model.MaxReceiptSizeMb"
-                  hint="@($"Erlaubt sind Bilder und PDF bis {Model.MaxReceiptSizeMb} MB. Fotos werden vor dem Upload auf maximal 1600 Pixel verkleinert.")"></ms-field>
+                  accept="image/*,application/pdf" capture="environment" full-width="true" paste="true"
+                  max-size="@($"{Model.MaxReceiptSizeMb}MB")" data-ms-receipt="true"
+                  hint="Fotos werden vor dem Upload auf maximal 1600 Pixel verkleinert."></ms-field>
         <ms-button id="rc-upload" kind="primary" icon="upload" label="Beleg hochladen"></ms-button>
     </ms-form>
 

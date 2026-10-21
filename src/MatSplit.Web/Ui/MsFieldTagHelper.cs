@@ -31,7 +31,8 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
 
     /// <summary>
     /// text, textarea, select, checkbox, file, money, number, date, datetime,
-    /// time, email, password, tel, url, search, color, hidden or static.
+    /// time, email, password, tel, url, search, color, hidden or static. MatUi draws the controls:
+    /// date and time are pickers, number a stepper, file an upload, password has the eye.
     /// </summary>
     public string Type { get; set; } = "text";
 
@@ -97,8 +98,12 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
     /// <summary>Capture mode for type="file", e.g. environment for the rear camera.</summary>
     public string? Capture { get; set; }
 
-    /// <summary>Adds a camera button next to a file input (getUserMedia fallback).</summary>
-    public bool Camera { get; set; }
+    /// <summary>Largest file for type="file" as MatUi reads it, e.g. 10MB (data-max-size of the upload).</summary>
+    [HtmlAttributeName("max-size")]
+    public string? MaxSize { get; set; }
+
+    /// <summary>type="file": an image on the clipboard can be pasted into the upload (data-paste).</summary>
+    public bool Paste { get; set; }
 
     /// <summary>Checked state for type="checkbox" without model binding.</summary>
     [HtmlAttributeName("checked")]
@@ -187,7 +192,9 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
         }
 
         var input = BuildInput(id, name, type, children, labelText, showRequiredMarker);
-        var suffix = ResolveSuffix(type);
+
+        // The stepper of a number shows its unit itself (data-unit), it is never put into an input group.
+        var suffix = string.Equals(type, "number", StringComparison.Ordinal) ? null : ResolveSuffix(type);
 
         if (string.IsNullOrWhiteSpace(Prefix) && string.IsNullOrWhiteSpace(suffix))
         {
@@ -211,11 +218,6 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             }
 
             wrapper.InnerHtml.AppendHtml(group);
-        }
-
-        if (Camera && string.Equals(type, "file", StringComparison.Ordinal))
-        {
-            wrapper.InnerHtml.AppendHtml(BuildCameraButton(id));
         }
 
         if (!string.IsNullOrWhiteSpace(Hint))
@@ -317,21 +319,6 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             : null;
     }
 
-    private IHtmlContent BuildCameraButton(string id)
-    {
-        var button = new TagBuilder("button");
-        button.AddCssClass("mat-btn mat-btn--secondary mat-btn--sm ms-camera-button");
-        button.Attributes["type"] = "button";
-        button.Attributes["id"] = id + "-camera";
-        button.Attributes["data-ms-camera"] = id;
-        button.InnerHtml.AppendHtml(MsHtml.Icon("camera"));
-
-        var label = new TagBuilder("span");
-        label.InnerHtml.Append("Foto aufnehmen");
-        button.InnerHtml.AppendHtml(label);
-        return button;
-    }
-
     private IHtmlContent BuildLabel(string id, string text, bool required)
     {
         var label = new TagBuilder("label");
@@ -416,10 +403,128 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
 
         if (string.Equals(type, "file", StringComparison.Ordinal))
         {
-            return BuildFile(name, attributes);
+            return BuildUpload(BuildFile(name, attributes));
         }
 
-        return NativeValidation(BuildTextBox(name, type, attributes), Optional);
+        var textBox = NativeValidation(BuildTextBox(name, type, attributes), Optional);
+
+        return type switch
+        {
+            "date" or "time" => BuildPicker(type, textBox, required),
+            "number" => BuildStepper(textBox),
+            "password" => BuildPassword(id, textBox),
+            "search" => BuildSearch(textBox),
+            _ => textBox
+        };
+    }
+
+    /// <summary>
+    /// A date or a time is chosen in the picker of MatUi (FORM-15): the wrapper around the real input, which keeps
+    /// posting the invariant value (2026-10-21, 09:30) the model binder reads. Without the script it is a text field.
+    /// </summary>
+    private TagBuilder BuildPicker(string type, IHtmlContent input, bool required)
+    {
+        var picker = new TagBuilder("div");
+        picker.AddCssClass("mat-picker");
+        picker.Attributes["data-picker"] = type;
+
+        if (!string.IsNullOrWhiteSpace(Placeholder))
+        {
+            picker.Attributes["data-placeholder"] = Placeholder!;
+        }
+
+        if (!required && !ReadOnly && !Disabled)
+        {
+            picker.Attributes["data-clearable"] = "data-clearable";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Min))
+        {
+            picker.Attributes["data-min"] = Min!;
+        }
+
+        if (!string.IsNullOrWhiteSpace(Max))
+        {
+            picker.Attributes["data-max"] = Max!;
+        }
+
+        if (string.Equals(type, "time", StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(Step))
+        {
+            picker.Attributes["data-step"] = Step!;
+        }
+
+        picker.InnerHtml.AppendHtml(input);
+        return picker;
+    }
+
+    /// <summary>A number with a button for less and one for more (FORM-20); the unit is the suffix of the field.</summary>
+    private TagBuilder BuildStepper(IHtmlContent input)
+    {
+        var stepper = new TagBuilder("div");
+        stepper.AddCssClass("mat-stepper");
+        stepper.Attributes["data-stepper"] = "data-stepper";
+
+        if (!string.IsNullOrWhiteSpace(Suffix))
+        {
+            stepper.Attributes["data-unit"] = Suffix!;
+        }
+
+        stepper.InnerHtml.AppendHtml(input);
+        return stepper;
+    }
+
+    /// <summary>A password with the eye of MatUi that shows and hides it (data-password-toggle).</summary>
+    private static TagBuilder BuildPassword(string id, IHtmlContent input)
+    {
+        var wrap = new TagBuilder("div");
+        wrap.AddCssClass("mat-input-icon mat-input-icon--end");
+        wrap.InnerHtml.AppendHtml(input);
+
+        var toggle = new TagBuilder("button");
+        toggle.AddCssClass("mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm mat-input-icon__btn");
+        toggle.Attributes["type"] = "button";
+        toggle.Attributes["data-password-toggle"] = id;
+        toggle.Attributes["aria-pressed"] = "false";
+        toggle.Attributes["aria-label"] = "Passwort anzeigen";
+        toggle.Attributes["data-tip"] = "Anzeigen oder verbergen";
+        toggle.InnerHtml.AppendHtml(MsHtml.Icon("eye", "mat-toggle-on"));
+        toggle.InnerHtml.AppendHtml(MsHtml.Icon("eye-off", "mat-toggle-off"));
+        wrap.InnerHtml.AppendHtml(toggle);
+        return wrap;
+    }
+
+    /// <summary>A search field outside a toolbar: the magnifier in front of the text.</summary>
+    private static TagBuilder BuildSearch(IHtmlContent input)
+    {
+        var wrap = new TagBuilder("div");
+        wrap.AddCssClass("mat-input-icon");
+        wrap.InnerHtml.AppendHtml(MsHtml.Icon("search"));
+        wrap.InnerHtml.AppendHtml(input);
+        return wrap;
+    }
+
+    /// <summary>
+    /// The file upload of MatUi (FORM-21) around the real file input: a drop zone, the chosen file with a
+    /// thumbnail and a remove button, refusals in words. The input stays what the form posts.
+    /// </summary>
+    private TagBuilder BuildUpload(IHtmlContent input)
+    {
+        var upload = new TagBuilder("div");
+        upload.AddCssClass("mat-upload");
+        upload.Attributes["data-upload"] = "data-upload";
+
+        if (!string.IsNullOrWhiteSpace(MaxSize))
+        {
+            upload.Attributes["data-max-size"] = MaxSize!;
+        }
+
+        if (Paste)
+        {
+            upload.Attributes["data-paste"] = "data-paste";
+        }
+
+        upload.InnerHtml.AppendHtml(input);
+        return upload;
     }
 
     private Dictionary<string, object> BuildAttributes(string id, string type)
@@ -429,7 +534,8 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             "checkbox" => string.Empty,
             "select" => "mat-select",
             "textarea" => "mat-textarea",
-            "money" => "mat-input",
+            "date" or "time" => "mat-picker__input",
+            "file" => "mat-upload__input",
             _ => "mat-input"
         };
 
@@ -483,12 +589,20 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             attributes["pattern"] = Pattern!;
         }
 
-        if (!string.IsNullOrWhiteSpace(Min))
+        // A picker reads its limits from the wrapper (data-min / data-max), its input is a text field.
+        var isPicker = type is "date" or "time";
+
+        if (isPicker)
+        {
+            attributes["autocomplete"] = "off";
+        }
+
+        if (!isPicker && !string.IsNullOrWhiteSpace(Min))
         {
             attributes["min"] = Min!;
         }
 
-        if (!string.IsNullOrWhiteSpace(Max))
+        if (!isPicker && !string.IsNullOrWhiteSpace(Max))
         {
             attributes["max"] = Max!;
         }
@@ -523,7 +637,7 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
             attributes["autocomplete"] = "off";
             attributes["data-ms-money"] = "true";
         }
-        else if (!string.IsNullOrWhiteSpace(Step))
+        else if (!isPicker && !string.IsNullOrWhiteSpace(Step))
         {
             attributes["step"] = Step!;
         }
@@ -907,9 +1021,9 @@ public sealed class MsFieldTagHelper : MsTagHelperBase
         // typed on any locale/keyboard; site.js normalises it to an invariant dot.
         "money" => "text",
         "number" => "number",
+        // Date and time are the text input inside a MatUi picker; it holds the invariant value.
         "datetime" or "datetime-local" => "datetime-local",
-        "date" => "date",
-        "time" => "time",
+        "date" or "time" => "text",
         "email" => "email",
         "password" => "password",
         "tel" => "tel",

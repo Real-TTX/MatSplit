@@ -1,18 +1,17 @@
 /*
     MatSplit - receipt capture (Belegfoto)
     ---------------------------------------------------------------------------
-    Enhances every file input inside a [data-ms-receipt] container:
+    The field is the file upload of MatUi (.mat-upload, FORM-21) inside a [data-ms-receipt] field: the toolkit
+    draws the drop zone, the chosen file with its thumbnail and remove button, and refuses a wrong type or a file
+    above data-max-size in words. What is left here is what only MatSplit does:
 
-      * "Foto aufnehmen" button using getUserMedia with a live video preview,
-        automatic fallback to the plain file dialog (input capture="environment")
-        when the browser or the user denies camera access.
-      * Canvas compression of every selected or captured image: longest edge
-        1600 px, JPEG quality 0.8. Keeps the original file when compression
-        would not help (or when the image cannot be decoded, e.g. HEIC on
-        desktop browsers).
-      * Live thumbnail preview with a "Entfernen" button.
-      * Client side size check against data-ms-max-mb (AppConfig.MaxReceiptSizeMb),
-        so an oversized photo is rejected before it travels over the network.
+      * Canvas compression of every chosen image: longest edge 1600 px, JPEG at falling quality until
+        data-ms-target-kb is met. The smaller file replaces the original in the upload (MatUi.upload.add).
+        An image the upload refused only for its size is compressed too, and added when it fits then.
+        The original stays when compression does not help (or the image cannot be decoded, e.g. HEIC on
+        desktop browsers). data-ms-compress="false" turns it off.
+      * "Foto aufnehmen": the camera with a live picture in a MatUi dialog (getUserMedia); without a
+        camera, or when access is denied, the file dialog opens instead (input capture="environment").
 
     Dependency free, ES5 syntax, works offline - no CDN, no bundler.
     The upload itself is a normal multipart form post to the razor page handler.
@@ -22,7 +21,6 @@
 
     var MAX_EDGE = 1600;
     var JPEG_QUALITY = 0.8;
-    var DEFAULT_MAX_MB = 10;
     var DEFAULT_TARGET_KB = 500;
     // Progressively lower JPEG quality until the target size is met.
     var QUALITY_STEPS = [0.85, 0.7, 0.55, 0.45, 0.35];
@@ -32,18 +30,12 @@
         return Array.prototype.slice.call((scope || document).querySelectorAll(selector));
     }
 
-    function canReplaceFiles() {
-        return !!(window.DataTransfer && window.File && window.FileList);
+    function upload() {
+        return window.MatUi && window.MatUi.upload ? window.MatUi.upload : null;
     }
 
     function canCapture() {
-        return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && canReplaceFiles();
-    }
-
-    function maxBytes(field) {
-        var raw = parseInt(field.getAttribute('data-ms-max-mb'), 10);
-        var megabytes = isNaN(raw) || raw <= 0 ? DEFAULT_MAX_MB : raw;
-        return megabytes * 1024 * 1024;
+        return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.File && upload());
     }
 
     function targetBytes(field) {
@@ -54,16 +46,6 @@
 
     function compressEnabled(field) {
         return field.getAttribute('data-ms-compress') !== 'false';
-    }
-
-    function formatSize(bytes) {
-        if (bytes >= 1024 * 1024) {
-            return (bytes / (1024 * 1024)).toFixed(1).replace('.', ',') + ' MB';
-        }
-        if (bytes >= 1024) {
-            return Math.round(bytes / 1024) + ' KB';
-        }
-        return bytes + ' B';
     }
 
     function isImage(file) {
@@ -78,105 +60,10 @@
         return base + '.jpg';
     }
 
-    /* ------------------------------ messages ----------------------------- */
-
-    function errorTarget(field) {
-        return field.querySelector('.mat-error');
-    }
-
-    function setError(field, message) {
-        var target = errorTarget(field);
-        if (!target) {
-            return;
-        }
-        target.classList.remove('field-validation-valid');
-        target.classList.add('field-validation-error');
-        target.textContent = message;
-    }
-
-    function clearError(field) {
-        var target = errorTarget(field);
-        if (!target) {
-            return;
-        }
-        target.classList.add('field-validation-valid');
-        target.classList.remove('field-validation-error');
-        target.textContent = '';
-    }
-
-    /* ------------------------------ preview ------------------------------ */
-
-    function previewBox(field) {
-        var box = field.querySelector('[data-ms-receipt-preview]');
-        if (box) {
-            return box;
-        }
-
-        box = document.createElement('div');
-        box.className = 'mat-row';
-        box.setAttribute('data-ms-receipt-preview', 'true');
-        box.hidden = true;
-        field.appendChild(box);
-        return box;
-    }
-
-    function clearPreview(state) {
-        var box = previewBox(state.field);
-        if (state.previewUrl) {
-            URL.revokeObjectURL(state.previewUrl);
-            state.previewUrl = null;
-        }
-        box.innerHTML = '';
-        box.hidden = true;
-    }
-
-    function renderPreview(state, file) {
-        var box = previewBox(state.field);
-        clearPreview(state);
-
-        if (!file) {
-            return;
-        }
-
-        if (isImage(file) && window.URL && URL.createObjectURL) {
-            state.previewUrl = URL.createObjectURL(file);
-            var image = document.createElement('img');
-            image.setAttribute('width', '96');
-            image.setAttribute('loading', 'lazy');
-            image.setAttribute('decoding', 'async');
-            image.alt = 'Vorschau des Belegs';
-            image.src = state.previewUrl;
-            box.appendChild(image);
-        } else {
-            var chip = document.createElement('span');
-            chip.className = 'mat-tag';
-            chip.textContent = 'Datei';
-            box.appendChild(chip);
-        }
-
-        var caption = document.createElement('span');
-        caption.className = 'mat-muted';
-        caption.textContent = (file.name || 'Beleg') + ' · ' + formatSize(file.size);
-        box.appendChild(caption);
-
-        var remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'mat-btn mat-btn--ghost mat-btn--sm';
-        remove.textContent = 'Entfernen';
-        remove.addEventListener('click', function () {
-            state.input.value = '';
-            clearError(state.field);
-            clearPreview(state);
-        });
-        box.appendChild(remove);
-
-        box.hidden = false;
-    }
-
     /* ---------------------------- compression ---------------------------- */
 
     function compressImage(file, target, done) {
-        if (!isImage(file) || !canReplaceFiles() || !window.URL || !URL.createObjectURL) {
+        if (!isImage(file) || !window.URL || !URL.createObjectURL) {
             done(null);
             return;
         }
@@ -255,75 +142,47 @@
         image.src = url;
     }
 
-    function assignFile(input, file) {
-        if (!canReplaceFiles()) {
-            return false;
-        }
-
-        var transfer = new DataTransfer();
-        transfer.items.add(file);
-        input.files = transfer.files;
-        return true;
-    }
-
     /* ------------------------------ handling ----------------------------- */
 
-    function accept(state, file) {
-        if (file.size > maxBytes(state.field)) {
-            setError(state.field, 'Die Datei ist zu groß (' + formatSize(file.size)
-                + '). Erlaubt sind maximal ' + formatSize(maxBytes(state.field)) + '.');
-            state.input.value = '';
-            clearPreview(state);
-            return;
-        }
-
-        clearError(state.field);
-        renderPreview(state, file);
-    }
-
-    function handleSelection(state) {
-        var file = state.input.files && state.input.files.length > 0 ? state.input.files[0] : null;
-
-        if (!file) {
-            clearError(state.field);
-            clearPreview(state);
-            return;
-        }
-
+    // The upload holds one file: adding the smaller one replaces the original (source "api", so it is not compressed again).
+    function shrink(state, file) {
         if (!isImage(file) || !compressEnabled(state.field)) {
-            accept(state, file);
             return;
         }
 
         compressImage(file, targetBytes(state.field), function (compressed) {
-            if (compressed && assignFile(state.input, compressed)) {
-                accept(state, compressed);
-                return;
+            if (compressed) {
+                upload().add(state.wrap, [compressed]);
             }
-
-            accept(state, file);
         });
     }
 
     /* ------------------------------- camera ------------------------------ */
 
+    function button(kind, text, attribute) {
+        return '<button type="button" class="mat-btn mat-btn--' + kind + '" ' + attribute + '>' + text + '</button>';
+    }
+
     function openCamera(state) {
-        var overlay = document.createElement('div');
-        overlay.className = 'ms-camera';
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-label', 'Beleg aufnehmen');
-        overlay.innerHTML = '<div class="ms-camera__box">'
-            + '<video class="ms-camera__video" autoplay playsinline muted></video>'
-            + '<div class="ms-camera__actions">'
-            + '<button type="button" class="mat-btn mat-btn--primary" data-shoot>Aufnehmen</button>'
-            + '<button type="button" class="mat-btn mat-btn--secondary" data-flip>Kamera wechseln</button>'
-            + '<button type="button" class="mat-btn mat-btn--ghost" data-cancel>Abbrechen</button>'
+        var dialog = document.createElement('dialog');
+        dialog.className = 'mat-dialog ms-camera';
+        dialog.id = state.input.id + '-camera';
+        dialog.setAttribute('aria-labelledby', dialog.id + '-title');
+        dialog.setAttribute('data-static', '');
+        dialog.innerHTML = '<div class="mat-dialog__head">'
+            + '<h2 class="mat-dialog__title" id="' + dialog.id + '-title">Beleg aufnehmen</h2>'
+            + '<button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-dialog__close" data-dialog-close aria-label="Schließen">'
+            + '<svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#mat-i-x"></use></svg></button></div>'
+            + '<div class="mat-dialog__body"><video class="ms-camera__video" autoplay playsinline muted></video></div>'
+            + '<div class="mat-dialog__foot"><div class="mat-btn-row mat-btn-row--plain">'
+            + button('primary', 'Aufnehmen', 'data-shoot')
+            + button('secondary', 'Kamera wechseln', 'data-flip')
+            + button('secondary', 'Abbrechen', 'data-dialog-close')
             + '</div></div>';
 
-        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
 
-        var video = overlay.querySelector('video');
+        var video = dialog.querySelector('video');
         var stream = null;
         var facing = 'environment';
 
@@ -337,19 +196,13 @@
             stream = null;
         }
 
-        function close() {
+        // However the dialog closes (a button, Escape, the script), the camera goes off and the dialog goes away.
+        dialog.addEventListener('close', function () {
             stopStream();
-            document.removeEventListener('keydown', onKeyDown);
-            if (overlay.parentNode) {
-                overlay.parentNode.removeChild(overlay);
+            if (dialog.parentNode) {
+                dialog.parentNode.removeChild(dialog);
             }
-        }
-
-        function onKeyDown(event) {
-            if (event.key === 'Escape') {
-                close();
-            }
-        }
+        });
 
         function start() {
             stopStream();
@@ -359,20 +212,18 @@
                     video.srcObject = stream;
                 })
                 .catch(function () {
-                    close();
+                    window.MatUi.dialog.close(dialog);
                     // No camera permission: let the user pick a file instead.
                     state.input.click();
                 });
         }
 
-        overlay.querySelector('[data-cancel]').addEventListener('click', close);
-
-        overlay.querySelector('[data-flip]').addEventListener('click', function () {
+        dialog.querySelector('[data-flip]').addEventListener('click', function () {
             facing = facing === 'environment' ? 'user' : 'environment';
             start();
         });
 
-        overlay.querySelector('[data-shoot]').addEventListener('click', function () {
+        dialog.querySelector('[data-shoot]').addEventListener('click', function () {
             var sourceWidth = video.videoWidth || 1280;
             var sourceHeight = video.videoHeight || 960;
             var scale = Math.min(1, MAX_EDGE / Math.max(sourceWidth, sourceHeight));
@@ -385,40 +236,37 @@
             canvas.getContext('2d').drawImage(video, 0, 0, width, height);
 
             if (!canvas.toBlob) {
-                close();
+                window.MatUi.dialog.close(dialog);
                 state.input.click();
                 return;
             }
 
             canvas.toBlob(function (blob) {
-                close();
+                window.MatUi.dialog.close(dialog);
 
                 if (!blob) {
                     return;
                 }
 
-                var file = new File([blob], 'beleg-' + Date.now() + '.jpg', {
+                upload().add(state.wrap, [new File([blob], 'beleg-' + Date.now() + '.jpg', {
                     type: 'image/jpeg',
                     lastModified: Date.now()
-                });
-
-                if (assignFile(state.input, file)) {
-                    accept(state, file);
-                }
+                })]);
             }, 'image/jpeg', JPEG_QUALITY);
         });
 
-        document.addEventListener('keydown', onKeyDown);
+        window.MatUi.dialog.open(dialog);
         start();
     }
 
     function addCameraButton(state) {
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.id = state.input.id + '-capture';
-        button.className = 'mat-btn mat-btn--secondary mat-btn--sm ms-camera-button';
-        button.textContent = 'Foto aufnehmen';
-        button.addEventListener('click', function () {
+        var camera = document.createElement('button');
+        camera.type = 'button';
+        camera.id = state.input.id + '-capture';
+        camera.className = 'mat-btn mat-btn--secondary mat-btn--sm ms-camera-button';
+        camera.innerHTML = '<svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#ms-i-camera"></use></svg>';
+        camera.appendChild(document.createTextNode('Foto aufnehmen'));
+        camera.addEventListener('click', function () {
             if (!canCapture()) {
                 state.input.click();
                 return;
@@ -426,7 +274,7 @@
             openCamera(state);
         });
 
-        state.input.insertAdjacentElement('afterend', button);
+        state.wrap.insertAdjacentElement('afterend', camera);
     }
 
     /* -------------------------------- boot ------------------------------- */
@@ -436,21 +284,32 @@
             return;
         }
 
-        var input = field.querySelector('input[type="file"]');
-        if (!input) {
+        var wrap = field.querySelector('.mat-upload');
+        var input = wrap ? wrap.querySelector('input[type="file"]') : null;
+        if (!input || !upload()) {
             return;
         }
 
         field.setAttribute('data-ms-receipt-ready', 'true');
 
-        var state = {
-            field: field,
-            input: input,
-            previewUrl: null
-        };
+        var state = { field: field, wrap: wrap, input: input };
 
-        input.addEventListener('change', function () {
-            handleSelection(state);
+        wrap.addEventListener('mat:upload-change', function (event) {
+            if (event.detail.source === 'api') {
+                return;
+            }
+            event.detail.added.forEach(function (file) {
+                shrink(state, file);
+            });
+        });
+
+        // A photo straight from a phone camera is often above the limit; compressed it usually fits.
+        wrap.addEventListener('mat:upload-refused', function (event) {
+            event.detail.refused.forEach(function (entry) {
+                if (entry.reason === 'size') {
+                    shrink(state, entry.file);
+                }
+            });
         });
 
         addCameraButton(state);

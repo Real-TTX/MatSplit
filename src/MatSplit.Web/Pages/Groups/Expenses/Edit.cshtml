@@ -90,11 +90,11 @@
         {
             <hr class="ms-sep mat-field--full" />
             <ms-field id="ef-receipt" name="Receipt" type="file" label="Belegfoto" full-width="true"
-                      accept="image/*,application/pdf" capture="environment" data-ms-receipt="true"
-                      data-ms-max-mb="@Model.MaxReceiptSizeMb"
+                      accept="image/*,application/pdf" capture="environment" paste="true"
+                      max-size="@($"{Model.MaxReceiptSizeMb}MB")" data-ms-receipt="true"
                       data-ms-compress="@(Model.CompressReceipts ? "true" : "false")"
                       data-ms-target-kb="@Model.ReceiptTargetKb"
-                      hint="@($"Optional: Foto direkt mit der Kamera aufnehmen. Maximal {Model.MaxReceiptSizeMb} MB." + (Model.CompressReceipts ? $" Bilder werden vor dem Upload auf ca. {Model.ReceiptTargetKb} KB verkleinert." : string.Empty))"></ms-field>
+                      hint="@("Optional: Foto direkt mit der Kamera aufnehmen." + (Model.CompressReceipts ? $" Bilder werden vor dem Upload auf ca. {Model.ReceiptTargetKb} KB verkleinert." : string.Empty))"></ms-field>
         }
 
         <ms-field id="ef-id" for="Input.Id" type="hidden"></ms-field>

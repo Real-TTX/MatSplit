@@ -46,17 +46,6 @@ html[data-ms-banner="visible"] .mat-nav { padding-top: 0; }
 .mat-page { padding-bottom: calc(var(--mat-space-12) + var(--mat-safe-bottom)); }
 .mat-footer { padding-bottom: calc(var(--mat-space-4) + var(--mat-safe-bottom)); }
 
-/* iOS zooms into a field whose type is smaller than 16 px when it gets the focus, and does not zoom back. MatUi sets 15 px for
-   its fields; on a touch screen every field is 16 px (the control height of 44 px comes from the toolkit). */
-@media (pointer: coarse) {
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
-  select,
-  textarea,
-  body .mat-input,
-  body .mat-select,
-  body .mat-textarea { font-size: max(16px, 1em); }
-}
-
 /* ---- Pages without a menu (sign-in, invitation, error, the read-only link) ---------------------------------------
    The same rule as the shell: the page is pinned to the screen and scrolls on its own; the card is centred in a column. */
 .ms-auth {
@@ -94,6 +83,11 @@ html[data-ms-banner="visible"] .mat-nav { padding-top: 0; }
 .ms-list-title .mat-icon { color: var(--mat-accent-text); }
 .ms-static { margin: 0; min-height: var(--mat-control-h); display: flex; align-items: center; overflow-wrap: anywhere; }
 .ms-camera-button { align-self: flex-start; }
+
+/* MatUi 0.7.0 keeps the room of a leading icon in a field whose only icon is the button at its end (the eye of a
+   password), so the text starts too far right. Until the toolkit fixes it: a field without a leading icon starts
+   where every field does. */
+.mat-input-icon--end:not(:has(> .mat-icon)) > .mat-input { padding-left: var(--mat-input-pad-x, var(--mat-space-3)); }
 
 /* an amount: debts are red, a credit green when the page asks for the sign; plain amounts keep the text colour */
 .ms-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -224,31 +218,8 @@ html[data-ms-banner="visible"] .ms-offline-banner { transform: none; }
   .ms-pwa-install { display: none; }
 }
 
-/* ---- Camera for the receipt: full screen, above everything, clear of the notch and the home indicator ---------------- */
-.ms-camera {
-  position: fixed;
-  inset: 0;
-  z-index: var(--mat-z-dialog);
-  display: grid;
-  place-items: center;
-  padding: calc(var(--mat-space-4) + var(--mat-safe-top)) calc(var(--mat-space-4) + var(--mat-safe-right)) calc(var(--mat-space-4) + var(--mat-safe-bottom)) calc(var(--mat-space-4) + var(--mat-safe-left));
-  background: var(--mat-overlay);
-}
-
-.ms-camera__box {
-  width: min(640px, 100%);
-  max-height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: var(--mat-space-3);
-  padding: var(--mat-space-3);
-  background: var(--mat-surface);
-  border: 1px solid var(--mat-border);
-  border-radius: var(--mat-radius-lg);
-}
-
-.ms-camera__video { width: 100%; min-height: 0; max-height: 70dvh; object-fit: cover; border-radius: var(--mat-radius); background: var(--mat-surface-3); }
-.ms-camera__actions { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); }
+/* ---- Camera for the receipt: a dialog of MatUi (receipt-capture.js), the live picture fills its body ---------------- */
+.ms-camera__video { display: block; width: 100%; max-height: 60dvh; object-fit: cover; border-radius: var(--mat-radius); background: var(--mat-surface-3); }
 
 /* ---- Group list (Gruppen): a card that is a link per group ------------------------------------------------------- */
 .ms-grouplist { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
@@ -298,11 +269,12 @@ html[data-ms-banner="visible"] .ms-offline-banner { transform: none; }
 .ef-section { display: flex; align-items: center; gap: var(--mat-space-2); margin: var(--mat-space-1) 0 0; font-size: var(--mat-fs-md); font-weight: 700; }
 .ef-section .mat-icon { color: var(--mat-accent-text); }
 
-.ef-share-row { display: flex; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-2) 0; }
+.ef-share-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-2) var(--mat-space-3); padding: var(--mat-space-2) 0; }
 .ef-share-row + .ef-share-row { border-top: 1px solid var(--mat-border); }
 .ef-share-row > .mat-field { gap: 0; }
-.ef-share-row > .mat-field:has(.mat-check) { flex: 1 1 auto; min-width: 0; }
-.ef-share-row > .mat-field:has([name$=".ShareFactor"]) { flex: none; width: 92px; }
+.ef-share-row > .mat-field:has(.mat-check) { flex: 1 1 8rem; min-width: 0; }
+/* the stepper of MatUi: two buttons of 44 px and the number between them */
+.ef-share-row > .mat-field:has([name$=".ShareFactor"]) { flex: none; width: 9.5rem; }
 .ef-share-row > .mat-field:has([name$=".Amount"]) { flex: none; width: 132px; }
 .ef-share-row .mat-check { min-height: 0; align-items: center; }
 .ef-share-row .mat-error:empty { display: none; }
@@ -317,7 +289,7 @@ html[data-ms-banner="visible"] .ms-offline-banner { transform: none; }
 .ef-share-row > .ef-apply[hidden] { display: none; }
 
 /* the share of a member in "Individuelle Anteile", worked out while typing */
-.ef-share-preview { flex: none; color: var(--mat-text-muted); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ef-share-preview { flex: none; margin-left: auto; color: var(--mat-text-muted); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* "Feste Beträge": what is still to be distributed, with the word (colour is never the only signal) */
 .ef-remaining { padding: var(--mat-space-2) var(--mat-space-3); border-radius: var(--mat-radius); background: var(--mat-surface-3); color: var(--mat-text-muted); font-size: var(--mat-fs-sm); font-weight: 700; }

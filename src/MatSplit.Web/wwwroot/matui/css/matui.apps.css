@@ -1,0 +1,52 @@
+/* ==========================================================================
+   MatUi · apps
+   The colour of each Mat app: ONE custom property on <html data-app="...">. Everything else is derived (see matui.tokens.css).
+
+   - --mat-app-accent      the app's identity colour (white text on it passes AA, or --mat-app-on-accent says otherwise)
+   - --mat-app-on-accent   text on a filled accent surface, only when it is not white
+   - --mat-app-accent-text link / text colour on a surface, only when the derived one would not pass AA
+   MatDesign checks every value here against the app registry and against WCAG AA (unit tests).
+
+   Below the apps: the accent presets a USER can pick in the settings of an app (<html data-accent="ocean">). A preset wins over the
+   app colour, because the user chose it, and it resets the app's on-accent and link overrides.
+   ========================================================================== */
+
+[data-app="mattiverse"]  { --mat-app-accent: #6164ec; }
+[data-app="matdock"]     { --mat-app-accent: #1d78be; }
+[data-app="matos"]       { --mat-app-accent: #8558ec; }
+[data-app="matcad"]      { --mat-app-accent: #2f6feb; }
+[data-app="matddns"]     { --mat-app-accent: #204db6; }
+[data-app="matfile"]     { --mat-app-accent: #3472d8; }
+[data-app="matmail"]     { --mat-app-accent: #475569; }
+[data-app="matpaper"]    { --mat-app-accent: #268538; }
+[data-app="matplay"]     { --mat-app-accent: #00819b; }
+[data-app="matsplit"]    { --mat-app-accent: #bf5610; }
+[data-app="matmon"]      { --mat-app-accent: #295cff; }
+[data-app="matcms"]      { --mat-app-accent: #2563eb; }
+[data-app="matdo"]       { --mat-app-accent: #8300bc; }
+[data-app="matstat"]     { --mat-app-accent: #2563eb; }
+[data-app="matbu"]       { --mat-app-accent: #0b7f8a; }
+[data-app="mattrakr"]    { --mat-app-accent: #6c5ce7; }
+[data-app="matlan"]      { --mat-app-accent: #418251; }
+[data-app="matarchive"]  { --mat-app-accent: #4fd1c5; --mat-app-on-accent: #0b1020; --mat-app-accent-text: #1d7f77; }
+[data-app="msbi"]        { --mat-app-accent: #6d5df6; }
+[data-app="matbiz"]      { --mat-app-accent: #1b6ec2; }
+[data-app="matgate"]     { --mat-app-accent: #0a7d57; }
+[data-app="matdesign"]   { --mat-app-accent: #d6336c; }
+[data-app="matidentity"] { --mat-app-accent: #a21a50; }
+[data-app="matsmtp"]     { --mat-app-accent: #f5b800; --mat-app-on-accent: #0b1020; --mat-app-accent-text: #8a6100; }
+
+/* ---- A free choice of colour: matui.js (MatUi.accent.custom) writes --mat-custom-accent and --mat-custom-on-accent ---- */
+[data-accent="custom"] { --mat-app-accent: var(--mat-custom-accent, #5b5fe6); --mat-app-on-accent: var(--mat-custom-on-accent, #ffffff); --mat-app-accent-text: initial; }
+
+/* ---- Accent presets (user choice) ---- */
+[data-accent="purple"]   { --mat-app-accent: #8300bc; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="indigo"]   { --mat-app-accent: #3f51b5; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="ocean"]    { --mat-app-accent: #1a73e8; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="teal"]     { --mat-app-accent: #008578; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="forest"]   { --mat-app-accent: #1c863a; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="gold"]     { --mat-app-accent: #966d07; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="sunset"]   { --mat-app-accent: #ca4c09; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="red"]      { --mat-app-accent: #cb4538; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="berry"]    { --mat-app-accent: #c2185b; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }
+[data-accent="graphite"] { --mat-app-accent: #546e7a; --mat-app-on-accent: initial; --mat-app-accent-text: initial; }

@@ -1,0 +1,96 @@
+/* ==========================================================================
+   MatUi · dialogs
+   Every question, message and input is a dialog (never window.confirm / alert / prompt), and the search, filter and
+   sort of a list are dialogs too (DIALOG-01 .. DIALOG-05).
+   On a phone EVERY dialog is full screen, with the close button (X) at the top right (DIALOG-03).
+   Built on the native <dialog>, opened with showModal() by matui.js.
+   ========================================================================== */
+
+/* @prop dialog | --mat-dialog-radius | length | var(--mat-radius-lg) | Corner radius of a dialog and of a panel from the side (on a phone every dialog fills the screen and has none). */
+/* @prop dialog | --mat-dialog-width | length | 560px | Width of a dialog of the default size (the small, large and extra large sizes keep their own; never wider than the screen). */
+/* @prop dialog | --mat-dialog-border-width | length | 1px | Width of the line around a dialog. */
+/* @prop dialog | --mat-dialog-pad | length | var(--mat-space-6) | Space between the edge of a dialog and its body, at the sides of its foot and at the left of its head. */
+dialog.mat-dialog {
+  padding: 0;
+  width: min(var(--mat-dialog-width, 560px), calc(100vw - 2 * var(--mat-space-4)));
+  max-width: 100vw;
+  max-height: min(88dvh, 780px);
+  color: var(--mat-text);
+  background: var(--mat-surface);
+  border: var(--mat-dialog-border-width, 1px) solid var(--mat-border-strong);
+  border-radius: var(--mat-dialog-radius, var(--mat-radius-lg));
+  box-shadow: var(--mat-shadow-3);
+  overflow: hidden;
+}
+dialog.mat-dialog[open] { display: flex; flex-direction: column; animation: mat-dialog-in var(--mat-dur-slow) var(--mat-ease); }
+dialog.mat-dialog::backdrop { background: var(--mat-overlay); }
+@keyframes mat-dialog-in { from { opacity: 0; transform: translateY(6px); } }
+
+dialog.mat-dialog--sm { width: min(420px, calc(100vw - 2 * var(--mat-space-4))); }
+dialog.mat-dialog--lg { width: min(760px, calc(100vw - 2 * var(--mat-space-4))); }
+dialog.mat-dialog--xl { width: min(980px, calc(100vw - 2 * var(--mat-space-4))); }
+
+/* The dialog may be a form (search, filter, sort): then the form is the flex column. */
+.mat-dialog__form { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+
+.mat-dialog__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--mat-space-3);
+  padding: var(--mat-space-4) var(--mat-space-4) var(--mat-space-4) var(--mat-dialog-pad, var(--mat-space-6));
+  border-bottom: 1px solid var(--mat-border);
+}
+.mat-dialog__head > .mat-icon { font-size: 1.25rem; color: var(--mat-accent-text); }
+.mat-dialog__title { flex: 1 1 auto; min-width: 0; font-size: var(--mat-fs-lg); font-weight: 650; margin: 0; }
+/* The X: always the last item of the head, so it sits at the top right. */
+.mat-dialog__close { flex: none; margin-left: auto; }
+
+.mat-dialog__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--mat-dialog-pad, var(--mat-space-6)); overscroll-behavior: contain; }
+.mat-dialog__body > p { color: var(--mat-text); }
+
+.mat-dialog__foot { flex: none; padding: var(--mat-space-4) var(--mat-dialog-pad, var(--mat-space-6)); border-top: 1px solid var(--mat-border); background: var(--mat-surface-2); }
+.mat-dialog__foot .mat-btn-row { border-top: 0; padding-top: 0; margin-top: 0; }
+
+/* A radio list for the sort dialog: one row per field, direction next to it. */
+.mat-options { display: flex; flex-direction: column; gap: var(--mat-space-1); }
+.mat-option { display: flex; align-items: center; gap: var(--mat-space-3); min-height: var(--mat-control-h); padding: 0 var(--mat-space-3); border-radius: var(--mat-radius-sm); cursor: pointer; }
+.mat-option:hover { background: var(--mat-surface-3); }
+.mat-option input { accent-color: var(--mat-accent); width: var(--mat-check-size, 18px); height: var(--mat-check-size, 18px); }
+.mat-option:has(input:checked) { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); font-weight: 600; }
+
+/* A panel from the side (the off-canvas of other kits): the same dialog, fixed to the right or the left edge. On a phone it is full screen like every dialog. */
+dialog.mat-dialog--end, dialog.mat-dialog--start {
+  width: min(440px, 100vw);
+  height: 100dvh; max-height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  border-width: 0 0 0 1px;
+}
+dialog.mat-dialog--end { margin-left: auto; border-radius: var(--mat-dialog-radius, var(--mat-radius-lg)) 0 0 var(--mat-dialog-radius, var(--mat-radius-lg)); }
+dialog.mat-dialog--start { margin-right: auto; border-width: 0 1px 0 0; border-radius: 0 var(--mat-dialog-radius, var(--mat-radius-lg)) var(--mat-dialog-radius, var(--mat-radius-lg)) 0; }
+/* The [open] rule of the centred dialog sets the animation, so the panel's own animation is set on [open] as well (later, same specificity). */
+dialog.mat-dialog--end[open] { animation-name: mat-panel-in-end; }
+dialog.mat-dialog--start[open] { animation-name: mat-panel-in-start; }
+@keyframes mat-panel-in-end { from { transform: translateX(24px); opacity: 0; } }
+@keyframes mat-panel-in-start { from { transform: translateX(-24px); opacity: 0; } }
+
+/* ---- Phone: every dialog is a full-screen sheet with the X at the top right ---- */
+@media (max-width: 640px) {
+  dialog.mat-dialog, dialog.mat-dialog--sm, dialog.mat-dialog--lg, dialog.mat-dialog--xl {
+    width: 100%; height: 100%;
+    max-width: none; max-height: none;
+    margin: 0; inset: 0;
+    border: 0; border-radius: 0;
+  }
+  dialog.mat-dialog[open] { animation: mat-sheet-in var(--mat-dur-slow) var(--mat-ease); }
+  .mat-dialog__head {
+    padding-top: calc(var(--mat-space-3) + var(--mat-safe-top));
+    padding-left: calc(var(--mat-space-4) + var(--mat-safe-left));
+    padding-right: calc(var(--mat-space-3) + var(--mat-safe-right));
+  }
+  .mat-dialog__body { padding: var(--mat-space-5) calc(var(--mat-space-4) + var(--mat-safe-left)); }
+  .mat-dialog__foot { padding-bottom: calc(var(--mat-space-4) + var(--mat-safe-bottom)); padding-inline: calc(var(--mat-space-4) + var(--mat-safe-left)); }
+  .mat-dialog__foot .mat-btn-row { flex-direction: row; }
+}
+@keyframes mat-sheet-in { from { transform: translateY(24px); opacity: 0; } }

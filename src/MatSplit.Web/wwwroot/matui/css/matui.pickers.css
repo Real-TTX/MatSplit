@@ -1,0 +1,490 @@
+/* ==========================================================================
+   MatUi · pickers (FORM-15)
+   A picker is a field that is filled in a panel: a select with pictures, descriptions and tags, a date or a period, a time or a time range,
+   a colour. The input inside (.mat-picker__input) holds the value that is posted; matui.js adds the button that shows it and the panel.
+   On a phone the panel is a full-screen sheet with the X at the top right, like every dialog.
+   ========================================================================== */
+
+.mat-picker { position: relative; display: block; min-width: 0; }
+/* The real input stays in the form (it is what is validated and posted) but is not drawn; it lies over the button so that a browser message points at it. */
+.mat-picker__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+
+/* ---- The button that looks like a field ---- */
+.mat-picker__trigger { display: flex; align-items: center; justify-content: space-between; gap: var(--mat-space-3); text-align: left; cursor: pointer; font: inherit; }
+.mat-picker__trigger > .mat-icon { flex: none; color: var(--mat-text-muted); }
+.mat-picker__trigger[aria-expanded="true"] { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); }
+.mat-picker__trigger:focus-visible { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); outline: none; }
+.mat-picker__value { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--mat-space-2); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mat-picker__value.is-placeholder { color: var(--mat-text-faint); }
+.mat-picker__trigger.is-clearable .mat-picker__value { padding-right: 30px; }
+.mat-picker__clear {
+  position: absolute; top: 50%; right: 36px; transform: translateY(-50%);
+  display: grid; place-items: center; width: 28px; height: 28px;
+  border: 0; border-radius: 50%; background: transparent; color: var(--mat-text-muted); cursor: pointer;
+}
+.mat-picker__clear:hover { background: var(--mat-surface-3); color: var(--mat-text); }
+.mat-picker__clear:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-picker__clear[hidden] { display: none; }
+.mat-picker--sm .mat-picker__trigger { min-height: var(--mat-control-h-sm); font-size: var(--mat-fs-sm); padding-inline: var(--mat-space-2); }
+.mat-picker--lg .mat-picker__trigger { min-height: var(--mat-control-h-lg); font-size: var(--mat-fs-lg); padding-inline: var(--mat-space-4); }
+.mat-picker__swatch { flex: none; width: 18px; height: 18px; border-radius: var(--mat-radius-xs); background: var(--mat-swatch, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 22%, transparent); }
+
+/* ---- The panel: next to the button on a wide screen, the whole screen on a phone ---- */
+.mat-picker__panel {
+  position: fixed; z-index: var(--mat-z-menu);
+  display: flex; flex-direction: column;
+  min-width: 280px; max-width: min(96vw, 720px); max-height: calc(100dvh - 16px);
+  background: var(--mat-surface); color: var(--mat-text);
+  border: 1px solid var(--mat-border-strong); border-radius: var(--mat-radius-lg); box-shadow: var(--mat-shadow-3);
+  /* the panel only fades in: a panel that also moves and grows (as a menu does) looks as if it first appeared at the wrong place and then slid into its own */
+  animation: mat-picker-in var(--mat-dur-fast) var(--mat-ease);
+  transform-origin: top left;
+}
+@keyframes mat-picker-in { from { opacity: 0; } }
+.mat-picker__panel[hidden] { display: none; }
+.mat-picker__head { display: none; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-3) var(--mat-space-3) var(--mat-space-3) var(--mat-space-4); border-bottom: 1px solid var(--mat-border); flex: none; }
+.mat-picker__heading { flex: 1 1 auto; min-width: 0; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-picker__body { padding: var(--mat-space-3); overflow: auto; min-height: 0; flex: 1 1 auto; overscroll-behavior: contain; }
+.mat-picker__foot { display: flex; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-3); border-top: 1px solid var(--mat-border); flex: none; }
+.mat-picker__foot[hidden] { display: none; }
+.mat-picker__spacer { flex: 1 1 auto; }
+.mat-picker__status { min-height: 1.4em; font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.mat-picker__status[hidden] { display: none; }
+.mat-picker__chips { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); }
+.mat-picker__chips[hidden] { display: none; }
+
+@media (max-width: 640px) {
+  .mat-picker__panel {
+    inset: 0; width: 100%; height: 100%; min-width: 0; max-width: none; max-height: none;
+    border: 0; border-radius: 0; box-shadow: none;
+    padding-top: var(--mat-safe-top); padding-bottom: var(--mat-safe-bottom);
+    animation: none;
+  }
+  .mat-picker__head { display: flex; }
+  .mat-picker__body { padding: var(--mat-space-4); }
+  .mat-picker__foot { padding: var(--mat-space-4); }
+}
+
+/* ---- Select with a picture, a title, a description and tags ---- */
+.mat-picker__panel--list { width: max-content; }
+.mat-picker__search { position: relative; padding: var(--mat-space-2) var(--mat-space-2) 0; }
+.mat-picker__search > .mat-icon { position: absolute; left: calc(var(--mat-space-2) + var(--mat-space-3)); top: calc(var(--mat-space-2) + (var(--mat-control-h) - 1.25em) / 2); color: var(--mat-text-muted); pointer-events: none; }
+.mat-picker__search > .mat-input { padding-left: calc(var(--mat-space-3) + 1.75em); }
+.mat-picker__panel--list .mat-picker__body { padding: 0; display: flex; flex-direction: column; }
+.mat-picker__options { display: flex; flex-direction: column; gap: 2px; padding: var(--mat-space-2); overflow: auto; max-height: min(360px, 55dvh); }
+.mat-picker__options[hidden] { display: none; }
+.mat-picker__option {
+  position: relative; display: flex; align-items: center; gap: var(--mat-space-3);
+  width: 100%; padding: var(--mat-space-2) var(--mat-space-3);
+  border: 0; border-radius: var(--mat-radius-sm); background: transparent; color: var(--mat-text);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.mat-picker__option[hidden] { display: none; }
+.mat-picker__option:hover, .mat-picker__option:focus-visible { background: var(--mat-surface-3); outline: none; }
+.mat-picker__option:focus-visible { box-shadow: var(--mat-focus-ring); }
+.mat-picker__option[aria-selected="true"] { background: var(--mat-accent-soft-strong); }
+.mat-picker__option:disabled { opacity: .5; cursor: not-allowed; }
+.mat-picker__img {
+  flex: none; display: grid; place-items: center; width: 44px; height: 44px;
+  border-radius: var(--mat-radius-sm); object-fit: cover; background: var(--mat-surface-3); color: var(--mat-text-muted);
+}
+.mat-picker__value .mat-picker__img { width: 24px; height: 24px; border-radius: var(--mat-radius-xs); }
+.mat-picker__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mat-picker__name { font-weight: 650; }
+.mat-picker__desc { font-size: var(--mat-fs-sm); color: var(--mat-text-muted); line-height: 1.4; }
+.mat-picker__tags { display: flex; flex-wrap: wrap; gap: var(--mat-space-1); margin-top: 2px; }
+.mat-picker__check { flex: none; display: grid; place-items: center; width: 22px; height: 22px; color: var(--mat-accent-text); visibility: hidden; }
+.mat-picker__option[aria-selected="true"] .mat-picker__check { visibility: visible; }
+/* Several choices: a box in front of every option, filled when it is chosen. */
+.mat-picker--multiple .mat-picker__check { order: -1; visibility: visible; width: 20px; height: 20px; border: 1.5px solid var(--mat-border-strong); border-radius: var(--mat-radius-xs); background: var(--mat-surface); color: transparent; }
+.mat-picker--multiple .mat-picker__option[aria-selected="true"] .mat-picker__check { background: var(--mat-accent); border-color: var(--mat-accent); color: var(--mat-on-accent); }
+/* "Select all" (data-select-all): the first row above the list, with the box in three states (all, some or none of the options that are shown are chosen). */
+.mat-picker__all {
+  display: flex; align-items: center; gap: var(--mat-space-3);
+  margin: var(--mat-space-2) var(--mat-space-2) 0; padding: var(--mat-space-2) var(--mat-space-3);
+  border: 0; border-radius: var(--mat-radius-sm); background: transparent; color: var(--mat-text);
+  font: inherit; font-weight: 650; text-align: left; cursor: pointer;
+}
+.mat-picker__all[hidden] { display: none; }
+.mat-picker__all:hover, .mat-picker__all:focus-visible { background: var(--mat-surface-3); outline: none; }
+.mat-picker__all:focus-visible { box-shadow: var(--mat-focus-ring); }
+.mat-picker__all + .mat-picker__options { margin-top: var(--mat-space-2); border-top: 1px solid var(--mat-border); }
+.mat-picker__all[aria-checked="true"] .mat-picker__check, .mat-picker__all[aria-checked="mixed"] .mat-picker__check { background: var(--mat-accent); border-color: var(--mat-accent); color: var(--mat-on-accent); }
+.mat-picker__all[aria-checked="mixed"] .mat-picker__check > .mat-icon { display: none; }
+.mat-picker__all[aria-checked="mixed"] .mat-picker__check::after { content: ""; width: 10px; height: 2px; border-radius: 1px; background: currentColor; }
+.mat-picker__empty { padding: var(--mat-space-5) var(--mat-space-4); text-align: center; color: var(--mat-text-muted); }
+.mat-picker__empty[hidden] { display: none; }
+@media (max-width: 640px) {
+  .mat-picker__panel--list { width: 100%; }
+  .mat-picker__panel--list .mat-picker__body { padding: 0; }
+  .mat-picker__options { max-height: none; flex: 1 1 auto; padding: var(--mat-space-3); }
+  .mat-picker__option { padding: var(--mat-space-3); }
+  .mat-picker__all { margin: var(--mat-space-3) var(--mat-space-3) 0; padding: var(--mat-space-3); }
+  .mat-picker__img { width: 52px; height: 52px; }
+  .mat-picker__search { padding: var(--mat-space-3) var(--mat-space-3) 0; }
+  .mat-picker__search > .mat-icon { left: calc(var(--mat-space-3) + var(--mat-space-3)); top: calc(var(--mat-space-3) + (var(--mat-control-h) - 1.25em) / 2); }
+}
+
+/* ---- Select: create what is missing, and suggestions (FORM-16) ---- */
+/* "Create <text>" is the first row of the list, a suggested name another: the plus where a picture would be, the words in the colour of a link. While the request runs the row is busy
+   (aria-busy) and a ring turns where the plus was. A message under the search field says why it did not work. */
+.mat-picker__create, .mat-picker__option--new { color: var(--mat-accent-text); }
+.mat-picker__create .mat-picker__name, .mat-picker__option--new .mat-picker__name { font-weight: 650; }
+.mat-picker__create[hidden] { display: none; }
+.mat-picker__plus { flex: none; display: grid; place-items: center; width: 22px; height: 22px; }
+.mat-picker__option.is-busy { cursor: progress; opacity: .75; }
+.mat-picker__option.is-busy .mat-picker__plus > .mat-icon { display: none; }
+.mat-picker__option.is-busy .mat-picker__plus::after { content: ""; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: mat-spin .7s linear infinite; }
+.mat-picker__create-msg { margin: 0; padding: var(--mat-space-1) var(--mat-space-4) var(--mat-space-2); color: var(--mat-danger-text); }
+.mat-picker__create-msg[hidden] { display: none; }
+/* Suggestions: a group with its heading above the whole list, which has the heading "All". The closed button counts them in the colour of a link. */
+.mat-picker__group { display: flex; flex-direction: column; gap: 2px; }
+.mat-picker__group[hidden] { display: none; }
+.mat-picker__group-head { padding: var(--mat-space-2) var(--mat-space-3) var(--mat-space-1); font-size: var(--mat-fs-sm); font-weight: 650; color: var(--mat-text-muted); }
+.mat-picker__group-head--all { margin-top: var(--mat-space-2); }
+.mat-picker__group-head[hidden] { display: none; }
+.mat-picker__value.is-suggest { color: var(--mat-accent-text); }
+/* An option with a colour (data-colour, COLOR-10) has the dot before its name; the closed field shows it too. */
+.mat-picker__option[data-colour].is-coloured::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--mat-swatch); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 35%, transparent); }
+
+/* ---- Calendar: a date, a period ---- */
+.mat-cal { display: flex; flex-direction: column; gap: var(--mat-space-3); min-width: 0; }
+.mat-cal__months { display: flex; gap: var(--mat-space-6); }
+.mat-cal__month { flex: 1 1 0; min-width: 252px; }
+.mat-cal__head { display: flex; align-items: center; justify-content: space-between; gap: var(--mat-space-2); min-height: 40px; }
+.mat-cal__title { flex: 1 1 auto; text-align: center; font-weight: 650; text-transform: capitalize; }
+.mat-cal__nav-gap { flex: none; width: var(--mat-control-h-sm); }
+.mat-cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px; }
+.mat-cal__row { display: contents; }
+.mat-cal__dow { padding: var(--mat-space-2) 0; text-align: center; font-size: var(--mat-fs-xs); font-weight: 600; color: var(--mat-text-muted); }
+.mat-cal__day {
+  height: 38px; min-width: 0; padding: 0;
+  border: 1.5px solid transparent; border-radius: var(--mat-radius-sm);
+  background: transparent; color: var(--mat-text); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.mat-cal__day:hover:not(:disabled) { background: var(--mat-accent-soft-strong); }
+.mat-cal__day:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-cal__day.is-today { border-color: var(--mat-accent); }
+.mat-cal__day.is-in-range { background: var(--mat-accent-soft-strong); border-radius: 0; }
+.mat-cal__day.is-selected, .mat-cal__day.is-selected:hover:not(:disabled) { background: var(--mat-accent); color: var(--mat-on-accent); font-weight: 650; }
+.mat-cal__day.is-range-start { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.mat-cal__day.is-range-end { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.mat-cal__day:disabled { color: var(--mat-text-faint); cursor: not-allowed; }
+.mat-cal__tools { display: flex; align-items: center; gap: var(--mat-space-2); }
+@media (max-width: 640px) {
+  .mat-cal__month { min-width: 0; }
+  .mat-cal__day { height: 44px; }
+  .mat-cal .mat-cal__pick { min-height: 20rem; }
+}
+
+/* ---- Time: columns of hours and minutes, and a field to type in ---- */
+.mat-time { display: flex; flex-direction: column; gap: var(--mat-space-3); min-width: 0; }
+.mat-time__entry { text-align: center; font-family: var(--mat-mono); max-width: 9rem; }
+.mat-time__cols { display: flex; gap: var(--mat-space-2); }
+.mat-timecol {
+  position: relative; flex: 1 1 0; min-width: 64px; max-height: 224px; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 2px; padding: 2px;
+  border: 1px solid var(--mat-border); border-radius: var(--mat-radius);
+}
+.mat-timecol__item {
+  flex: none; height: 36px; padding: 0 var(--mat-space-2);
+  border: 0; border-radius: var(--mat-radius-sm); background: transparent; color: var(--mat-text);
+  font: inherit; font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.mat-timecol__item:hover { background: var(--mat-accent-soft-strong); }
+.mat-timecol__item:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-timecol__item[aria-selected="true"] { background: var(--mat-accent); color: var(--mat-on-accent); font-weight: 650; }
+@media (max-width: 640px) {
+  .mat-timecol { max-height: min(40dvh, 320px); }
+  .mat-timecol__item { height: 44px; }
+}
+
+/* ---- Colour: swatches, then the free choice ---- */
+.mat-colour { display: flex; flex-direction: column; gap: var(--mat-space-3); min-width: 0; }
+.mat-colour__swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(28px, 1fr)); gap: var(--mat-space-2); }
+.mat-colour__swatch {
+  position: relative; display: grid; place-items: center; aspect-ratio: 1; min-width: 0; padding: 0;
+  border: 0; border-radius: var(--mat-radius-sm); background: var(--mat-swatch); color: var(--mat-swatch-on); cursor: pointer;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 20%, transparent);
+}
+.mat-colour__swatch > .mat-icon { opacity: 0; }
+.mat-colour__swatch[aria-pressed="true"] > .mat-icon { opacity: 1; }
+.mat-colour__swatch:hover { transform: scale(1.06); }
+.mat-colour__swatch:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--mat-surface), 0 0 0 4px var(--mat-text); }
+.mat-colour__area {
+  position: relative; height: 132px; border-radius: var(--mat-radius); cursor: crosshair; touch-action: none;
+  background: linear-gradient(to top, var(--mat-picker-dark), transparent), linear-gradient(to right, var(--mat-picker-light), var(--mat-hue));
+}
+.mat-colour__area:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-colour__thumb {
+  position: absolute; left: var(--mat-x); top: var(--mat-y); width: 18px; height: 18px; margin: -9px 0 0 -9px;
+  border: 2px solid var(--mat-picker-light); border-radius: 50%; pointer-events: none;
+  box-shadow: 0 0 0 1px var(--mat-picker-dark), var(--mat-shadow-1);
+}
+.mat-colour__hue { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; margin: 0; border-radius: var(--mat-radius-pill); background: var(--mat-picker-hues); cursor: pointer; }
+.mat-colour__hue::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid var(--mat-picker-light); border-radius: 50%; background: var(--mat-hue); box-shadow: 0 0 0 1px var(--mat-picker-dark), var(--mat-shadow-1); }
+.mat-colour__hue::-moz-range-thumb { width: 16px; height: 16px; border: 2px solid var(--mat-picker-light); border-radius: 50%; background: var(--mat-hue); box-shadow: 0 0 0 1px var(--mat-picker-dark), var(--mat-shadow-1); }
+.mat-colour__hue:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-colour__row { display: flex; align-items: center; gap: var(--mat-space-3); }
+.mat-colour__preview { flex: none; width: 44px; height: var(--mat-control-h); border-radius: var(--mat-radius-sm); background: var(--mat-swatch); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 22%, transparent); }
+.mat-colour__hex { max-width: 9rem; font-family: var(--mat-mono); text-transform: uppercase; }
+.mat-colour__contrast { display: flex; align-items: center; gap: var(--mat-space-2); font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.mat-colour__sample { flex: none; display: grid; place-items: center; width: 34px; height: 26px; border-radius: var(--mat-radius-xs); background: var(--mat-swatch); color: var(--mat-swatch-on); font-weight: 650; font-size: var(--mat-fs-sm); }
+@media (max-width: 640px) {
+  .mat-colour__area { height: 200px; }
+}
+
+/* The chosen chip (flexible dates): the same tint as a chosen button of a group. */
+.mat-picker__chips .mat-btn.is-active { background: var(--mat-accent-soft-strong); border-color: var(--mat-accent); color: var(--mat-accent-text); }
+.mat-time__entry[aria-invalid="true"], .mat-colour__hex[aria-invalid="true"] { border-color: var(--mat-danger); }
+
+/* ---- Search with suggestions (FORM-23, SHELL-20) ----
+   A search field with a magnifier at its left and a clear button at its right, and a popup under it: the list of a combobox, drawn like the panels of the pickers (fixed, a line, a shadow).
+   The input is a real one: without the script it is a plain search field in a form. The active option is a tint behind the whole row (COLOR-08), the part of a title that matches is
+   bold and in the colour of a link, never a colour alone (COLOR-04). On a phone the focused field is a full-screen panel: the field and the X on top, the suggestions below. */
+/* @prop search | --mat-search-radius | length | var(--mat-radius) | Corner radius of a search field. */
+/* @prop search | --mat-search-height | length | var(--mat-control-h) | Least height of a search field. A floor: on a touch screen keep it at 44 px or more (MOBILE-04). */
+.mat-search { position: relative; display: block; min-width: 0; width: 100%; }
+.mat-search__bar { display: flex; align-items: center; gap: var(--mat-space-2); min-width: 0; }
+.mat-search__field { position: relative; flex: 1 1 auto; display: flex; align-items: center; min-width: 0; }
+.mat-search__input {
+  width: 100%; min-width: 0;
+  min-height: var(--mat-search-height, var(--mat-control-h));
+  padding: 0 var(--mat-input-pad-x, var(--mat-space-3));
+  background: var(--mat-surface); color: var(--mat-text);
+  border: var(--mat-input-border-width, 1px) solid var(--mat-border-strong);
+  border-radius: var(--mat-search-radius, var(--mat-radius));
+  font: inherit;
+  appearance: none; -webkit-appearance: none;
+  transition: border-color var(--mat-dur-fast) var(--mat-ease), box-shadow var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-search__input::placeholder { color: var(--mat-text-faint); }
+.mat-search__input:hover { border-color: color-mix(in srgb, var(--mat-accent) 40%, var(--mat-border-strong)); }
+.mat-search__input:focus { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); outline: none; }
+.mat-search__input:disabled { background: var(--mat-surface-3); color: var(--mat-text-muted); cursor: not-allowed; }
+.mat-search__input::-webkit-search-decoration, .mat-search__input::-webkit-search-cancel-button { appearance: none; -webkit-appearance: none; display: none; }
+.mat-field.is-invalid .mat-search__input { border-color: var(--mat-danger); }
+/* with the script the field has room for the magnifier at its left and the clear button and the hint of the key at its right */
+.mat-search.is-ready .mat-search__input { padding-left: calc(var(--mat-space-3) + 1.6rem); padding-right: 2.5rem; }
+.mat-search.is-ready:has(.mat-search__key:not([hidden])) .mat-search__input { padding-right: 5rem; }
+.mat-search__lens { position: absolute; left: var(--mat-space-3); top: 50%; transform: translateY(-50%); display: grid; color: var(--mat-text-muted); pointer-events: none; }
+.mat-search__lens > .mat-icon { font-size: 1.1rem; }
+.mat-search__clear {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  display: grid; place-items: center; width: 28px; height: 28px;
+  border: 0; border-radius: 50%; background: transparent; color: var(--mat-text-muted); cursor: pointer;
+}
+.mat-search__clear:hover { background: var(--mat-surface-3); color: var(--mat-text); }
+.mat-search__clear:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-search__clear[hidden] { display: none; }
+.mat-search__key { position: absolute; top: 50%; right: var(--mat-space-3); transform: translateY(-50%); pointer-events: none; white-space: nowrap; }
+.mat-search__key[hidden] { display: none; }
+.mat-search.is-filled .mat-search__key, .mat-search:focus-within .mat-search__key { display: none; }
+@media (max-width: 900px) { .mat-search__key { display: none; } }
+/* the X of the full-screen panel and the button that opens it in the header bar exist on a phone only */
+.mat-search__close, .mat-search__open { display: none; }
+
+/* ---- The popup ---- */
+.mat-search__panel {
+  position: fixed; z-index: var(--mat-z-menu);
+  display: flex; flex-direction: column;
+  max-width: calc(100vw - 16px); max-height: min(28rem, calc(100dvh - 16px));
+  overflow: auto; overscroll-behavior: contain;
+  background: var(--mat-surface); color: var(--mat-text);
+  border: 1px solid var(--mat-border-strong); border-radius: var(--mat-radius-lg); box-shadow: var(--mat-shadow-3);
+  animation: mat-picker-in var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-search__panel[hidden] { display: none; }
+.mat-search__list { display: flex; flex-direction: column; gap: 2px; padding: var(--mat-space-2); }
+.mat-search__list:empty { display: none; }
+.mat-search__group { display: flex; flex-direction: column; gap: 2px; }
+.mat-search__group + .mat-search__group { margin-top: var(--mat-space-1); }
+.mat-search__heading { padding: var(--mat-space-2) var(--mat-space-3) var(--mat-space-1); font-size: var(--mat-fs-sm); font-weight: 650; color: var(--mat-text-muted); }
+.mat-search__option {
+  position: relative; display: flex; align-items: center; gap: var(--mat-space-3);
+  width: 100%; padding: var(--mat-space-2) var(--mat-space-3);
+  border: 0; border-radius: var(--mat-radius-sm); background: transparent; color: var(--mat-text);
+  font: inherit; text-align: left; text-decoration: none; cursor: pointer;
+}
+.mat-search__option:hover { background: var(--mat-surface-3); text-decoration: none; }
+.mat-search__option.is-active, .mat-search__option.is-active:hover { background: var(--mat-accent-soft-strong); text-decoration: none; }
+.mat-search__icon { flex: none; display: grid; place-items: center; width: 1.5rem; color: var(--mat-text-muted); }
+.mat-search__icon > .mat-icon { font-size: 1.15rem; }
+.mat-search__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mat-search__title { font-weight: 600; overflow-wrap: anywhere; }
+.mat-search__desc { font-size: var(--mat-fs-sm); line-height: 1.4; color: var(--mat-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-search__kind { flex: none; padding: 0 var(--mat-space-2); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-xs); font-size: var(--mat-fs-xs); line-height: 1.6; color: var(--mat-text-muted); }
+.mat-search__hit { background: transparent; color: var(--mat-accent-text); font-weight: 750; }
+.mat-search__option--all { margin-top: var(--mat-space-1); border-top: 1px solid var(--mat-border); border-radius: 0 0 var(--mat-radius-sm) var(--mat-radius-sm); color: var(--mat-accent-text); font-weight: 650; }
+.mat-search__option--clear { color: var(--mat-text-muted); }
+.mat-search__note { display: flex; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-3) var(--mat-space-4); color: var(--mat-text-muted); }
+.mat-search__note[hidden] { display: none; }
+.mat-search__note-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mat-search__note.is-error { color: var(--mat-danger-text); }
+.mat-search__note.is-error .mat-search__icon { color: inherit; }
+.mat-search.is-disabled .mat-search__key { opacity: .5; }
+
+/* ---- A phone: the focused field is the whole screen, the field and the X on top ---- */
+@media (max-width: 640px) {
+  .mat-search__input { font-size: 1rem; }
+  .mat-search.is-full {
+    position: fixed; inset: 0; z-index: var(--mat-z-menu);
+    display: flex; flex-direction: column; width: auto;
+    background: var(--mat-surface);
+    padding-top: var(--mat-safe-top); padding-bottom: var(--mat-safe-bottom);
+  }
+  .mat-search.is-full .mat-search__bar { flex: none; padding: var(--mat-space-2) var(--mat-space-2) var(--mat-space-2) var(--mat-space-3); border-bottom: 1px solid var(--mat-border); }
+  .mat-search.is-full .mat-search__close { display: inline-flex; flex: none; }
+  .mat-search.is-full .mat-search__panel {
+    position: static; flex: 1 1 auto; min-height: 0; width: auto; max-width: none; max-height: none;
+    border: 0; border-radius: 0; box-shadow: none; animation: none;
+  }
+  .mat-search.is-full .mat-search__list { padding: var(--mat-space-3); }
+  .mat-search.is-full .mat-search__option { padding: var(--mat-space-3); }
+}
+
+/* ---- Touch targets (MOBILE-04): a row is 44 px high, and the small clear button keeps its look and has a centred target of 44 px ---- */
+@media (pointer: coarse) {
+  .mat-search__option { min-height: 44px; }
+  .mat-search__clear::before { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
+}
+
+@media (forced-colors: active) {
+  .mat-search__option.is-active { outline: 2px solid Highlight; outline-offset: -2px; }
+  .mat-search__hit { text-decoration: underline; }
+}
+
+/* ---- Tags: a field of chips that the user types into (data-picker="tags") ----
+   The field is drawn like every field (mat-input) but grows with its chips; the text field inside has no border of its own. The suggestions are the list of a
+   select, as a dropdown under the field on every screen size (it is not a full-screen sheet: the keyboard stays in the field). */
+.mat-tagfield { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-1) var(--mat-space-2); height: auto; padding: var(--mat-space-1) var(--mat-space-2); cursor: text; }
+.mat-tagfield:focus-within { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); }
+.mat-tagfield.is-disabled { background: var(--mat-surface-3); color: var(--mat-text-muted); cursor: not-allowed; }
+.mat-tagfield.is-readonly { background: var(--mat-surface-2); cursor: default; }
+.mat-tagfield .mat-chip { max-width: 100%; min-width: 0; }
+.mat-tagfield.is-disabled .mat-chip { background: var(--mat-surface-3); color: var(--mat-text-muted); }
+.mat-tagfield .mat-chip__x:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-chip__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat-tagfield__input { flex: 1 1 8ch; min-width: 8ch; min-height: var(--mat-control-h-sm); padding: 0 var(--mat-space-1); border: 0; outline: none; background: transparent; color: inherit; font: inherit; }
+/* the field around it shows the focus (:focus-within), so the text field draws no ring of its own */
+.mat-tagfield__input:focus-visible { box-shadow: none; border-radius: 0; }
+.mat-tagfield__input::placeholder { color: var(--mat-text-faint); }
+.mat-tagfield__input:disabled { cursor: not-allowed; }
+.mat-picker--sm .mat-tagfield { min-height: var(--mat-control-h-sm); font-size: var(--mat-fs-sm); }
+.mat-picker--lg .mat-tagfield { min-height: var(--mat-control-h-lg); font-size: var(--mat-fs-lg); }
+.mat-picker__panel--suggest { min-width: 0; }
+.mat-picker__option.is-active { background: var(--mat-surface-3); }
+@media (max-width: 640px) {
+  .mat-picker__panel.mat-picker__panel--suggest {
+    inset: auto; width: auto; height: auto; max-height: min(50dvh, 320px); padding: 0;
+    border: 1px solid var(--mat-border-strong); border-radius: var(--mat-radius-lg); box-shadow: var(--mat-shadow-3);
+    animation: mat-picker-in var(--mat-dur-fast) var(--mat-ease);
+  }
+  .mat-picker__panel--suggest .mat-picker__options { max-height: min(50dvh, 320px); padding: var(--mat-space-2); }
+}
+
+/* ---- The month grid, shared by the date picker, the calendar and the appointment picker (FORM-18) ----
+   A day can carry dots (events, free appointments), a day that cannot be chosen is dimmed (and struck through, or absent), the title of the month is a button that
+   leads to the choice of a month and then of a year, and a column of week numbers can stand in front of the rows. */
+.mat-cal__day { position: relative; }
+.mat-cal__marks { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; justify-content: center; gap: 2px; pointer-events: none; }
+.mat-cal__mark { width: 4px; height: 4px; border-radius: 50%; background: var(--mat-accent); }
+.mat-cal__day.is-selected .mat-cal__mark { background: currentColor; }
+/* what cannot be chosen says so in a second way besides its colour (COLOR-04): a line through the number */
+.mat-cal__day.is-unavailable { text-decoration: line-through; }
+.mat-cal__day.is-absent { visibility: hidden; }
+.mat-cal__grid--weeks { grid-template-columns: 2.25rem repeat(7, minmax(0, 1fr)); }
+.mat-cal__wk { display: grid; place-items: center; font-size: var(--mat-fs-xs); color: var(--mat-text-muted); font-variant-numeric: tabular-nums; }
+.mat-cal__title--button {
+  flex: 0 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: var(--mat-space-1);
+  min-height: var(--mat-control-h-sm); padding: 0 var(--mat-space-2);
+  border: 0; border-radius: var(--mat-radius-sm); background: transparent; color: inherit; font: inherit; font-weight: 650; cursor: pointer;
+}
+.mat-cal__title--button:hover { background: var(--mat-surface-3); }
+.mat-cal__title--button:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-cal__title--button > .mat-icon { flex: none; color: var(--mat-text-muted); }
+.mat-cal__pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(48px, 1fr); gap: var(--mat-space-2); min-height: 17rem; padding-top: var(--mat-space-2); }
+.mat-cal__cell {
+  min-width: 0; padding: 0; border: 1.5px solid transparent; border-radius: var(--mat-radius-sm);
+  background: transparent; color: var(--mat-text); font: inherit; font-variant-numeric: tabular-nums; text-transform: capitalize; cursor: pointer;
+}
+.mat-cal__cell:hover:not(:disabled) { background: var(--mat-accent-soft-strong); }
+.mat-cal__cell:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-cal__cell.is-today { border-color: var(--mat-accent); }
+.mat-cal__cell.is-current { background: var(--mat-accent-soft-strong); font-weight: 650; }
+.mat-cal__cell:disabled { color: var(--mat-text-faint); cursor: not-allowed; }
+
+/* ---- Calendar: always shown (data-calendar) ----
+   A surface with a line around it, like a card. The real input is not drawn; it lies over the calendar so that a browser message points at it. */
+.mat-calendar { position: relative; display: block; width: 100%; max-width: 22.5rem; padding: var(--mat-space-3); background: var(--mat-surface); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); }
+.mat-calendar[data-months="2"] { max-width: 40rem; }
+.mat-calendar__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+.mat-calendar .mat-cal__months { flex-wrap: wrap; }
+.mat-calendar[data-months="2"] .mat-cal__month { min-width: min(252px, 100%); }
+.mat-field.is-invalid .mat-calendar { border-color: var(--mat-danger); }
+.mat-calendar__agenda { display: flex; flex-direction: column; gap: var(--mat-space-2); margin-top: var(--mat-space-3); padding-top: var(--mat-space-3); border-top: 1px solid var(--mat-border); }
+.mat-calendar__agenda-title { margin: 0; font-weight: 650; }
+.mat-calendar__events { display: flex; flex-direction: column; gap: var(--mat-space-1); margin: 0; padding: 0; list-style: none; }
+.mat-calendar__event { display: flex; align-items: baseline; gap: var(--mat-space-3); padding: var(--mat-space-2) var(--mat-space-3); border-radius: var(--mat-radius-sm); background: var(--mat-surface-2); }
+.mat-calendar__time { flex: none; min-width: 5.5rem; font-size: var(--mat-fs-sm); font-variant-numeric: tabular-nums; color: var(--mat-text-muted); }
+.mat-calendar__what { min-width: 0; overflow-wrap: anywhere; }
+.mat-calendar__none { margin: 0; font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+
+/* ---- Appointment picker: a month, then the times of the chosen day (data-picker="slot") ----
+   Side by side on a wide screen (the times scroll inside their column, so that the panel keeps its height when another day is chosen), one below the other on a phone. */
+@media (min-width: 641px) {
+  .mat-picker__panel--slots { width: min(96vw, 42rem); }
+}
+.mat-picker__panel--slots .mat-picker__foot { flex-wrap: wrap; }
+.mat-slots { display: grid; gap: var(--mat-space-5); min-width: 0; }
+.mat-slots__cal, .mat-slots__day { min-width: 0; }
+@media (min-width: 641px) {
+  .mat-slots { grid-template-columns: 19rem minmax(0, 1fr); gap: var(--mat-space-6); }
+  .mat-slots__day { position: relative; }
+  .mat-slots__scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
+}
+.mat-slots__status { display: flex; align-items: center; gap: var(--mat-space-2); flex-wrap: wrap; }
+.mat-slots__heading { margin: 0; font-weight: 650; }
+.mat-slots__hint { margin: 2px 0 0; font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.mat-slots__empty { display: flex; align-items: center; gap: var(--mat-space-2); margin: var(--mat-space-3) 0 0; color: var(--mat-text-muted); }
+.mat-slots__group-title { margin: var(--mat-space-4) 0 var(--mat-space-2); font-size: var(--mat-fs-sm); font-weight: 600; color: var(--mat-text-muted); }
+.mat-slots__heading + .mat-slots__list, .mat-slots__hint + .mat-slots__list { margin-top: var(--mat-space-3); }
+.mat-slots__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr)); gap: var(--mat-space-2); }
+.mat-slot {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: var(--mat-control-h); padding: 0 var(--mat-space-2);
+  border: 1px solid var(--mat-border-strong); border-radius: var(--mat-radius); background: var(--mat-surface); color: var(--mat-text);
+  font: inherit; font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.mat-slot:hover:not(:disabled) { background: var(--mat-accent-soft-strong); border-color: var(--mat-accent); }
+.mat-slot:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+.mat-slot[aria-pressed="true"], .mat-slot[aria-pressed="true"]:hover { background: var(--mat-accent); border-color: var(--mat-accent); color: var(--mat-on-accent); font-weight: 650; }
+/* a taken time is dashed, struck through and says "Taken": not a colour alone (COLOR-04) */
+.mat-slot:disabled { background: var(--mat-surface-2); border-style: dashed; border-color: var(--mat-border); color: var(--mat-text-faint); cursor: not-allowed; }
+.mat-slot:disabled .mat-slot__time { text-decoration: line-through; }
+.mat-slot__note { font-size: var(--mat-fs-xs); line-height: 1.1; color: var(--mat-text-muted); }
+.mat-slots__summary { flex: 1 1 100%; margin: 0; font-weight: 650; }
+.mat-slots__summary.is-empty { font-weight: 400; color: var(--mat-text-muted); }
+
+/* ---- Touch targets (MOBILE-04): in the panels of the pickers everything that is pressed is 44 px on a touch screen. The rows and cells grow; a small button inside a field keeps
+   its look and gets a centred ::before as its target; a swatch is drawn in the middle of its 44 px cell; the hue slider is 44 px high and draws its 14 px track in the middle. ---- */
+@media (pointer: coarse) {
+  .mat-picker__option, .mat-picker__all { min-height: 44px; }
+  .mat-picker__clear::before { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
+  .mat-cal__day { height: 44px; }
+  .mat-cal__title--button { min-height: 44px; }
+  .mat-timecol__item { height: 44px; }
+  .mat-colour__swatches { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 0; }
+  .mat-colour__swatch { aspect-ratio: auto; height: 44px; background: transparent; box-shadow: none; }
+  .mat-colour__swatch::before { content: ""; position: absolute; inset: 7px; border-radius: var(--mat-radius-sm); background: var(--mat-swatch); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 20%, transparent); }
+  .mat-colour__swatch > .mat-icon { position: relative; }
+  .mat-colour__swatch:focus-visible { box-shadow: none; }
+  .mat-colour__swatch:focus-visible::before { box-shadow: 0 0 0 2px var(--mat-surface), 0 0 0 4px var(--mat-text); }
+  .mat-colour__hue { box-sizing: border-box; height: 44px; padding-block: 15px; background-clip: content-box; }
+}
+@media (pointer: coarse) and (min-width: 641px) { .mat-cal__month { min-width: 308px; } }
+
+/* ---- The type of a field on a touch screen (MOBILE-06): the search field and the text field of the tags have `font: inherit`, so they are raised to 16 px here, after their own rules
+   (the rest is in matui.forms.css). max(1rem, 1em) never makes one smaller than the size of what it stands in. ---- */
+@media (pointer: coarse) {
+  .mat-search__input, .mat-tagfield__input { font-size: max(1rem, 1em); }
+}

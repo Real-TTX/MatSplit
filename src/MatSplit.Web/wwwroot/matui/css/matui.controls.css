@@ -1,0 +1,470 @@
+/* ==========================================================================
+   MatUi · controls
+   Buttons, button row, form fields, cards, badges and pills, alerts, toasts and the small building blocks.
+   ========================================================================== */
+
+/* ---- Buttons --------------------------------------------------------------------------------------------------
+   Four kinds only: primary, secondary, ghost, danger. A button with an icon puts the icon BEFORE the label. */
+/* @prop btn | --mat-btn-radius | length | var(--mat-radius) | Corner radius of every button, in every size, in a button group and on an icon button (a button inside an input group takes the radius of the group). */
+/* @prop btn | --mat-btn-height | length | var(--mat-control-h) | Least height of a button of the default size, and the width of its icon-only form. A floor: on a touch screen keep it at 44 px or more (MOBILE-04). */
+/* @prop btn | --mat-btn-pad-x | length | var(--mat-space-4) | Space between the edge of a button of the default size and its content. */
+/* @prop btn | --mat-btn-border-width | length | 1px | Width of the border of every button (a secondary button shows it, the others keep it transparent). */
+/* @prop btn | --mat-btn-font-weight | number | 600 | Weight of the letters of every button. */
+.mat-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mat-space-2);
+  min-height: var(--mat-btn-height, var(--mat-control-h));
+  padding: 0 var(--mat-btn-pad-x, var(--mat-space-4));
+  border: var(--mat-btn-border-width, 1px) solid transparent;
+  border-radius: var(--mat-btn-radius, var(--mat-radius));
+  background: var(--mat-surface);
+  color: var(--mat-text);
+  font-weight: var(--mat-btn-font-weight, 600);
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--mat-dur-fast) var(--mat-ease), border-color var(--mat-dur-fast) var(--mat-ease),
+              color var(--mat-dur-fast) var(--mat-ease), transform var(--mat-dur-fast) var(--mat-ease), box-shadow var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-btn:hover { text-decoration: none; }
+.mat-btn:active:not(:disabled) { transform: translateY(1px); }
+.mat-btn:disabled, .mat-btn.is-disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
+
+.mat-btn--primary { background: var(--mat-accent); color: var(--mat-on-accent); }
+.mat-btn--primary:hover { background: var(--mat-accent-hover); }
+.mat-btn--primary:active:not(:disabled) { background: var(--mat-accent-active); }
+
+.mat-btn--secondary { background: var(--mat-surface); border-color: var(--mat-border-strong); }
+.mat-btn--secondary:hover { background: var(--mat-surface-3); }
+
+.mat-btn--ghost { background: transparent; color: var(--mat-text-muted); }
+.mat-btn--ghost:hover { background: var(--mat-surface-3); color: var(--mat-text); }
+
+.mat-btn--danger { background: var(--mat-surface); border-color: color-mix(in srgb, var(--mat-danger) 45%, transparent); color: var(--mat-danger-text); }
+.mat-btn--danger:hover { background: var(--mat-danger-bg); border-color: var(--mat-danger); }
+.mat-btn--danger.mat-btn--solid { background: var(--mat-danger); border-color: var(--mat-danger); color: var(--mat-on-danger); }
+.mat-btn--danger.mat-btn--solid:hover { background: color-mix(in oklab, var(--mat-danger) 86%, black); }
+
+.mat-btn--sm { min-height: var(--mat-control-h-sm); padding: 0 var(--mat-space-3); font-size: var(--mat-fs-sm); border-radius: var(--mat-btn-radius, var(--mat-radius-sm)); }
+.mat-btn--lg { min-height: var(--mat-control-h-lg); padding: 0 var(--mat-space-6); font-size: var(--mat-fs-lg); }
+.mat-btn--icon { padding: 0; width: var(--mat-btn-height, var(--mat-control-h)); }
+.mat-btn--icon.mat-btn--sm { width: var(--mat-control-h-sm); }
+.mat-btn--block { display: flex; width: 100%; }
+.mat-btn .mat-icon { font-size: 1.15em; }
+.mat-btn.is-loading { position: relative; color: transparent; pointer-events: none; }
+.mat-btn.is-loading::after {
+  content: "";
+  position: absolute; inset: 0; margin: auto;
+  width: 1.1em; height: 1.1em;
+  border: 2px solid var(--mat-on-accent); border-right-color: transparent;
+  border-radius: 50%;
+  animation: mat-spin .7s linear infinite;
+}
+@keyframes mat-spin { to { transform: rotate(360deg); } }
+
+/* ---- Button row ------------------------------------------------------------------------------------------------
+   Always UNDER the content of a create/edit form, in ONE line, positive to negative:
+   primary (Save) -> secondary / ghost (Back) -> spacer -> danger (Delete). The order is enforced here, whatever the markup order. */
+.mat-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mat-space-3);
+  padding-top: var(--mat-space-5);
+  margin-top: var(--mat-space-2);
+  border-top: 1px solid var(--mat-border);
+}
+.mat-btn-row > .mat-btn, .mat-actions > .mat-btn { order: 1; }
+.mat-btn-row > .mat-btn--primary, .mat-actions > .mat-btn--primary { order: 0; }
+.mat-btn-row > .mat-btn--danger, .mat-btn-row > .mat-btn--end, .mat-actions > .mat-btn--danger, .mat-actions > .mat-btn--end { order: 3; }
+.mat-btn-row__spacer { order: 2; flex: 1 1 var(--mat-space-6); min-width: var(--mat-space-4); }
+.mat-btn-row--plain { border-top: 0; padding-top: 0; margin-top: 0; }
+.mat-btn-row--sticky {
+  position: sticky; bottom: 0;
+  margin-inline: calc(var(--mat-space-4) * -1);
+  padding: var(--mat-space-3) var(--mat-space-4) calc(var(--mat-space-3) + var(--mat-safe-bottom));
+  background: var(--mat-glass);
+  border-top: 1px solid var(--mat-border);
+}
+/* Actions under a list: left aligned, a danger action keeps its distance. */
+.mat-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-3); }
+
+/* ---- Cards ---------------------------------------------------------------------------------------------------- */
+/* @prop card | --mat-card-radius | length | var(--mat-radius-lg) | Corner radius of a card and of the picture at its top. */
+/* @prop card | --mat-card-border-width | length | 1px | Width of the line around a card. */
+/* @prop card | --mat-card-pad | length | var(--mat-space-6) | Space between the edge of a card and its body, and at the sides of its head and foot (also on a phone). */
+/* @prop card | --mat-card-head-pad-y | length | var(--mat-space-4) | Space above and below the title row and the foot of a card. */
+.mat-card {
+  background: var(--mat-surface);
+  border: var(--mat-card-border-width, 1px) solid var(--mat-border);
+  border-radius: var(--mat-card-radius, var(--mat-radius-lg));
+  box-shadow: var(--mat-shadow-1);
+  min-width: 0;
+}
+.mat-card__head { display: flex; align-items: center; gap: var(--mat-space-3); padding: var(--mat-card-head-pad-y, var(--mat-space-4)) var(--mat-card-pad, var(--mat-space-6)); border-bottom: 1px solid var(--mat-border); }
+.mat-card__head .mat-icon { font-size: 1.2rem; color: var(--mat-accent-text); }
+.mat-card__head .mat-check { align-items: center; min-height: 0; } /* the check of a selectable card sits on the line of the title */
+.mat-card__head .mat-check input { margin: 0; }
+.mat-card__title { font-size: var(--mat-fs-lg); font-weight: 650; }
+.mat-card__sub { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+.mat-card__body { padding: var(--mat-card-pad, var(--mat-space-6)); }
+.mat-card__foot { padding: var(--mat-card-head-pad-y, var(--mat-space-4)) var(--mat-card-pad, var(--mat-space-6)); border-top: 1px solid var(--mat-border); }
+.mat-card--flush > .mat-card__body { padding: 0; }
+@media (max-width: 600px) { .mat-card__head, .mat-card__body, .mat-card__foot { padding-inline: var(--mat-card-pad, var(--mat-space-5)); } }
+
+a.mat-card, .mat-card--link { display: block; color: inherit; text-decoration: none; transition: border-color var(--mat-dur) var(--mat-ease), background var(--mat-dur) var(--mat-ease); }
+a.mat-card:hover, .mat-card--link:hover { border-color: var(--mat-text-faint); background: var(--mat-surface-2); text-decoration: none; }
+.mat-card--accent { border-color: var(--mat-accent); }
+
+/* ---- Badges, pills, chips, tags ---------------------------------------------------------------------------------
+   Colour is never the only information: a pill always carries text. */
+/* @prop badge | --mat-badge-size | length | 20px | Height and least width of a count badge (a dot badge keeps its own size). */
+/* @prop badge | --mat-badge-pad-x | length | 6px | Space between the edge of a count badge and its number. */
+/* @prop badge | --mat-badge-radius | length | var(--mat-radius-pill) | Corner radius of a count badge. */
+/* @prop badge | --mat-badge-font-size | length | var(--mat-fs-xs) | Size of the number in a badge. */
+.mat-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: var(--mat-badge-size, 20px); height: var(--mat-badge-size, 20px); padding: 0 var(--mat-badge-pad-x, 6px);
+  border-radius: var(--mat-badge-radius, var(--mat-radius-pill));
+  background: var(--mat-accent); color: var(--mat-on-accent);
+  font-size: var(--mat-badge-font-size, var(--mat-fs-xs)); font-weight: 650; line-height: 1;
+}
+.mat-badge--soft { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); }
+
+/* @prop pill | --mat-pill-height | length | 24px | Height of a status pill (a pill is a label, not a target). */
+/* @prop pill | --mat-pill-pad-x | length | 10px | Space between the edge of a status pill and its content. */
+/* @prop pill | --mat-pill-radius | length | var(--mat-radius-pill) | Corner radius of a status pill. */
+/* @prop pill | --mat-pill-font-size | length | var(--mat-fs-xs) | Size of the text in a status pill. */
+.mat-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: var(--mat-pill-height, 24px); padding: 0 var(--mat-pill-pad-x, 10px);
+  border-radius: var(--mat-pill-radius, var(--mat-radius-pill));
+  background: var(--mat-surface-3); color: var(--mat-text-muted);
+  font-size: var(--mat-pill-font-size, var(--mat-fs-xs)); font-weight: 650; white-space: nowrap;
+}
+.mat-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.mat-pill--ok { background: var(--mat-success-bg); color: var(--mat-success-text); }
+.mat-pill--warn { background: var(--mat-warning-bg); color: var(--mat-warning-text); }
+.mat-pill--error { background: var(--mat-danger-bg); color: var(--mat-danger-text); }
+.mat-pill--info { background: var(--mat-info-bg); color: var(--mat-info-text); }
+.mat-pill--accent { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); }
+.mat-pill--busy::before { animation: mat-pulse 1.2s ease-in-out infinite; }
+.mat-pill--plain::before { content: none; }
+@keyframes mat-pulse { 50% { opacity: .25; } }
+
+/* @prop tag | --mat-tag-radius | length | var(--mat-radius-xs) | Corner radius of a tag. */
+/* @prop tag | --mat-tag-pad-x | length | 8px | Space between the edge of a tag and its text. */
+/* @prop tag | --mat-tag-font-size | length | var(--mat-fs-xs) | Size of the text in a tag. */
+/* @prop tag | --mat-tag-font-weight | number | 600 | Weight of the text in a tag. */
+.mat-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px var(--mat-tag-pad-x, 8px); border-radius: var(--mat-tag-radius, var(--mat-radius-xs)); background: var(--mat-surface-3); color: var(--mat-text-muted); font-size: var(--mat-tag-font-size, var(--mat-fs-xs)); font-weight: var(--mat-tag-font-weight, 600); }
+
+/* A colour a user chose is a mark next to the name (COLOR-10): data-colour="#rrggbb" on a tag, a dot or an icon, which matui.js writes into --mat-swatch (and marks is-coloured). The text of a tag
+   stays muted and readable whatever the colour; a thin ring in the colour of the text keeps a white dot visible in light mode and a black one in dark mode. Without a valid colour: the neutral look. */
+.mat-dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--mat-swatch, var(--mat-text-faint)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 35%, transparent); }
+.mat-tag[data-colour].is-coloured::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--mat-swatch); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 35%, transparent); }
+.mat-icon[data-colour] { color: var(--mat-swatch); }
+
+.mat-chips { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); }
+.mat-chip {
+  display: inline-flex; align-items: center; gap: var(--mat-space-2);
+  min-height: var(--mat-control-h-sm); padding: 0 var(--mat-space-2) 0 var(--mat-space-3);
+  border-radius: var(--mat-radius-pill);
+  background: var(--mat-accent-soft-strong); color: var(--mat-accent-text);
+  font-size: var(--mat-fs-sm); font-weight: 600;
+}
+.mat-chip__x { display: grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+.mat-chip__x:hover { background: var(--mat-accent-soft-strong); }
+
+/* ---- Alerts and toasts ------------------------------------------------------------------------------------------ */
+/* @prop alert | --mat-alert-radius | length | var(--mat-radius) | Corner radius of an alert. */
+/* @prop alert | --mat-alert-pad-x | length | var(--mat-space-4) | Space at the sides between the edge of an alert and its content. */
+/* @prop alert | --mat-alert-pad-y | length | var(--mat-space-3) | Space above and below the content of an alert. */
+/* @prop alert | --mat-alert-gap | length | var(--mat-space-3) | Space between the icon of an alert, its text and its close button. */
+/* @prop alert | --mat-alert-border-width | length | 1px | Width of the (transparent) border of an alert. */
+.mat-alert {
+  display: flex; align-items: flex-start; gap: var(--mat-alert-gap, var(--mat-space-3));
+  padding: var(--mat-alert-pad-y, var(--mat-space-3)) var(--mat-alert-pad-x, var(--mat-space-4));
+  border: var(--mat-alert-border-width, 1px) solid transparent; border-radius: var(--mat-alert-radius, var(--mat-radius));
+  background: var(--mat-info-bg); color: var(--mat-info-text);
+}
+.mat-alert > .mat-icon { margin-top: 2px; font-size: 1.15rem; }
+.mat-alert--info { background: var(--mat-info-bg); color: var(--mat-info-text); }
+.mat-alert__body { flex: 1 1 auto; min-width: 0; color: var(--mat-text); }
+.mat-alert__body strong { color: inherit; }
+.mat-alert--success { background: var(--mat-success-bg); color: var(--mat-success-text); }
+.mat-alert--warning { background: var(--mat-warning-bg); color: var(--mat-warning-text); }
+.mat-alert--danger { background: var(--mat-danger-bg); color: var(--mat-danger-text); }
+.mat-alert__close { flex: none; border: 0; background: transparent; color: inherit; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; display: grid; place-items: center; }
+.mat-alert__close:hover { background: var(--mat-surface-3); }
+
+/* @prop toast | --mat-toast-radius | length | var(--mat-radius) | Corner radius of a toast. */
+/* @prop toast | --mat-toast-width | length | 380px | Width of the column of toasts (never wider than the screen less its margins). */
+/* @prop toast | --mat-toast-pad-x | length | var(--mat-space-4) | Space at the sides between the edge of a toast and its content. */
+/* @prop toast | --mat-toast-pad-y | length | var(--mat-space-3) | Space above and below the content of a toast. */
+/* @prop toast | --mat-toast-gap | length | var(--mat-space-3) | Space between the icon of a toast and its text. */
+.mat-toasts {
+  position: fixed; z-index: var(--mat-z-toast);
+  right: calc(var(--mat-space-4) + var(--mat-safe-right)); bottom: calc(var(--mat-space-4) + var(--mat-safe-bottom));
+  display: flex; flex-direction: column; gap: var(--mat-space-2);
+  width: min(var(--mat-toast-width, 380px), calc(100vw - 2 * var(--mat-space-4)));
+  pointer-events: none;
+}
+/* A toast only tells: a tap on it goes to what lies under it (the next Delete of a list is never blocked); only its X takes the tap. */
+.mat-toast {
+  pointer-events: none;
+  display: flex; align-items: flex-start; gap: var(--mat-toast-gap, var(--mat-space-3));
+  padding: var(--mat-toast-pad-y, var(--mat-space-3)) var(--mat-toast-pad-x, var(--mat-space-4));
+  background: var(--mat-surface); color: var(--mat-text);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-toast-radius, var(--mat-radius)); box-shadow: var(--mat-shadow-2);
+  animation: mat-toast-in var(--mat-dur-slow) var(--mat-ease);
+}
+/* The tone is in the icon (and the words), not in a coloured edge. */
+.mat-toast > .mat-icon { margin-top: 2px; font-size: 1.15rem; color: var(--mat-info-text); }
+.mat-toast--success > .mat-icon { color: var(--mat-success-text); }
+.mat-toast--warning > .mat-icon { color: var(--mat-warning-text); }
+.mat-toast--danger > .mat-icon { color: var(--mat-danger-text); }
+.mat-toast .mat-alert__close { pointer-events: auto; }
+@keyframes mat-toast-in { from { opacity: 0; transform: translateY(10px); } }
+@keyframes mat-toast-in-top { from { opacity: 0; transform: translateY(-10px); } }
+/* On a phone the bottom is where the thumb works (the actions of a list, the sheets, the main button): the toasts stand at the top, under the header bar. */
+@media (max-width: 600px) {
+  .mat-toasts { left: calc(var(--mat-space-4) + var(--mat-safe-left)); right: calc(var(--mat-space-4) + var(--mat-safe-right)); width: auto; top: calc(var(--mat-topbar-h) + var(--mat-space-2) + var(--mat-safe-top)); bottom: auto; }
+  .mat-toast { animation-name: mat-toast-in-top; }
+  /* one at a time, like a snackbar: the newest takes the place of the one before */
+  .mat-toasts > .mat-toast:not(:last-child) { display: none; }
+}
+
+/* ---- Small blocks -------------------------------------------------------------------------------------------------- */
+.mat-empty { display: flex; flex-direction: column; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-12) var(--mat-space-6); text-align: center; color: var(--mat-text-muted); }
+.mat-empty__icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--mat-accent-soft); color: var(--mat-accent-text); font-size: 1.8rem; }
+.mat-empty__title { font-size: var(--mat-fs-lg); font-weight: 650; color: var(--mat-text); }
+
+.mat-kv { display: grid; grid-template-columns: minmax(110px, 200px) minmax(0, 1fr); gap: var(--mat-space-3) var(--mat-space-5); margin: 0; }
+.mat-kv dt { color: var(--mat-text-muted); }
+.mat-kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .mat-kv { grid-template-columns: minmax(0, 1fr); gap: 2px; } .mat-kv dd { margin-bottom: var(--mat-space-3); } }
+
+.mat-code {
+  position: relative;
+  padding: var(--mat-space-3) var(--mat-space-4);
+  background: var(--mat-surface-3);
+  border: 1px solid var(--mat-border);
+  border-radius: var(--mat-radius);
+  font-family: var(--mat-mono); font-size: var(--mat-fs-sm);
+  white-space: pre; overflow-x: auto; tab-size: 2;
+}
+.mat-code[data-copy] { padding-right: 52px; cursor: pointer; }
+/* the code inside a block is not an inline code: its padding would only push the first line to the right */
+.mat-code code { padding: 0; background: none; border-radius: 0; }
+/* The parts of highlighted code. They use the colours of the status texts, which are readable on the grey of the block in both modes. */
+.mat-code__tag, .mat-code__kw { color: var(--mat-info-text); }
+.mat-code__attr, .mat-code__num { color: var(--mat-warning-text); }
+.mat-code__str { color: var(--mat-success-text); }
+.mat-code__pun { color: var(--mat-text-muted); }
+.mat-code__com { color: var(--mat-text-muted); font-style: italic; }
+
+.mat-meter { height: 8px; background: var(--mat-surface-3); border-radius: var(--mat-radius-pill); overflow: hidden; }
+.mat-meter__fill { height: 100%; width: var(--mat-meter, 0%); background: var(--mat-accent); border-radius: inherit; transition: width var(--mat-dur-slow) var(--mat-ease); }
+.mat-meter__fill[data-tone="ok"] { background: var(--mat-success); }
+.mat-meter__fill[data-tone="warn"] { background: var(--mat-warning); }
+.mat-meter__fill[data-tone="error"] { background: var(--mat-danger); }
+
+.mat-skeleton { display: block; min-height: 1em; border-radius: var(--mat-radius-sm); background: linear-gradient(90deg, var(--mat-surface-3) 25%, var(--mat-surface-2) 50%, var(--mat-surface-3) 75%); background-size: 200% 100%; animation: mat-shimmer 1.4s linear infinite; }
+@keyframes mat-shimmer { to { background-position: -200% 0; } }
+
+.mat-divider { border: 0; border-top: 1px solid var(--mat-border); margin: var(--mat-space-4) 0; }
+
+/* Steps of a wizard. */
+.mat-steps { display: flex; gap: var(--mat-space-2); list-style: none; }
+.mat-steps li { flex: 1 1 0; height: 6px; border-radius: var(--mat-radius-pill); background: var(--mat-surface-3); }
+.mat-steps li.is-done { background: color-mix(in srgb, var(--mat-accent) 55%, transparent); }
+.mat-steps li.is-active { background: var(--mat-accent); }
+
+/* Tooltip for icon buttons: [data-tip="Edit"]. Real information never lives only in a tooltip.
+   A tip that is not shown takes no room (display: none, not only transparent): a button at the end of a table row or of the header bar would otherwise let
+   its scrolling box scroll sideways by the width of a tip nobody sees. It fades in from @starting-style.
+   Where it opens: centred above the element; at the end of a row of a table (mat-table__actions) and in the actions of the header bar it opens towards the
+   start, in the header bar below (above it there is no room). data-tip-align="start|end" and data-tip-place="below" do the same anywhere else. */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  display: none;
+  position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 0;
+  padding: 4px 8px; border-radius: var(--mat-radius-xs);
+  background: var(--mat-text); color: var(--mat-bg);
+  font-size: var(--mat-fs-xs); font-weight: 600; white-space: nowrap;
+  opacity: 1; pointer-events: none;
+  transition: opacity var(--mat-dur-fast) var(--mat-ease);
+  z-index: var(--mat-z-menu);
+}
+[data-tip]:hover::after, [data-tip]:focus-visible::after { display: block; }
+@starting-style { [data-tip]:hover::after, [data-tip]:focus-visible::after { opacity: 0; } }
+.mat-table__actions [data-tip]::after, .mat-topbar__actions [data-tip]::after, [data-tip-align="end"]::after { left: auto; right: 0; translate: none; }
+[data-tip-align="start"]::after { left: 0; translate: none; }
+.mat-topbar [data-tip]::after, [data-tip-place="below"]::after { bottom: auto; top: calc(100% + 6px); }
+@media (hover: none) { [data-tip]::after { display: none; } [data-tip]:hover::after, [data-tip]:focus-visible::after { display: none; } }
+
+/* ==========================================================================
+   More building blocks: button groups, spinners, progress, accordions, list groups, avatars, indicators, stats, timelines, text, pictures.
+   ========================================================================== */
+
+/* ---- Button group: buttons that belong together share one border; a toolbar holds several groups ---- */
+.mat-btn-group { display: inline-flex; vertical-align: middle; }
+.mat-btn-group > .mat-btn { border-radius: 0; }
+.mat-btn-group > .mat-btn + .mat-btn, .mat-btn-group > .mat-btn-check + .mat-btn { margin-left: -1px; }
+.mat-btn-group > .mat-btn:first-child, .mat-btn-group > .mat-btn-check:first-child + .mat-btn { border-top-left-radius: var(--mat-btn-radius, var(--mat-radius)); border-bottom-left-radius: var(--mat-btn-radius, var(--mat-radius)); }
+.mat-btn-group > .mat-btn:last-child { border-top-right-radius: var(--mat-btn-radius, var(--mat-radius)); border-bottom-right-radius: var(--mat-btn-radius, var(--mat-radius)); }
+.mat-btn-group > .mat-btn:hover, .mat-btn-group > .mat-btn:focus-visible, .mat-btn-group > .mat-btn.is-active, .mat-btn-group > .mat-btn-check:checked + .mat-btn { position: relative; z-index: 1; }
+.mat-btn-group > .mat-btn.is-active { background: var(--mat-accent-soft-strong); border-color: var(--mat-accent); color: var(--mat-accent-text); }
+.mat-btn-group--vertical { flex-direction: column; }
+.mat-btn-group--vertical > .mat-btn + .mat-btn { margin-left: 0; margin-top: -1px; }
+.mat-btn-group--vertical > .mat-btn:first-child { border-radius: var(--mat-btn-radius, var(--mat-radius)) var(--mat-btn-radius, var(--mat-radius)) 0 0; }
+.mat-btn-group--vertical > .mat-btn:last-child { border-radius: 0 0 var(--mat-btn-radius, var(--mat-radius)) var(--mat-btn-radius, var(--mat-radius)); }
+.mat-btn-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-3); }
+.mat-btn__caret { margin-left: var(--mat-space-1); font-size: 1em; opacity: .75; }
+
+/* ---- Spinner: something is loading and nothing else can be shown yet. Give it a text (role="status"). ---- */
+.mat-spinner { display: inline-block; flex: none; width: 1.5rem; height: 1.5rem; border: 3px solid var(--mat-surface-3); border-top-color: var(--mat-accent); border-radius: 50%; animation: mat-spin .75s linear infinite; }
+.mat-spinner--sm { width: 1rem; height: 1rem; border-width: 2px; }
+.mat-spinner--lg { width: 2.5rem; height: 2.5rem; border-width: 4px; }
+.mat-loading { display: flex; align-items: center; justify-content: center; gap: var(--mat-space-3); padding: var(--mat-space-8); color: var(--mat-text-muted); }
+/* With reduced motion the spinner turns slowly instead of stopping: a spinner that does not move says nothing is happening (the one exception to A11Y-05). */
+@media (prefers-reduced-motion: reduce) { .mat-spinner { animation-duration: 3s !important; } }
+
+/* ---- Progress (the meter): sizes, tones, stripes, unknown length, several parts. The value is written next to the bar, not on it. ---- */
+.mat-meter--sm { height: 4px; }
+.mat-meter--lg { height: 18px; }
+.mat-meter { position: relative; }
+.mat-meter--striped .mat-meter__fill { background-image: linear-gradient(45deg, color-mix(in srgb, var(--mat-on-accent) 28%, transparent) 25%, transparent 25%, transparent 50%, color-mix(in srgb, var(--mat-on-accent) 28%, transparent) 50%, color-mix(in srgb, var(--mat-on-accent) 28%, transparent) 75%, transparent 75%); background-size: 1rem 1rem; }
+.mat-meter--animated .mat-meter__fill { animation: mat-stripes 1s linear infinite; }
+@keyframes mat-stripes { to { background-position: 1rem 0; } }
+.mat-meter--indeterminate .mat-meter__fill { width: 35%; animation: mat-indeterminate 1.4s var(--mat-ease) infinite; }
+@keyframes mat-indeterminate { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+.mat-meter--stack { display: flex; }
+.mat-meter--stack > .mat-meter__fill { flex: none; border-radius: 0; }
+
+/* ---- Accordion and collapse: native <details>; with the same name only one is open ---- */
+.mat-accordion { display: flex; flex-direction: column; background: var(--mat-surface); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); overflow: hidden; }
+.mat-accordion__item { border-top: 1px solid var(--mat-border); }
+.mat-accordion__item:first-child { border-top: 0; }
+.mat-accordion__item > summary, .mat-collapse > summary { display: flex; align-items: center; gap: var(--mat-space-3); min-height: var(--mat-control-h-lg); padding: var(--mat-space-3) var(--mat-space-5); font-weight: 600; cursor: pointer; list-style: none; }
+.mat-accordion__item > summary::-webkit-details-marker, .mat-collapse > summary::-webkit-details-marker { display: none; }
+.mat-accordion__item > summary:hover { background: var(--mat-accent-soft); }
+.mat-accordion__chev { margin-left: auto; flex: none; color: var(--mat-text-muted); transition: transform var(--mat-dur) var(--mat-ease); }
+.mat-accordion__item[open] > summary .mat-accordion__chev, .mat-collapse[open] > summary .mat-accordion__chev { transform: rotate(180deg); }
+.mat-accordion__item[open] > summary { color: var(--mat-accent-text); }
+.mat-accordion__body { padding: 0 var(--mat-space-5) var(--mat-space-5); color: var(--mat-text); }
+.mat-collapse > summary { padding-inline: 0; min-height: var(--mat-control-h); color: var(--mat-accent-text); width: fit-content; }
+.mat-collapse > .mat-accordion__body { padding-inline: 0; }
+
+/* ---- List group: rows of one list, as links, buttons or plain; with badges, a current row, numbers ---- */
+.mat-listgroup { list-style: none; display: flex; flex-direction: column; background: var(--mat-surface); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); overflow: hidden; }
+.mat-listgroup__item { display: flex; align-items: center; gap: var(--mat-space-3); min-height: var(--mat-control-h-lg); padding: var(--mat-space-3) var(--mat-space-5); border: 0; background: transparent; color: var(--mat-text); font: inherit; text-align: left; text-decoration: none; }
+.mat-listgroup > * + * { border-top: 1px solid var(--mat-border); }
+a.mat-listgroup__item, button.mat-listgroup__item { width: 100%; cursor: pointer; }
+a.mat-listgroup__item:hover, button.mat-listgroup__item:hover { background: var(--mat-accent-soft); text-decoration: none; }
+.mat-listgroup__item.is-active, .mat-listgroup__item[aria-current="true"] { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); font-weight: 600; }
+.mat-listgroup__item.is-disabled, .mat-listgroup__item[aria-disabled="true"] { color: var(--mat-text-muted); pointer-events: none; }
+.mat-listgroup__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.mat-listgroup__text small { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+.mat-listgroup__item > .mat-icon { color: var(--mat-text-muted); font-size: 1.2rem; }
+.mat-listgroup__item.is-active > .mat-icon { color: inherit; }
+.mat-listgroup--flush { border: 0; border-radius: 0; background: transparent; }
+.mat-listgroup--flush .mat-listgroup__item { padding-inline: 0; }
+.mat-listgroup--numbered { counter-reset: mat-item; }
+.mat-listgroup--numbered > .mat-listgroup__item::before { counter-increment: mat-item; content: counter(mat-item); display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--mat-surface-3); color: var(--mat-text-muted); font-size: var(--mat-fs-xs); font-weight: 650; }
+
+/* ---- Avatars and a badge on something (a count on an icon button, a dot for the state of a person) ---- */
+.mat-avatar { position: relative; }
+.mat-avatar > img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.mat-avatar--sm { width: 26px; height: 26px; font-size: var(--mat-fs-xs); }
+.mat-avatar--xl { width: 88px; height: 88px; font-size: var(--mat-fs-2xl); }
+.mat-avatar__status { position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%; background: var(--mat-text-faint); box-shadow: 0 0 0 2px var(--mat-surface); }
+.mat-avatar__status--ok { background: var(--mat-success); }
+.mat-avatar__status--warn { background: var(--mat-warning); }
+.mat-avatar__status--error { background: var(--mat-danger); }
+.mat-avatars { display: inline-flex; }
+.mat-avatars > .mat-avatar { box-shadow: 0 0 0 2px var(--mat-surface); }
+.mat-avatars > .mat-avatar + .mat-avatar { margin-left: -6px; }
+.mat-badge--ok { background: var(--mat-success-bg); color: var(--mat-success-text); }
+.mat-badge--warn { background: var(--mat-warning-bg); color: var(--mat-warning-text); }
+.mat-badge--error { background: var(--mat-danger); color: var(--mat-on-danger); }
+.mat-badge--info { background: var(--mat-info-bg); color: var(--mat-info-text); }
+.mat-badge--dot { min-width: 0; width: 10px; height: 10px; padding: 0; }
+.mat-indicator { position: relative; display: inline-flex; }
+.mat-indicator > .mat-badge { position: absolute; top: -6px; right: -6px; box-shadow: 0 0 0 2px var(--mat-surface); }
+.mat-indicator > .mat-badge--dot { top: 2px; right: 2px; }
+
+/* ---- Stat: one number that matters, with its label and the change ---- */
+.mat-stat { display: flex; flex-direction: column; gap: 2px; }
+.mat-stat__label { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+.mat-stat__value { font-size: var(--mat-fs-2xl); font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.mat-stat__delta { display: inline-flex; align-items: center; gap: 4px; font-size: var(--mat-fs-xs); font-weight: 600; color: var(--mat-text-muted); }
+.mat-stat__delta--up { color: var(--mat-success-text); }
+.mat-stat__delta--down { color: var(--mat-danger-text); }
+.mat-stat__delta .mat-icon { font-size: 1em; }
+
+/* ---- Timeline: what happened, newest first ---- */
+.mat-timeline { list-style: none; display: flex; flex-direction: column; }
+.mat-timeline > li { position: relative; padding: 0 0 var(--mat-space-5) var(--mat-space-6); }
+.mat-timeline > li::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: -6px; width: 2px; background: var(--mat-border-strong); }
+.mat-timeline > li:last-child::before { display: none; }
+.mat-timeline > li::after { content: ""; position: absolute; left: 0; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--mat-accent); box-shadow: 0 0 0 3px var(--mat-surface); }
+.mat-timeline > li.mat-timeline__ok::after { background: var(--mat-success); }
+.mat-timeline > li.mat-timeline__warn::after { background: var(--mat-warning); }
+.mat-timeline > li.mat-timeline__error::after { background: var(--mat-danger); }
+.mat-timeline__time { display: block; color: var(--mat-text-muted); font-size: var(--mat-fs-xs); font-family: var(--mat-mono); }
+
+/* ---- Text: a lead, a quote, running text with its lists, a figure and pictures ---- */
+.mat-lead { font-size: var(--mat-fs-lg); line-height: 1.5; color: var(--mat-text-muted); }
+.mat-small { font-size: var(--mat-fs-sm); }
+.mat-blockquote { margin: 0; padding: var(--mat-space-1) var(--mat-space-5); border-left: 2px solid var(--mat-text-faint); color: var(--mat-text-muted); }
+.mat-blockquote footer { margin-top: var(--mat-space-2); color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+.mat-prose { max-width: 70ch; line-height: 1.6; }
+.mat-prose > * + * { margin-top: var(--mat-space-4); }
+.mat-prose > h2, .mat-prose > h3, .mat-prose > h4 { margin-top: var(--mat-space-8); }
+.mat-prose ul, .mat-prose ol { padding-left: 1.4rem; display: flex; flex-direction: column; gap: var(--mat-space-1); }
+.mat-prose mark { padding: 0 4px; border-radius: 3px; background: var(--mat-warning-bg); color: var(--mat-warning-text); }
+.mat-prose hr { border: 0; border-top: 1px solid var(--mat-border); }
+.mat-figure { margin: 0; display: flex; flex-direction: column; gap: var(--mat-space-2); }
+.mat-figure figcaption { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+.mat-img { display: block; max-width: 100%; height: auto; }
+.mat-img--rounded { border-radius: var(--mat-radius); }
+.mat-img--circle { border-radius: 50%; }
+.mat-img--thumb { padding: 4px; border: 1px solid var(--mat-border-strong); border-radius: var(--mat-radius); background: var(--mat-surface); }
+.mat-ratio { aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--mat-radius); background: var(--mat-surface-3); }
+.mat-ratio--4x3 { aspect-ratio: 4 / 3; }
+.mat-ratio--1x1 { aspect-ratio: 1 / 1; }
+.mat-ratio > img, .mat-ratio > svg, .mat-ratio > video { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* ---- Cards with a picture, or a picture beside the text ---- */
+.mat-card__media { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--mat-accent-soft); border-radius: var(--mat-card-radius, var(--mat-radius-lg)) var(--mat-card-radius, var(--mat-radius-lg)) 0 0; }
+.mat-card--horizontal { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr); overflow: hidden; }
+.mat-card--horizontal > .mat-card__media { height: 100%; aspect-ratio: auto; border-radius: 0; }
+@media (max-width: 600px) { .mat-card--horizontal { grid-template-columns: minmax(0, 1fr); } .mat-card--horizontal > .mat-card__media { aspect-ratio: 16 / 9; } }
+
+/* ---- Alerts with a title, a link and actions; skeleton shapes ---- */
+.mat-alert__title { display: block; font-weight: 650; }
+.mat-alert__body a:not(.mat-btn) { color: inherit; text-decoration: underline; }
+.mat-alert__actions { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); margin-top: var(--mat-space-3); }
+.mat-skeleton--circle { width: 40px; height: 40px; border-radius: 50%; }
+.mat-skeleton--btn { width: 7rem; height: var(--mat-control-h); border-radius: var(--mat-radius); }
+.mat-skeleton--block { height: 6rem; border-radius: var(--mat-radius); }
+.mat-skeleton--w-25 { width: 25%; }
+.mat-skeleton--w-50 { width: 50%; }
+.mat-skeleton--w-75 { width: 75%; }
+
+/* ---- Touch targets (MOBILE-04): a small button that sits inside something larger (the X of a chip or an alert) keeps its look and is a target of 44 px on a touch screen.
+   The target is a centred ::before (no layout moves; the ::after of an element with data-tip is its tooltip); the rows of chips are 44 px apart, so the targets of two rows do not overlap. ---- */
+@media (pointer: coarse) {
+  /* a link in a list of keys and values: the row is 44 px (half of what the line lacks above and below it), the link has the padding of that room */
+  .mat-kv > dd:has(a:not(.mat-btn)), .mat-kv > dt:has(+ dd a:not(.mat-btn)) { padding-block: max(0px, calc((44px - 1lh) / 2)); }
+  .mat-kv dd a:not(.mat-btn) { padding: 12px 4px; margin: -12px -4px; }
+  .mat-chip__x, .mat-alert__close { position: relative; }
+  .mat-chip__x::before, .mat-alert__close::before { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
+}

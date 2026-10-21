@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Version 0.1.0 of the toolkit MatUi (what changed in each version: CHANGELOG.md; how to update an app: docs/VERSIONING.md).
+   Version 0.7.0 of the toolkit MatUi (what changed in each version: CHANGELOG.md; how to update an app: docs/VERSIONING.md).
    `node tools/bump.js` writes the version here, in matui.boot.js and in MatUiVersion (Directory.Build.props); window.MatUi.version has it.
    MatUi · behaviour
    Dependency-free. Everything is wired by delegated listeners and data-attributes, so server-rendered and dynamically added
@@ -52,7 +52,8 @@
                                             data-placeholder, data-clearable (a button that clears the value), data-min / data-max / data-week-start / data-flex (dates),
                                             data-step / data-hour12 (times), data-swatches (colours), data-search / data-multiple / data-sep (select; the options are
                                             .mat-picker__option with data-value), data-select-all (select with data-multiple: a first row "Select all" with a box in three
-                                            states for the options that are shown). The texts change with data-pk-<name> on <html>, the format of dates with data-locale.
+                                            states for the options that are shown). The texts change with data-pk-<name> on <html>, the format of dates with data-locale (on <html>; a date field in an element with lang, or with its own
+                                            data-locale, writes its value in that language: a German document in an English page)
                                             tags is a field of chips and has no panel: data-sep, data-max (number of tags), data-max-length (of one tag),
                                             data-duplicates (allow a tag twice), data-strict (only the options, which are the suggestions, can be added)
                                             slot books an appointment (FORM-18): a month with the days that have a free time, then the times of the chosen day. It posts
@@ -93,6 +94,8 @@
      data-show-if="#id | name" data-show-value="a,b | * | true"   show a dependent field only when it is needed
      data-copy="text | #id"                 copy to the clipboard
      data-tabs                              a tab group (role=tablist buttons + role=tabpanel panels)
+     data-table-scroll                      on a .mat-table-wrap: the table keeps every column and scrolls sideways (TABLE-04). Without it a table that is wider than
+                                            its frame above 720 px leaves out its mat-hide-sm columns, the last one first, until it fits (is-col-hidden on their cells)
      data-groups="key"                      a table whose groups (<tbody class="mat-group" data-group="name">) open and close (LIST-16): the toggle in the heading row
                                             (data-group-toggle, aria-expanded) opens or closes its group, and the choice is remembered per table key and group; a group with
                                             data-group-fixed stays as the server drew it (the one with a search hit). data-groups-set="open|closed|toggle" on a button does it
@@ -101,6 +104,59 @@
      data-dismiss                           close the alert around it
      data-view-switch="list|gallery"        switch between the two views of a list (remembered per data-view-key)
      data-shortcut="/"                      key that clicks the element, or focuses it when it is a text field (not while typing)
+     data-rating                            a rating (FORM-22): a fieldset (.mat-rating) of native radio buttons that the script draws as stars (mat-rating--heart, --dot: hearts, dots); the
+                                            pointer shows the value it is on, a click chooses it; or, with .mat-rating--readonly, a value shown (data-value="4.5", data-max 3 to 10, data-count
+                                            "128" adds "(128)"). data-clearable (a click on the chosen value clears it), data-show-value (the value as text beside the shapes). Event:
+                                            mat:rating-change (detail.value). API: MatUi.rating.init / get / set. The texts: data-rt-<name> on <html>
+     data-tree                              a tree view (LIST-17): <ul class="mat-tree" data-tree aria-label="..."> of <li class="mat-tree__item"> with a nested <ul class="mat-tree__group">; the script gives it
+                                            the roles of the ARIA tree pattern, one tab stop, the keys (arrows, Home, End, * and the first letters), a chevron, and the level of every item.
+                                            data-multiple (a box per item; a parent is in between when some of its children are checked), data-expand-all, data-expanded on an item,
+                                            data-tree-key="key" (what is open is remembered), data-tree-toggle="row" (a click on a parent's row opens it too), data-lazy on an item whose
+                                            children are loaded when it opens (mat:tree-load, answered by MatUi.tree.setChildren), data-tree-id / data-value / data-tree-search / data-tree-fixed (stays as drawn) on an item.
+                                            data-tree-filter="id" on a search field hides the items that do not match and keeps their parents open; data-tree-set="open|closed|toggle" with
+                                            data-tree-target="#id" on a button does it for every parent. Events: mat:tree-select, mat:tree-toggle, mat:tree-load, mat:tree-filter.
+                                            API: MatUi.tree.init / expand / collapse / select / setChildren / setAll / get. The texts: data-tr-<name> on <html>
+     data-upload                            a file upload (FORM-21): .mat-upload around the real file input (.mat-upload__input; accept, multiple and required are its own); the script draws a drop
+                                            zone, the list of the chosen files (name, size, a thumbnail for an image, a remove button) and what was refused and why. data-max-size="10MB" (KB, MB, GB;
+                                            1 KB is 1024 bytes), data-max-files="5" (with multiple), data-paste (images from the clipboard, while the focus is in the control), data-preview="none" (no
+                                            thumbnails). Without multiple a new file replaces the old one. Events: mat:upload-change (detail.files, added, removed, source), mat:upload-refused
+                                            (detail.refused). API: MatUi.upload.init / files / add / remove / clear / setProgress / setError. The texts: data-up-<name> on <html>
+     data-autocomplete                      a search field with suggestions (FORM-23): .mat-search around a real input type=search (.mat-search__input, in a <form role="search"> it
+                                            is a plain search without the script); the script draws the magnifier, a clear button and the popup of a WAI-ARIA combobox with a listbox.
+                                            data-search-url="/api/search" (GET ?q=text&limit=8, the answer { groups: [ { name, items: [ { title, text, href, icon, kind, id } ] } ] }) or
+                                            data-items='[...]' (the same as local data), data-min (the least number of characters, 1), data-delay (ms before a question is sent, 120),
+                                            data-limit (8), data-results-url="/Search" (the last row "All results for ..." goes to <url>?q=text), data-recent="key" (the last five choices are
+                                            remembered per app and key and shown while the field is empty and focused), data-key="/,mod+k" (keys that focus the field; mod is Ctrl or Cmd; a plain key
+                                            that another element has as data-shortcut stays that element's). In the header bar (.mat-topbar__search, SHELL-20) a phone gets an icon button; on a phone
+                                            the focused field is a full-screen panel with an X. Events: mat:search-select (cancelable), mat:search-results. API: MatUi.search.init / setItems /
+                                            open / close / clear / focus / value. The texts: data-sr-<name> on <html>
+
+   Events (CustomEvents named after the control and what happened; this is all of them, docs/ADOPTING.md section 3b has the same list as a table and a test holds both to the code).
+   Each is sent on the element it is about and bubbles, so one listener on document hears them all, except the first four: they are sent on <html> and do not bubble
+   (listen on document.documentElement). None can be cancelled except where it says so; a cancelled one (preventDefault) stops what the script would do next.
+     mat:theme            <html>           { theme: 'system' | 'light' | 'dark' }: the theme was applied (a click, MatUi.theme.set) and once when the script starts
+     mat:accent           <html>           { accent: name | null } or { accent: 'custom', color: '#rrggbb' }: MatUi.accent.set / .custom, and once at the start for data-custom-accent
+     mat:scheme           <html>           { scheme: 'standard' | 'paper' | 'contrast' | 'oled' }: the colour scheme was chosen (data-scheme-set, MatUi.scheme.set)
+     mat:navset           <html>           { set: id }: the menu switcher shows another menu (an entry that is a button, MatUi.nav.set)
+     mat:dialog-open      the dialog       no detail: a dialog.mat-dialog was opened (data-dialog-open, data-autoopen, MatUi.dialog.open, MatUi.confirm / alert / prompt)
+     mat:group-toggle     tbody.mat-group  { group, open }: a group of a table opened or closed
+     mat:item-action      li.mat-item      { item, action, list }: a sliding option was pressed (action is its data-item-action or its text in lower case)
+     mat:reorder          li.mat-item      { list, item, from, to, order }: a row was dropped in a new place (order = the keys of the rows now)
+     mat:item-filter      the list         { list, text, shown, total }: the filter field of a list changed which rows are shown
+     mat:slots-needed     .mat-picker      { month, from, to, picker }: the appointment picker shows a month it has no times for; answer with MatUi.picker.setSlots
+     mat:otp-complete     .mat-otp         { value }: every box has a character; cancelable: preventDefault keeps data-submit from sending the form
+     mat:rating-change    .mat-rating      { value, rating }: the user chose a value
+     mat:schedule-select  .mat-schedule    the event as the app gave it: an event was chosen; cancelable: preventDefault keeps a link (url) from being followed
+     mat:schedule-range   .mat-schedule    { from, to, view, date }: the range that is shown changed (and once when it is drawn first): load its events
+     mat:schedule-day     .mat-schedule    { date, view }: the user chose a day
+     mat:tree-select      li.mat-tree__item  { tree, item, selected, values }: an item was selected or ticked
+     mat:tree-toggle      li.mat-tree__item  { tree, item, open }: a parent opened or closed (not when the remembered state is restored)
+     mat:tree-load        li.mat-tree__item  { tree, item, id, value }: a lazy parent opens for the first time; answer with MatUi.tree.setChildren
+     mat:tree-filter      ul.mat-tree      { tree, text, shown, total }: the filter field changed which items are shown
+     mat:upload-change    .mat-upload      { files, added, removed, source }: the list of files changed (source: picker, drop, paste, remove, reset or api)
+     mat:upload-refused   .mat-upload      { refused, source }: files that were not taken, each with its reason
+     mat:search-results   .mat-search      { query, count, source }: suggestions were drawn (source: local, server or error)
+     mat:search-select    .mat-search      { item, group, query, source }: an option was chosen (source: result, recent or all); cancelable: preventDefault means the app takes over, nothing is followed
    ========================================================================== */
 (function () {
   'use strict';
@@ -926,7 +982,7 @@
 
   function dialogEl(ref) { return typeof ref === 'string' ? doc.getElementById(ref) : ref; }
 
-  function syncLock() { root.classList.toggle('mat-lock', dialogStack.length > 0 || !!(app() && app().classList.contains('is-nav-open')) || !!(pickerOpen && pickerOpen.full)); }
+  function syncLock() { root.classList.toggle('mat-lock', dialogStack.length > 0 || !!(app() && app().classList.contains('is-nav-open')) || !!(pickerOpen && pickerOpen.full) || !!searchFull); }
 
   function openDialog(ref, opener) {
     var d = dialogEl(ref);
@@ -1079,7 +1135,45 @@
     if (host.parentNode !== home) { home.appendChild(host); }
     return host;
   }
-  function placeToasts() { if ($('.mat-toasts')) { toastHost(); } }
+  function placeToasts() { if ($('.mat-toasts')) { toastHost(); toasts.slice().forEach(toastSettle); } }
+
+  // A toast goes after 6 s, but never while it is being read or used: the timer waits while the pointer is over the toast or the focus is inside it (its X, a link), and when both have
+  // gone it runs the time that was left, 1.5 s at least. A toast lets taps through (CSS: pointer-events: none, only its X takes one), so it never receives a pointer event of its own:
+  // the pointer is looked for by its position, by one listener on the document that works only while a toast is there, and a touch is never "over" (it has no hover).
+  var TOAST_TIME = 6000, TOAST_LEAST = 1500;
+  var toasts = [];
+  function toastHeld(s) { return s.over || s.el.contains(doc.activeElement); }
+  // is the timer to run or to wait? Called whenever the pointer or the focus may have changed; the focus is read from the document, never from a focus event (moving the host
+  // into a dialog takes the focus off a toast without one).
+  function toastSettle(s) {
+    if (!s.el.parentNode) { toastEnd(s); return; }
+    if (toastHeld(s)) {
+      if (s.timer) { clearTimeout(s.timer); s.timer = 0; s.left = Math.max(s.left - (Date.now() - s.since), TOAST_LEAST); }
+    } else if (!s.timer) {
+      s.since = Date.now();
+      s.timer = setTimeout(function () { s.timer = 0; if (toastHeld(s)) { s.left = Math.max(s.left, TOAST_LEAST); } else { toastEnd(s); } }, s.left);
+    }
+  }
+  function toastEnd(s) {
+    clearTimeout(s.timer);
+    s.timer = 0;
+    var at = toasts.indexOf(s);
+    if (at >= 0) { toasts.splice(at, 1); }
+    var focused = s.el.contains(doc.activeElement);
+    if (s.el.parentNode) { s.el.parentNode.removeChild(s.el); }
+    // a toast that had the focus gives it back to what had it before (A11Y-09)
+    if (focused && s.back && s.back.focus && doc.contains(s.back)) { s.back.focus({ preventScroll: true }); }
+  }
+  doc.addEventListener('pointermove', function (e) {
+    if (!toasts.length || e.pointerType === 'touch') { return; }
+    toasts.slice().forEach(function (s) {
+      var r = s.el.getBoundingClientRect();
+      var over = r.width > 0 && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (over !== s.over) { s.over = over; toastSettle(s); }
+    });
+  }, { passive: true });
+  // the pointer that leaves the window from the toast sends no more moves
+  root.addEventListener('pointerleave', function () { toasts.slice().forEach(function (s) { if (s.over) { s.over = false; toastSettle(s); } }); });
 
   function toast(message, options) {
     var o = options || {};
@@ -1090,9 +1184,14 @@
       '<div class="mat-alert__body">' + esc(message) + '</div>' +
       '<button type="button" class="mat-alert__close" aria-label="' + esc(label('data-dlg-close', 'Close')) + '">' + icon('x') + '</button>';
     host.appendChild(t);
-    function remove() { if (t.parentNode) { t.parentNode.removeChild(t); } }
-    $('.mat-alert__close', t).addEventListener('click', remove);
-    setTimeout(remove, o.timeout || 6000);
+    var s = { el: t, left: o.timeout || TOAST_TIME, since: 0, timer: 0, over: false, back: null };
+    toasts.push(s);
+    $('.mat-alert__close', t).addEventListener('click', function () { toastEnd(s); });
+    t.addEventListener('focusin', function (e) { if (e.relatedTarget && !t.contains(e.relatedTarget)) { s.back = e.relatedTarget; } toastSettle(s); });
+    t.addEventListener('focusout', function () { toastSettle(s); });
+    // Escape closes the toast that has the focus, and only it (not the dialog it is shown in)
+    t.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); toastEnd(s); } });
+    toastSettle(s);
   }
 
   // ----------------------------------------------------------------------------------------- dependent form fields
@@ -1489,6 +1588,20 @@
       updateSelection(box);
     }
   });
+  // A tap on the cell around the check of a row is a tap on the check: the check is 18 px, the cell is the target of 44 px on a touch screen (MOBILE-04).
+  doc.addEventListener('click', function (e) {
+    var cell = e.target.closest && e.target.closest('.mat-table__select');
+    if (!cell || e.target.closest('input, label, a, button') || !cell.closest('[data-selectable]')) { return; }
+    var check = $('input[data-select-row], input[data-select-all]', cell);
+    if (check && !check.disabled) { check.click(); }
+  });
+  // The same for a row of a list that is a field (a label and a .mat-item__input in a .mat-item__main): a tap on the row, not only on the line of the field, puts the focus in it.
+  doc.addEventListener('click', function (e) {
+    var main = e.target.closest && e.target.closest('.mat-item__main');
+    if (!main || e.target.closest('input, select, textarea, label, a, button')) { return; }
+    var field = $('.mat-item__input', main);
+    if (field && !field.disabled && !field.readOnly) { field.focus(); }
+  });
 
   // ------------------------------------------------------------------------------------------------ groups in a table (LIST-16, matui.lists.css)
   // <table data-groups="key"> holds <tbody class="mat-group" data-group="name"> whose first row (.mat-group__head) has the toggle button (data-group-toggle,
@@ -1548,6 +1661,32 @@
       setAllGroups(scope, mode === 'open' ? true : mode === 'closed' ? false : groups.length > 0 && groups.every(function (g) { return g.classList.contains('is-collapsed'); }));
     }
   });
+
+  // ------------------------------------------------------------------------------------------------- tables that fit
+  // Under 720 px the rows of a table are cards (TABLE-02). Above, a table that is wider than its frame does not scroll sideways either: the columns that the phone
+  // leaves out (mat-hide-sm on the heading) go, the last one first, until it fits, and come back when there is room (a ResizeObserver on the frame). Only the rows
+  // with as many cells as the heading are touched (a group heading spans the row). data-table-scroll on the frame keeps every column and lets it scroll (TABLE-04).
+  function fitTable(wrap) {
+    var table = $('table.mat-table', wrap);
+    if (!table || !table.tHead || !table.tHead.rows.length) { return; }
+    var heads = Array.prototype.slice.call(table.tHead.rows[0].cells);
+    var optional = heads.map(function (th, i) { return th.classList.contains('mat-hide-sm') ? i : -1; }).filter(function (i) { return i >= 0; }).reverse();
+    if (!optional.length) { return; }
+    $$('.is-col-hidden', table).forEach(function (cell) { cell.classList.remove('is-col-hidden'); });
+    for (var k = 0; k < optional.length && wrap.scrollWidth > wrap.clientWidth; k += 1) {
+      Array.prototype.forEach.call(table.rows, function (row) {
+        if (row.cells.length === heads.length) { row.cells[optional[k]].classList.add('is-col-hidden'); }
+      });
+    }
+  }
+  function initTables(scope) {
+    $$('.mat-table-wrap', scope).forEach(function (wrap) {
+      if (wrap._matFit || wrap.hasAttribute('data-table-scroll')) { return; }
+      wrap._matFit = true;
+      fitTable(wrap);
+      if (typeof ResizeObserver === 'function') { new ResizeObserver(function () { fitTable(wrap); }).observe(wrap); }
+    });
+  }
 
   // ------------------------------------------------------------------------------------------------------- tabs
   function selectTab(tab, focus) {
@@ -1821,6 +1960,23 @@
       };
     }
     return pkFormats;
+  }
+  // The language of the value of one date field: its own data-locale, else the lang of the nearest element inside the page that has one (a German document in an
+  // English page writes its dates the German way), else the page's. Only the value in the field: the panel and its texts stay in the language of the page.
+  var pkDayFormats = {};
+  function valueLocale(el) {
+    var holder = el && el.closest ? el.closest('[lang]') : null;
+    var l = (el && el.getAttribute('data-locale')) || (holder && holder !== root ? holder.getAttribute('lang') : null);
+    if (!l) { return pkLocale(); }
+    if (/^en$/i.test(l)) { l = 'en-GB'; }
+    try { Intl.DateTimeFormat(l); } catch (e) { return pkLocale(); }
+    return l;
+  }
+  function dayFormat(el) {
+    var l = valueLocale(el);
+    if (l === pkLocale()) { return formats().day; }
+    if (!pkDayFormats[l]) { pkDayFormats[l] = new Intl.DateTimeFormat(l, { dateStyle: 'medium' }); }
+    return pkDayFormats[l];
   }
   function isPhone() { return window.matchMedia('(max-width: 640px)').matches; }
   function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
@@ -2845,7 +3001,7 @@
   var CAL_FOCUS = '.mat-cal__day[tabindex="0"]';
 
   function calDisplay(p, out) {
-    var v = dateValue(p), f = formats().day;
+    var v = dateValue(p), f = dayFormat(p.wrap);
     if (!p.input.value) { out.textContent = placeholderOf(p); return; }
     if (!v.start) { out.textContent = p.input.value; return; }
     var text = f.format(v.start);
@@ -6004,6 +6160,1839 @@
     }
   };
 
+  // ------------------------------------------------------------------------------------------------ rating (FORM-22, matui.forms.css)
+  // A value on a short scale that people give to something (stars, hearts or dots), or an average that is shown. To choose, the markup is a group of native radio buttons:
+  //   <fieldset class="mat-field mat-fieldset mat-rating" data-rating data-clearable data-show-value><legend class="mat-legend">Overall</legend>
+  //     <input class="mat-rating__input" type="radio" id="q-1" name="q" value="1"><label class="mat-rating__label" for="q-1">1 star</label> ... one per value</fieldset>
+  // so a form posts it, the keyboard of the browser (arrow keys, one Tab stop) and the screen reader work, and without the script it is a row of radio buttons. The radios say
+  // what can be chosen: half stars are 0.5, 1, 1.5 ... (twice the radios), and the highest value is the number of shapes. A radio with the value 0 or empty is "no rating".
+  // The script marks the group is-ready (the radios and labels become invisible, they keep the focus) and draws the shapes: the outline of each and, over it, the filled ones up
+  // to --mat-rating-fill. The pointer shows the value it is on (a mouse or a pen: the shapes fill up to it, and the text beside them says it), a click chooses it, and with
+  // data-clearable a click on the chosen value clears it (the radio "no rating", or no radio at all). The shape is the class mat-rating--heart or --dot (star by default).
+  // To show a value: <span class="mat-rating mat-rating--readonly" data-rating data-value="4.5" data-max="5" data-count="128" data-show-value>4.5 out of 5</span>; the content is what is
+  // seen without the script, the script draws the shapes (any value, partly filled), gives it role="img" and an aria-label ("Rated 4.5 out of 5, 128 ratings") unless it has one.
+  // data-max is the number of shapes (3 to 10, default 5), data-show-value writes the value as text beside the shapes (colour and shape alone do not say it, COLOR-04), data-count
+  // adds "(128)". Every change of a choice sends mat:rating-change (bubbles; detail.value, detail.rating) after the native change event. API: MatUi.rating.init / get / set.
+  var RT_TEXT = {
+    en: { rated: 'Rated {0} out of {1}', ratedCount: 'Rated {0} out of {1}, {2} ratings', ratedOne: 'Rated {0} out of {1}, 1 rating', notRated: 'Not rated' },
+    de: { rated: 'Bewertet mit {0} von {1}', ratedCount: 'Bewertet mit {0} von {1}, {2} Bewertungen', ratedOne: 'Bewertet mit {0} von {1}, 1 Bewertung', notRated: 'Nicht bewertet' }
+  };
+  var RT_ICONS = { heart: 'heart', dot: 'circle' };
+
+  function ratText(key, a, b, c) {
+    var table = RT_TEXT[(root.lang || 'en').slice(0, 2).toLowerCase()] || RT_TEXT.en;
+    var s = root.getAttribute('data-rt-' + key.toLowerCase()) || table[key] || RT_TEXT.en[key] || key;
+    return s.replace('{0}', function () { return a === undefined ? '' : a; }).replace('{1}', function () { return b === undefined ? '' : b; }).replace('{2}', function () { return c === undefined ? '' : c; });
+  }
+  // a number as the language of the page writes it (4,5 in German), with at most two decimals
+  function ratNum(n) {
+    var t = Math.round(n * 100) / 100;
+    try { return t.toLocaleString(root.lang || 'en', { maximumFractionDigits: 2 }); } catch (e) { return String(t); }
+  }
+  function ratOf(el) {
+    var r = el && el.closest ? el.closest('[data-rating]') : null;
+    return r && r._matRating ? r._matRating : null;
+  }
+  function ratShapes(el, max) {
+    var name = 'star', cls;
+    for (cls in RT_ICONS) { if (Object.prototype.hasOwnProperty.call(RT_ICONS, cls) && el.classList.contains('mat-rating--' + cls)) { name = RT_ICONS[cls]; } }
+    var cell = '<span class="mat-rating__cell">' + icon(name).replace('class="mat-icon"', 'class="mat-icon mat-rating__icon"') + '</span>', cells = '';
+    for (var i = 0; i < max; i += 1) { cells += cell; }
+    return '<span class="mat-rating__layer mat-rating__layer--empty">' + cells + '</span><span class="mat-rating__layer mat-rating__layer--fill">' + cells + '</span>';
+  }
+  function ratBody(r, body) {
+    var s = doc.createElement('span');
+    s.className = 'mat-rating__stars';
+    s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = ratShapes(r.root, r.max);
+    body.appendChild(s);
+    r.stars = s;
+    if (r.root.hasAttribute('data-show-value')) {
+      r.valueEl = doc.createElement('span');
+      r.valueEl.className = 'mat-rating__value';
+      body.appendChild(r.valueEl);
+    }
+    var count = parseInt(r.root.getAttribute('data-count'), 10);
+    if (count >= 0) {
+      var c = doc.createElement('span');
+      c.className = 'mat-rating__count';
+      c.textContent = '(' + count.toLocaleString(root.lang || 'en') + ')';
+      body.appendChild(c);
+      r.count = count;
+    }
+  }
+
+  // the value that is chosen (0 when nothing is, or "no rating"), or for a read-only rating its data-value
+  function ratValue(r) {
+    if (r.readonly) { var v = parseFloat(r.root.getAttribute('data-value')); return isFinite(v) ? Math.max(0, Math.min(r.max, v)) : 0; }
+    var on = r.inputs.filter(function (i) { return i.el.checked; })[0];
+    return on ? on.v : 0;
+  }
+  function ratDisabled(r) { return r.inputs.every(function (i) { return i.el.matches(':disabled'); }); }
+
+  function ratSync(r) {
+    var v = ratValue(r), shown = r.preview !== null ? r.preview : v;
+    r.root.style.setProperty('--mat-rating-fill', (Math.min(100, shown / r.max * 100)) + '%');
+    r.root.classList.toggle('is-previewing', r.preview !== null);
+    if (r.valueEl) { r.valueEl.textContent = shown > 0 ? ratNum(shown) : ratText('notRated'); }
+    if (r.readonly && r.ownLabel) {
+      var text = ratNum(v), max = ratNum(r.max);
+      r.root.setAttribute('aria-label', v <= 0 ? ratText('notRated') : r.count === undefined ? ratText('rated', text, max) : r.count === 1 ? ratText('ratedOne', text, max) : ratText('ratedCount', text, max, r.count.toLocaleString(root.lang || 'en')));
+    }
+  }
+
+  function ratInit(el) {
+    var readonly = el.classList.contains('mat-rating--readonly'), r = el._matRating;
+    if (r && !readonly) { ratSync(r); return; }
+    var max = parseInt(el.getAttribute('data-max'), 10) || 5, inputs = [];
+    if (!readonly) {
+      $$('input[type=radio]', el).forEach(function (i) {
+        var v = parseFloat(i.value);
+        inputs.push({ el: i, v: isFinite(v) && v > 0 ? v : 0 });
+      });
+      var top = inputs.reduce(function (m, i) { return Math.max(m, i.v); }, 0);
+      if (!top) { return; }
+      max = Math.ceil(top - 1e-9);
+    }
+    max = Math.max(3, Math.min(10, max));
+    r = { root: el, readonly: readonly, max: max, inputs: inputs, preview: null };
+    if (readonly) {
+      r.ownLabel = el.hasAttribute('data-rating-label') || !el.hasAttribute('aria-label');
+      if (r.ownLabel) { el.setAttribute('data-rating-label', ''); }
+      el.setAttribute('role', 'img');
+      el.textContent = '';
+      ratBody(r, el);
+    } else {
+      r.values = inputs.filter(function (i) { return i.v > 0; }).map(function (i) { return i.v; }).sort(function (a, b) { return a - b; });
+      r.none = inputs.filter(function (i) { return i.v === 0; })[0] || null;
+      r.clearable = el.hasAttribute('data-clearable');
+      var body = doc.createElement('div');
+      body.className = 'mat-rating__body';
+      ratBody(r, body);
+      el.appendChild(body);
+      r.stars.addEventListener('pointermove', function (e) { if (e.pointerType !== 'touch') { ratPreview(r, ratAt(r, e.clientX, e.clientY)); } });
+      r.stars.addEventListener('pointerleave', function () { ratPreview(r, null); });
+      r.stars.addEventListener('click', function (e) { ratPick(r, ratAt(r, e.clientX, e.clientY)); });
+      if (typeof ResizeObserver === 'function') { new ResizeObserver(function () { ratFit(r); }).observe(el); }
+    }
+    el.style.setProperty('--mat-rating-max', String(max));
+    el._matRating = r;
+    el.classList.add('is-ready');
+    ratSync(r);
+    ratFit(r);
+  }
+  // On a touch screen every shape is a target as high as it is wide (MOBILE-04), so a row that has no room for that many of them is set in two rows (is-wrapped, --mat-rating-cols):
+  // the row is measured as one row (its cells shrink when it does not fit), and again when the width of the field changes.
+  function ratFit(r) {
+    if (r.readonly || !r.stars) { return; }
+    var el = r.root, width = el.clientWidth, cell = r.stars.querySelector('.mat-rating__cell');
+    if (!width || !cell || width === r.fitWidth) { return; }
+    el.classList.remove('is-wrapped');
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches && cell.getBoundingClientRect().width < parseFloat(getComputedStyle(cell).height) - 0.5) {
+      el.style.setProperty('--mat-rating-cols', String(Math.ceil(r.max / 2)));
+      el.classList.add('is-wrapped');
+    }
+    r.fitWidth = el.clientWidth;
+  }
+  function initRatings(scope) { $$('[data-rating]', scope).forEach(ratInit); }
+
+  // the value under the pointer: the first value that can be chosen at or above its place in the row (the left half of a star is the half value where there is one)
+  // (set in two rows, y tells the row: the first half of the height is the first row)
+  function ratAt(r, x, y) {
+    var box = r.stars.getBoundingClientRect(), raw = 0, i;
+    if (box.width && r.root.classList.contains('is-wrapped')) {
+      var cols = Math.ceil(r.max / 2), row = box.height && y !== undefined && y - box.top >= box.height / 2 ? 1 : 0;
+      raw = row * cols + Math.max(0, Math.min(1, (x - box.left) / box.width)) * cols;
+    } else if (box.width) {
+      raw = Math.max(0, Math.min(1, (x - box.left) / box.width)) * r.max;
+    }
+    for (i = 0; i < r.values.length; i += 1) { if (r.values[i] >= raw - 1e-9) { return r.values[i]; } }
+    return r.values[r.values.length - 1];
+  }
+  function ratPreview(r, v) {
+    if (v !== null && ratDisabled(r)) { v = null; }
+    if (r.preview === v) { return; }
+    r.preview = v;
+    ratSync(r);
+  }
+  function ratFire(input) {
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  // Choose a value (0 clears): the radio that has it is checked and the browser's own events follow; without a radio for "no rating" the checked one is unchecked.
+  function ratChoose(r, v) {
+    if (v === ratValue(r)) { return true; }
+    if (v === 0) {
+      if (r.none) { r.none.el.checked = true; ratFire(r.none.el); return true; }
+      var on = r.inputs.filter(function (i) { return i.el.checked; })[0];
+      if (on) { on.el.checked = false; ratFire(on.el); }
+      return true;
+    }
+    var hit = r.inputs.filter(function (i) { return Math.abs(i.v - v) < 1e-9; })[0];
+    if (!hit) { return false; }
+    hit.el.checked = true;
+    ratFire(hit.el);
+    return true;
+  }
+  function ratPick(r, v) {
+    r.preview = null;
+    if (ratDisabled(r) || v === undefined) { ratSync(r); return; }
+    if (v === ratValue(r) && r.clearable) { ratChoose(r, 0); }
+    else {
+      ratChoose(r, v);
+      var on = r.inputs.filter(function (i) { return i.el.checked; })[0];
+      if (on) { on.el.focus({ preventScroll: true }); }
+    }
+    ratSync(r);
+  }
+  function ratGet(el) { var r = ratOf(el); return r ? ratValue(r) : null; }
+  function ratSet(el, value) {
+    var host = el && el.closest ? el.closest('[data-rating]') : null, r;
+    if (host && !host._matRating) { ratInit(host); }
+    r = ratOf(el);
+    if (!r) { return null; }
+    var v = Math.max(0, Math.min(r.max, parseFloat(value) || 0));
+    if (r.readonly) { host.setAttribute('data-value', String(v)); ratSync(r); return v; }
+    ratChoose(r, v);
+    ratSync(r);
+    return ratValue(r);
+  }
+
+  // every change of the choice (a click on a shape, a key, a script) is told to the page, after the native events
+  doc.addEventListener('change', function (e) {
+    var r = e.target.matches && e.target.matches('.mat-rating__input') ? ratOf(e.target) : null;
+    if (!r || r.readonly) { return; }
+    r.preview = null;
+    ratSync(r);
+    r.root.dispatchEvent(new CustomEvent('mat:rating-change', { bubbles: true, detail: { value: ratValue(r), rating: r.root } }));
+  });
+  doc.addEventListener('reset', function (e) {
+    setTimeout(function () { $$('[data-rating]', e.target).forEach(function (w) { if (w._matRating && !w._matRating.readonly) { ratSync(w._matRating); } }); }, 0);
+  }, true);
+  // ------------------------------------------------------------------------------------------------ tree view (LIST-17, matui.lists.css)
+  // A hierarchy of any depth: folders, categories, areas. The markup is a nested list that works (all open) without the script:
+  //   <ul class="mat-tree" data-tree aria-label="Files"><li class="mat-tree__item"><div class="mat-tree__row">icon, .mat-tree__label, .mat-tree__count, .mat-tree__actions</div>
+  //     <ul class="mat-tree__group"><li class="mat-tree__item">...</li></ul></li></ul>
+  // The script follows the ARIA tree pattern: role tree, treeitem and group; aria-level, aria-setsize and aria-posinset on every item (counted over the items that are shown);
+  // aria-expanded on a parent (the CSS reads it); aria-selected (one chosen) or, with data-multiple, aria-checked true, false or mixed; one tab stop (the item that was used last
+  // has tabindex 0, the others -1, and so have the buttons in .mat-tree__actions of the other rows). The focus is on the item, not on a control in it.
+  // Keys: Down and Up walk the items that are shown, Right opens a parent or goes to its first child, Left closes it or goes to the parent, Home and End, Enter and Space choose
+  // (Space ticks the box with data-multiple), * opens all parents of the level, a letter goes to the next item that starts with what was typed. The level of an item is written into
+  // --mat-tree-level (the CSS makes the indentation and the guide lines of it). With data-multiple a parent is checked when all of its items are, in between when some are, and
+  // checking it checks all of them. Lazy items (data-lazy) fire mat:tree-load when they open and the app answers with MatUi.tree.setChildren(item, html), or with null when it failed.
+  // What the user opened or closed is remembered with data-tree-key (per app, tree and item, like the groups of a table); an item with data-tree-fixed stays as drawn.
+  // The texts are English and German (TR_TEXT: both must have every key); data-tr-<name> on <html> changes one.
+  var TR_KEY = 'mat-tree';
+  var TR_TEXT = {
+    en: { tree: 'Tree', none: 'No matches', one: '1 match', many: '{0} matches', loading: 'Loading {0}', failed: '{0} could not be loaded', empty: '{0} is empty', selected: '{0} selected' },
+    de: { tree: 'Baumansicht', none: 'Keine Treffer', one: '1 Treffer', many: '{0} Treffer', loading: '{0} wird geladen', failed: '{0} konnte nicht geladen werden', empty: '{0} ist leer', selected: '{0} ausgewählt' }
+  };
+
+  function trText(key, a) {
+    var table = TR_TEXT[(root.lang || 'en').slice(0, 2).toLowerCase()] || TR_TEXT.en;
+    var s = root.getAttribute('data-tr-' + key.toLowerCase()) || table[key] || TR_TEXT.en[key] || key;
+    return s.replace('{0}', function () { return a === undefined ? '' : a; });
+  }
+
+  function trChild(el, cls) {
+    for (var c = el.firstElementChild; c; c = c.nextElementSibling) { if (c.classList.contains(cls)) { return c; } }
+    return null;
+  }
+  function trItems(group) {
+    return group ? Array.prototype.filter.call(group.children, function (c) { return c.classList.contains('mat-tree__item'); }) : [];
+  }
+  function trGroup(item) { return trChild(item, 'mat-tree__group'); }
+  function trRow(item) { return trChild(item, 'mat-tree__row'); }
+  function trParent(item) { var up = item.parentElement; return up ? up.closest('.mat-tree__item') : null; }
+  function trTreeOf(el) { var e = el && el.closest ? el.closest('[data-tree]') : null; return e && e._matTree ? e._matTree : null; }
+  function trOpen(item) { return item.getAttribute('aria-expanded') === 'true'; }
+  function trName(item) {
+    var row = trRow(item), l = row && $('.mat-tree__label', row);
+    return l ? l.textContent.replace(/\s+/g, ' ').trim() : '';
+  }
+  function trValue(item) { return item.getAttribute('data-value') || trName(item); }
+  // what is remembered of an item: its own id, or the names from the top down
+  function trId(item) {
+    var own = item.getAttribute('data-tree-id');
+    if (own) { return own; }
+    var parts = [];
+    for (var i = item; i; i = trParent(i)) { parts.unshift(trName(i)); }
+    return parts.join('/');
+  }
+  function trFold(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').toLowerCase().trim(); }
+  function trSay(t, text) { if (t.live) { t.live.textContent = text; } }
+
+  // the items that can be reached with the arrow keys: not hidden, and every parent above them open
+  function trVisible(el) {
+    var out = [];
+    (function walk(group) {
+      trItems(group).forEach(function (item) {
+        if (item.hidden) { return; }
+        out.push(item);
+        var sub = trGroup(item);
+        if (sub && trOpen(item)) { walk(sub); }
+      });
+    })(el);
+    return out;
+  }
+
+  // the place of an item among the items that are shown next to it (a filter hides some)
+  function trNumber(group) {
+    var shown = trItems(group).filter(function (i) { return !i.hidden; });
+    shown.forEach(function (item, n) {
+      item.setAttribute('aria-setsize', String(shown.length));
+      item.setAttribute('aria-posinset', String(n + 1));
+      var sub = trGroup(item);
+      if (sub) { trNumber(sub); }
+    });
+  }
+
+  // the chevron, the box of several, the name of the item for a screen reader (its label and its count, not what is below it)
+  function trParts(t, item, row) {
+    var label = $('.mat-tree__label', row);
+    if (label) {
+      if (!label.id) { label.id = nextId('mat-tree-l'); }
+      var ids = [label.id];
+      $$('.mat-tree__count', row).forEach(function (c) { if (!c.id) { c.id = nextId('mat-tree-c'); } ids.push(c.id); });
+      item.setAttribute('aria-labelledby', ids.join(' '));
+    }
+    var toggle = trChild(row, 'mat-tree__toggle');
+    if (!toggle) {
+      toggle = doc.createElement('span');
+      toggle.className = 'mat-tree__toggle';
+      toggle.setAttribute('aria-hidden', 'true');
+      toggle.innerHTML = icon('chevron-right');
+      row.insertBefore(toggle, row.firstChild);
+    }
+    if (t.multiple && !trChild(row, 'mat-tree__check')) {
+      var box = doc.createElement('span');
+      box.className = 'mat-tree__check';
+      box.setAttribute('aria-hidden', 'true');
+      box.innerHTML = icon('check').replace('class="mat-icon"', 'class="mat-icon mat-tree__check-on"') + icon('minus').replace('class="mat-icon"', 'class="mat-icon mat-tree__check-mixed"');
+      row.insertBefore(box, toggle.nextSibling);
+    }
+  }
+
+  // the items of a group get their roles and their level; a parent is an item with a group of items or with data-lazy
+  function trPrepare(t, group, level) {
+    trItems(group).forEach(function (item) {
+      var row = trRow(item);
+      var sub = trGroup(item);
+      var kids = trItems(sub);
+      item.setAttribute('role', 'treeitem');
+      item.setAttribute('aria-level', String(level));
+      item.style.setProperty('--mat-tree-level', String(level - 1));
+      item.tabIndex = -1;
+      if (kids.length && item.hasAttribute('data-lazy')) { item.removeAttribute('data-lazy'); }
+      var parent = kids.length > 0 || item.hasAttribute('data-lazy');
+      if (sub) { sub.setAttribute('role', 'group'); }
+      if (!parent) { item.removeAttribute('aria-expanded'); }
+      else if (!item.hasAttribute('aria-expanded')) {
+        item.setAttribute('aria-expanded', !item.hasAttribute('data-lazy') && (item.hasAttribute('data-expanded') || t.expandAll) ? 'true' : 'false');
+      }
+      if (row) { trParts(t, item, row); trControls(item, false); }
+      if (kids.length) { trPrepare(t, sub, level + 1); }
+    });
+  }
+
+  // the buttons in the actions of a row are in the tab order only while their row is the one with the tab stop; a link in the label is reached by Enter on the item
+  function trControls(item, on) {
+    var row = trRow(item);
+    if (!row) { return; }
+    $$('a[href], button, input, select, textarea, [tabindex]', row).forEach(function (c) { c.tabIndex = on && c.closest('.mat-tree__actions') ? 0 : -1; });
+  }
+  function trRove(t, item) {
+    if (t.rover && t.rover !== item) { t.rover.tabIndex = -1; trControls(t.rover, false); }
+    t.rover = item;
+    item.tabIndex = 0;
+    trControls(item, true);
+  }
+  function trFixRoving(t) {
+    var shown = trVisible(t.el);
+    if (t.rover && shown.indexOf(t.rover) >= 0) { return; }
+    var pick = shown.filter(function (i) { return i.getAttribute('aria-selected') === 'true'; })[0] || shown[0];
+    if (pick) { trRove(t, pick); } else if (t.rover) { t.rover.tabIndex = -1; trControls(t.rover, false); t.rover = null; }
+  }
+  function trFocus(t, item) { trRove(t, item); item.focus(); }
+
+  // ---- several: the box of a parent follows what is below it
+  function trCheckDown(item, on) {
+    item.setAttribute('aria-checked', on ? 'true' : 'false');
+    trItems(trGroup(item)).forEach(function (c) { trCheckDown(c, on); });
+  }
+  function trSyncParent(p) {
+    var kids = trItems(trGroup(p));
+    if (!kids.length) { return; }
+    var on = kids.filter(function (k) { return k.getAttribute('aria-checked') === 'true'; }).length;
+    var mixed = kids.some(function (k) { return k.getAttribute('aria-checked') === 'mixed'; });
+    p.setAttribute('aria-checked', on === kids.length ? 'true' : on > 0 || mixed ? 'mixed' : 'false');
+  }
+  function trCheckUp(item) { for (var p = trParent(item); p; p = trParent(p)) { trSyncParent(p); } }
+
+  // the states that the markup says (aria-selected or aria-checked on an item) made complete and consistent
+  function trNormalise(t, scope) {
+    var items = $$('.mat-tree__item', scope);
+    if (!t.multiple) {
+      items.forEach(function (i) { if (i.getAttribute('aria-selected') !== 'true') { i.setAttribute('aria-selected', 'false'); } });
+      return;
+    }
+    items.forEach(function (i) { if (i.getAttribute('aria-checked') === 'true' && trItems(trGroup(i)).length) { trCheckDown(i, true); } });
+    items.forEach(function (i) { if (!trItems(trGroup(i)).length) { i.setAttribute('aria-checked', i.getAttribute('aria-checked') === 'true' ? 'true' : 'false'); } else if (!i.hasAttribute('aria-checked')) { i.setAttribute('aria-checked', 'false'); } });
+    items.slice().reverse().forEach(trSyncParent);
+  }
+
+  function trSelected(t) {
+    return $$(t.multiple ? '.mat-tree__item[aria-checked="true"]' : '.mat-tree__item[aria-selected="true"]', t.el);
+  }
+
+  // choose an item (one), or tick or untick it (several); on: true, false, or undefined (several: the other state)
+  function trChoose(item, on) {
+    var t = trTreeOf(item);
+    if (!t || item.getAttribute('aria-disabled') === 'true') { return; }
+    if (t.multiple) {
+      trCheckDown(item, on === undefined ? item.getAttribute('aria-checked') !== 'true' : on);
+      trCheckUp(item);
+    } else {
+      var next = on !== false;
+      if ((item.getAttribute('aria-selected') === 'true') === next) { return; }
+      $$('.mat-tree__item[aria-selected="true"]', t.el).forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+      item.setAttribute('aria-selected', next ? 'true' : 'false');
+    }
+    var picked = trSelected(t);
+    if (t.multiple) { trSay(t, trText('selected', picked.filter(function (i) { return !trGroup(i) || i.hasAttribute('data-lazy'); }).length)); }
+    item.dispatchEvent(new CustomEvent('mat:tree-select', { bubbles: true, detail: { tree: t.el, item: item, selected: picked, values: picked.map(trValue) } }));
+  }
+
+  // ---- open and close
+  function trStore() { try { return JSON.parse(localStorage.getItem(TR_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function trStoreKey(t, item) { return (root.getAttribute('data-app') || '') + ':' + t.key + ':' + trId(item); }
+  function trRemember(t, item, open) {
+    if (!t.key) { return; }
+    var store = trStore();
+    store[trStoreKey(t, item)] = open;
+    try { localStorage.setItem(TR_KEY, JSON.stringify(store)); } catch (e) { /* ignore */ }
+  }
+  function trRestore(t) {
+    if (!t.key) { return; }
+    var store = trStore();
+    $$('.mat-tree__item[aria-expanded]', t.el).forEach(function (item) {
+      var saved = store[trStoreKey(t, item)];
+      if (typeof saved === 'boolean' && !item.hasAttribute('data-lazy') && !item.hasAttribute('data-tree-fixed')) { item.setAttribute('aria-expanded', saved ? 'true' : 'false'); }
+    });
+  }
+
+  // opts.quiet: no event and nothing remembered (a filter opens what holds a match)
+  function trSetOpen(item, open, opts) {
+    var t = trTreeOf(item);
+    if (!t || !item.hasAttribute('aria-expanded') || trOpen(item) === open) { return; }
+    var quiet = opts && opts.quiet;
+    item.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && item.hasAttribute('data-lazy') && !item._matLoading) { trLoad(t, item); }
+    // the focus was below the item that closes: it goes to the item
+    if (!open && item !== doc.activeElement && item.contains(doc.activeElement)) { trFocus(t, item); }
+    if (!quiet) {
+      if (item._matWas !== undefined) { item._matWas = open; }
+      trRemember(t, item, open);
+      item.dispatchEvent(new CustomEvent('mat:tree-toggle', { bubbles: true, detail: { tree: t.el, item: item, open: open } }));
+    }
+    trFixRoving(t);
+  }
+  // what holds the item opens, without an event and without being remembered (it is not a choice of the user)
+  function trReveal(item) { for (var p = trParent(item); p; p = trParent(p)) { trSetOpen(p, true, { quiet: true }); } }
+  function trSetAll(scope, open) {
+    $$('.mat-tree__item[aria-expanded]', scope).forEach(function (i) { if (!(open && i.hasAttribute('data-lazy'))) { trSetOpen(i, open); } });
+  }
+
+  // ---- lazy children
+  function trLoad(t, item) {
+    item._matLoading = true;
+    item.classList.add('is-loading');
+    item.setAttribute('aria-busy', 'true');
+    trSay(t, trText('loading', trName(item)));
+    item.dispatchEvent(new CustomEvent('mat:tree-load', { bubbles: true, detail: { tree: t.el, item: item, id: trId(item), value: trValue(item) } }));
+  }
+  // the answer to mat:tree-load: the markup of the children (li.mat-tree__item); null when it failed (the item closes and can be tried again), an empty text when there are none
+  function trSetChildren(item, html) {
+    var t = trTreeOf(item);
+    if (!t || !item.classList.contains('mat-tree__item')) { return; }
+    item._matLoading = false;
+    item.classList.remove('is-loading');
+    item.removeAttribute('aria-busy');
+    if (html === null || html === undefined || html === false) {
+      item.setAttribute('aria-expanded', 'false');
+      trSay(t, trText('failed', trName(item)));
+      trFixRoving(t);
+      return;
+    }
+    var sub = trGroup(item);
+    if (!sub) { sub = doc.createElement('ul'); sub.className = 'mat-tree__group'; item.appendChild(sub); }
+    sub.innerHTML = String(html);
+    item.removeAttribute('data-lazy');
+    var kids = trItems(sub);
+    if (!kids.length) {
+      sub.remove();
+      item.removeAttribute('aria-expanded');
+      trSay(t, trText('empty', trName(item)));
+      trFixRoving(t);
+      return;
+    }
+    sub.setAttribute('role', 'group');
+    trPrepare(t, sub, (parseInt(item.getAttribute('aria-level'), 10) || 1) + 1);
+    if (t.multiple && item.getAttribute('aria-checked') === 'true') { kids.forEach(function (k) { trCheckDown(k, true); }); }
+    trNormalise(t, sub);
+    if (t.multiple) { trCheckUp(kids[0]); }
+    trNumber(sub);
+    $$('[data-tree-filter="' + t.el.id + '"]').forEach(function (f) { if (f.value) { trFilter(f); } });
+    trFixRoving(t);
+  }
+
+  // ---- filter: a search field hides the items that do not match and keeps the parents of those that do, open
+  function trEmpty(el) {
+    for (var n = el.nextElementSibling; n && !n.hasAttribute('data-tree'); n = n.nextElementSibling) { if (n.classList.contains('mat-tree__empty')) { return n; } }
+    return null;
+  }
+  function trFilter(field) {
+    var el = doc.getElementById(field.getAttribute('data-tree-filter'));
+    var t = el && el._matTree;
+    if (!t) { return; }
+    var text = trFold(field.value);
+    var matches = 0;
+    var all = $$('.mat-tree__item', el);
+    if (!text) {
+      all.forEach(function (i) {
+        i.hidden = false;
+        if (i._matWas !== undefined) { var was = i._matWas; i._matWas = undefined; trSetOpen(i, was, { quiet: true }); }
+      });
+    } else {
+      (function mark(group) {
+        var any = false;
+        trItems(group).forEach(function (item) {
+          var own = trFold(item.getAttribute('data-tree-search') || trName(item)).indexOf(text) >= 0;
+          var sub = trGroup(item);
+          var below = sub ? mark(sub) : false;
+          if (own) { matches += 1; }
+          item.hidden = !(own || below);
+          if (item.hasAttribute('aria-expanded')) {
+            if (item._matWas === undefined) { item._matWas = trOpen(item); }
+            trSetOpen(item, below ? true : item._matWas, { quiet: true });
+          }
+          if (own || below) { any = true; }
+        });
+        return any;
+      })(el);
+    }
+    trNumber(el);
+    trFixRoving(t);
+    var empty = trEmpty(el);
+    if (empty) {
+      if (!empty.textContent.trim()) { empty.textContent = trText('none'); }
+      empty.hidden = !text || matches > 0;
+    }
+    trSay(t, !text ? '' : matches === 0 ? trText('none') : matches === 1 ? trText('one') : trText('many', matches));
+    el.dispatchEvent(new CustomEvent('mat:tree-filter', { bubbles: true, detail: { tree: el, text: field.value, shown: matches, total: all.length } }));
+  }
+  doc.addEventListener('input', function (e) { if (e.target.matches && e.target.matches('[data-tree-filter]')) { trFilter(e.target); } });
+
+  // ---- the tree
+  function trInit(el) {
+    if (el._matTree) { return; }
+    var t = { el: el, multiple: el.hasAttribute('data-multiple'), expandAll: el.hasAttribute('data-expand-all'), key: el.getAttribute('data-tree-key') || '', rover: null, typed: '', typedAt: 0, live: null };
+    el._matTree = t;
+    el.setAttribute('role', 'tree');
+    if (!el.hasAttribute('aria-label') && !el.hasAttribute('aria-labelledby')) { el.setAttribute('aria-label', trText('tree')); }
+    t.live = doc.createElement('span');
+    t.live.className = 'mat-sr-only';
+    t.live.setAttribute('role', 'status');
+    t.live.setAttribute('aria-live', 'polite');
+    el.parentNode.insertBefore(t.live, el.nextSibling);
+    trPrepare(t, el, 1);
+    trRestore(t);
+    trNormalise(t, el);
+    trNumber(el);
+    trFixRoving(t);
+    el.classList.add('is-ready');
+    $$('[data-tree-filter="' + el.id + '"]').forEach(function (f) { if (f.value) { trFilter(f); } });
+  }
+  function initTrees(scope) {
+    if (scope && scope.matches && scope.matches('[data-tree]')) { trInit(scope); }
+    $$('[data-tree]', scope).forEach(trInit);
+  }
+
+  // a click: the chevron opens, the box ticks, the rest of the row chooses (and, with data-tree-toggle="row", opens); a link in the label is followed as usual
+  doc.addEventListener('click', function (e) {
+    var target = e.target;
+    if (!target.closest) { return; }
+    var all = target.closest('[data-tree-set]');
+    if (all) {
+      var want = all.getAttribute('data-tree-target');
+      var scope = (want && $(want)) || $('[data-tree]');
+      var mode = all.getAttribute('data-tree-set');
+      if (scope) { trSetAll(scope, mode === 'open' ? true : mode === 'closed' ? false : !$$('.mat-tree__item[aria-expanded="true"]', scope).length); }
+      return;
+    }
+    var row = target.closest('.mat-tree__row');
+    var item = row && row.parentNode;
+    var t = item && item.classList && item.classList.contains('mat-tree__item') ? trTreeOf(item) : null;
+    if (!t || target.closest('.mat-tree__actions')) { return; }
+    trRove(t, item);
+    if (target.closest('.mat-tree__toggle')) { item.focus(); trSetOpen(item, !trOpen(item)); return; }
+    if (item.getAttribute('aria-disabled') === 'true') { item.focus(); return; }
+    if (target.closest('.mat-tree__check')) { item.focus(); trChoose(item); return; }
+    item.focus();
+    trChoose(item, t.multiple ? undefined : true);
+    if (t.el.getAttribute('data-tree-toggle') === 'row' && item.hasAttribute('aria-expanded')) { trSetOpen(item, !trOpen(item)); }
+  });
+  doc.addEventListener('dblclick', function (e) {
+    var row = e.target.closest && e.target.closest('.mat-tree__row');
+    var item = row && row.parentNode;
+    var t = item && item.classList && item.classList.contains('mat-tree__item') ? trTreeOf(item) : null;
+    if (!t || t.el.getAttribute('data-tree-toggle') === 'row' || e.target.closest('.mat-tree__actions, .mat-tree__toggle, .mat-tree__check')) { return; }
+    trSetOpen(item, !trOpen(item));
+  });
+  doc.addEventListener('focusin', function (e) {
+    var item = e.target.closest && e.target.closest('.mat-tree__item');
+    var t = item && trTreeOf(item);
+    if (t) { trRove(t, item); }
+  });
+
+  // the keys of the tree pattern; they work only while the focus is on an item (a button in its actions has its own keys)
+  doc.addEventListener('keydown', function (e) {
+    var item = e.target;
+    if (!item.classList || !item.classList.contains('mat-tree__item') || e.altKey || e.ctrlKey || e.metaKey) { return; }
+    var t = trTreeOf(item);
+    if (!t) { return; }
+    var shown = trVisible(t.el);
+    var at = shown.indexOf(item);
+    var rtl = getComputedStyle(t.el).direction === 'rtl';
+    var key = e.key === 'ArrowRight' ? (rtl ? 'ArrowLeft' : 'ArrowRight') : e.key === 'ArrowLeft' ? (rtl ? 'ArrowRight' : 'ArrowLeft') : e.key;
+    var go = null;
+    // a key that is not a letter ends the word that was being typed
+    if (key.length > 1) { t.typed = ''; }
+    if (key === 'ArrowDown') { go = shown[at + 1]; }
+    else if (key === 'ArrowUp') { go = shown[at - 1]; }
+    else if (key === 'Home') { go = shown[0]; }
+    else if (key === 'End') { go = shown[shown.length - 1]; }
+    else if (key === 'ArrowRight') {
+      if (item.hasAttribute('aria-expanded') && !trOpen(item)) { trSetOpen(item, true); } else if (trOpen(item)) { go = trItems(trGroup(item)).filter(function (c) { return !c.hidden; })[0]; }
+    } else if (key === 'ArrowLeft') {
+      if (trOpen(item)) { trSetOpen(item, false); } else { go = trParent(item); }
+    } else if (key === '*') {
+      trItems(item.parentElement).forEach(function (s) { if (!(s.hasAttribute('data-lazy'))) { trSetOpen(s, true); } });
+    } else if (key === 'Enter' || (key === ' ' && !t.typed)) {
+      if (item.getAttribute('aria-disabled') !== 'true') {
+        var link = $('.mat-tree__label[href]', trRow(item) || item);
+        trChoose(item, t.multiple ? undefined : true);
+        if (link && key === 'Enter') { link.click(); }
+        if (t.el.getAttribute('data-tree-toggle') === 'row' && item.hasAttribute('aria-expanded')) { trSetOpen(item, !trOpen(item)); }
+      }
+    } else if (key.length === 1 && key !== ' ' || (key === ' ' && t.typed)) {
+      // the first letters: what is typed within 700 ms is one word; the search starts after this item, or at it while the word grows
+      var now = Date.now();
+      t.typed = (now - t.typedAt < 700 ? t.typed : '') + key;
+      t.typedAt = now;
+      setTimeout(function () { if (Date.now() - t.typedAt >= 690) { t.typed = ''; } }, 700);
+      var word = trFold(t.typed);
+      for (var n = 0; n < shown.length; n += 1) {
+        var cand = shown[(at + (word.length > 1 ? 0 : 1) + n) % shown.length];
+        if (trFold(trName(cand)).indexOf(word) === 0) { go = cand; break; }
+      }
+    } else { return; }
+    e.preventDefault();
+    if (go) { trFocus(t, go); }
+  });
+
+  // MatUi.tree: set up trees added later, open and close, choose, the children of a lazy item, every parent at once, and what is chosen now
+  var tree = {
+    init: initTrees,
+    expand: function (item) { if (item && trTreeOf(item)) { trReveal(item); trSetOpen(item, true); } },
+    collapse: function (item) { if (item && trTreeOf(item)) { trSetOpen(item, false); } },
+    select: function (item, on) { if (item && trTreeOf(item)) { if (on !== false) { trReveal(item); } trChoose(item, on); } },
+    setChildren: trSetChildren,
+    setAll: function (el, open) { if (el && el._matTree) { trSetAll(el, open !== false); } },
+    get: function (el) { var t = el && el._matTree; return t ? { items: trSelected(t), values: trSelected(t).map(trValue) } : null; }
+  };
+
+  // ------------------------------------------------------------------------------------------------ file upload (FORM-21, matui.forms.css)
+  // <div class="mat-upload" data-upload><input class="mat-upload__input" type="file" id="" name="" multiple accept=".pdf"></div> is the native file field
+  // without the script, and it stays the thing that is validated and posted (required, accept, multiple work). The script hides it and draws a drop zone (files
+  // dragged onto it, or a click, Enter or Space on its button, which is the one Tab stop), the list of the chosen files (name, size, a thumbnail for an image, a
+  // remove button named by the file) and a line for what was refused and why. Every file that arrives (from the dialog, a drop, a paste or MatUi.upload.add) is
+  // checked against accept, data-max-size and data-max-files; a refused file is named with the reason in words, the others are still added. The files of the
+  // real input are kept in step with the list (a DataTransfer), so the form posts exactly what the list shows. Without `multiple` a new file replaces the old one.
+  // data-paste adds the images of the clipboard (only while the focus is in the control). An app that uploads by itself draws progress and failures with
+  // MatUi.upload.setProgress / setError. Events on the wrapper: mat:upload-change (detail.files, added, removed, source) and mat:upload-refused (detail.refused).
+  var UP_TEXT = {
+    en: {
+      dropOne: 'Drop a file here or choose one', dropMany: 'Drop files here or choose them', tapOne: 'Tap to choose a file', tapMany: 'Tap to choose files', dropping: 'Drop to add',
+      upToFiles: 'up to {0} files', upToSize: 'up to {0}', upToSizeEach: 'up to {0} each', pasteImage: 'you can also paste an image',
+      typeImages: 'images', typeAudio: 'audio', typeVideo: 'video', typeText: 'text',
+      files: 'Chosen files', remove: 'Remove {0}', added: '{0} added', addedMany: '{0} files added', removed: '{0} removed',
+      refusedType: '{0}: this type of file is not accepted. Allowed: {1}.', refusedSize: '{0}: the file is too large ({1}). The limit is {2}.',
+      refusedCount: '{0}: not added. At most {1} files are allowed.', refusedOne: '{0}: not added. Only one file is allowed.',
+      refusedDuplicate: '{0}: this file has already been added.', refusedFolder: '{0}: a folder cannot be uploaded. Choose the files in it instead.',
+      refusedPaste: 'Only images can be pasted here.',
+      percent: '{0} %', done: 'Uploaded', failed: 'Upload failed', pastedName: 'image'
+    },
+    de: {
+      dropOne: 'Datei hierher ziehen oder auswählen', dropMany: 'Dateien hierher ziehen oder auswählen', tapOne: 'Tippen, um eine Datei auszuwählen', tapMany: 'Tippen, um Dateien auszuwählen', dropping: 'Zum Hinzufügen loslassen',
+      upToFiles: 'bis zu {0} Dateien', upToSize: 'bis zu {0}', upToSizeEach: 'je bis zu {0}', pasteImage: 'ein Bild lässt sich auch einfügen',
+      typeImages: 'Bilder', typeAudio: 'Audio', typeVideo: 'Video', typeText: 'Text',
+      files: 'Ausgewählte Dateien', remove: '{0} entfernen', added: '{0} hinzugefügt', addedMany: '{0} Dateien hinzugefügt', removed: '{0} entfernt',
+      refusedType: '{0}: Dieser Dateityp wird nicht angenommen. Erlaubt: {1}.', refusedSize: '{0}: Die Datei ist zu groß ({1}). Das Limit ist {2}.',
+      refusedCount: '{0}: nicht hinzugefügt. Es sind höchstens {1} Dateien erlaubt.', refusedOne: '{0}: nicht hinzugefügt. Es ist nur eine Datei erlaubt.',
+      refusedDuplicate: '{0}: Diese Datei wurde schon hinzugefügt.', refusedFolder: '{0}: Ein Ordner kann nicht hochgeladen werden. Die Dateien darin lassen sich einzeln auswählen.',
+      refusedPaste: 'Hier lassen sich nur Bilder einfügen.',
+      percent: '{0} %', done: 'Hochgeladen', failed: 'Hochladen fehlgeschlagen', pastedName: 'bild'
+    }
+  };
+
+  function upText(key, a, b, c) {
+    var table = UP_TEXT[(root.lang || 'en').slice(0, 2).toLowerCase()] || UP_TEXT.en;
+    var s = root.getAttribute('data-up-' + key.toLowerCase()) || table[key] || UP_TEXT.en[key] || key;
+    var args = [a, b, c];
+    return s.replace(/\{(\d)\}/g, function (m, i) { var v = args[+i]; return v === undefined ? '' : v; });
+  }
+
+  // "10MB", "512 KB", "1.5 GB" or a number of bytes (1 KB is 1024 bytes); 0 when there is no limit or it cannot be read
+  function upSizeOf(text) {
+    var m = /^\s*(\d+(?:[.,]\d+)?)\s*(b|kb|k|mb|m|gb|g)?\s*$/i.exec(text || '');
+    if (!m) { return 0; }
+    var unit = (m[2] || 'b').toLowerCase().charAt(0);
+    return Math.round(parseFloat(m[1].replace(',', '.')) * (unit === 'g' ? 1073741824 : unit === 'm' ? 1048576 : unit === 'k' ? 1024 : 1));
+  }
+  function upFormatSize(bytes) {
+    var units = ['B', 'KB', 'MB', 'GB'], n = bytes, i = 0, text;
+    while (n >= 1024 && i < units.length - 1) { n /= 1024; i += 1; }
+    try { text = n.toLocaleString(root.lang || 'en', { maximumFractionDigits: i === 0 ? 0 : 1, useGrouping: false }); } catch (err) { text = String(Math.round(n * 10) / 10); }
+    return text + ' ' + units[i];
+  }
+
+  // accept as the browser reads it: ".pdf" (the end of the name), a kind such as image followed by a slash and a star (every type of that kind), "application/pdf" (one type)
+  var UP_KIND = /^([a-z]+)\/\*$/;
+  var UP_KIND_TEXT = { image: 'typeImages', audio: 'typeAudio', video: 'typeVideo', text: 'typeText' };
+  function upAcceptList(input) { return (input.getAttribute('accept') || '').split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean); }
+  function upAccepts(list, file) {
+    if (!list.length) { return true; }
+    var name = file.name.toLowerCase(), type = (file.type || '').toLowerCase();
+    return list.some(function (t) {
+      var kind = UP_KIND.exec(t);
+      if (t.charAt(0) === '.') { return name.slice(-t.length) === t; }
+      if (kind) { return type.indexOf(kind[1] + '/') === 0; }
+      return type === t;
+    });
+  }
+  // the accepted types as people say them: "PDF, PNG, images"
+  function upTypeLabel(list) {
+    var out = [];
+    list.forEach(function (t) {
+      var s, kind = UP_KIND.exec(t);
+      if (t.charAt(0) === '.') { s = t.slice(1).toUpperCase(); }
+      else if (kind) { s = UP_KIND_TEXT[kind[1]] ? upText(UP_KIND_TEXT[kind[1]]) : kind[1]; }
+      else { s = (t.split('/')[1] || t).split('+')[0].replace(/^x-/, '').toUpperCase(); }
+      if (s && out.indexOf(s) < 0) { out.push(s); }
+    });
+    return out.join(', ');
+  }
+  function upIconFor(file) {
+    var n = file.name.toLowerCase(), t = (file.type || '').toLowerCase();
+    if (t.indexOf('image/') === 0) { return 'image'; }
+    if (t === 'application/pdf' || t.indexOf('text/') === 0 || /\.(pdf|txt|md|doc|docx|odt|rtf)$/.test(n)) { return 'file-text'; }
+    if (/\.(zip|tar|gz|tgz|7z|rar)$/.test(n)) { return 'archive'; }
+    return 'file';
+  }
+  function upSupported() {
+    try { return typeof DataTransfer === 'function' && !!new DataTransfer().files; } catch (err) { return false; }
+  }
+  function upTouch() { return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); }
+
+  // what the wrapper is told: the limits of the real input and of the data attributes (read when they are needed, so that a change of one is seen)
+  function upConf(u) {
+    var multiple = u.input.multiple, max = parseInt(u.wrap.getAttribute('data-max-files'), 10);
+    return { multiple: multiple, room: multiple ? (max > 0 ? max : Infinity) : 1, max: max > 0 ? max : 0, maxSize: upSizeOf(u.wrap.getAttribute('data-max-size')), accept: upAcceptList(u.input) };
+  }
+
+  function upOf(ref) {
+    var el = typeof ref === 'string' ? (doc.getElementById(ref) || $(ref)) : ref;
+    var wrap = el && el.closest ? el.closest('.mat-upload') : null;
+    return wrap && wrap._matUpload ? wrap._matUpload : null;
+  }
+  function upSay(u, text) {
+    u.live.textContent = '';
+    if (text) { u.live.textContent = text; }
+  }
+
+  // The words in the zone: what to do, and the limits (so that the person knows them before choosing, not only when a file is refused).
+  function upPaintZone(u) {
+    var c = upConf(u), parts = [], types = upTypeLabel(c.accept);
+    u.title.textContent = u.wrap.classList.contains('is-drag') ? upText('dropping') : upText((upTouch() ? 'tap' : 'drop') + (c.multiple ? 'Many' : 'One'));
+    if (types) { parts.push(types); }
+    if (c.multiple && c.max) { parts.push(upText('upToFiles', c.max)); }
+    if (c.maxSize) { parts.push(upText(c.multiple ? 'upToSizeEach' : 'upToSize', upFormatSize(c.maxSize))); }
+    if (u.wrap.hasAttribute('data-paste')) { parts.push(upText('pasteImage')); }
+    u.limits.textContent = parts.length ? parts.join(' · ').replace(/^./, function (ch) { return ch.toUpperCase(); }) : '';
+    u.limits.hidden = !parts.length;
+  }
+
+  // the state of the real input is the one of the control: disabled, and the red mark that showError() puts on it
+  function upState(u) {
+    var off = u.input.disabled;
+    u.wrap.classList.toggle('is-disabled', off);
+    u.wrap.classList.toggle('is-invalid', u.input.getAttribute('aria-invalid') === 'true');
+    u.browse.disabled = off;
+    u.entries.forEach(function (e) { e.remove.disabled = off; });
+    upPaintZone(u);
+  }
+
+  // the real input holds exactly the chosen files (a form posts what the list shows)
+  function upSync(u) {
+    var dt = new DataTransfer();
+    u.entries.forEach(function (e) { dt.items.add(e.file); });
+    u.input.files = dt.files;
+    u.list.hidden = u.entries.length === 0;
+  }
+
+  function upPaintEntry(e) {
+    var state = e.error ? 'error' : e.done ? 'done' : e.progress !== null ? 'uploading' : '';
+    e.el.classList.toggle('is-uploading', state === 'uploading');
+    e.el.classList.toggle('is-done', state === 'done');
+    e.el.classList.toggle('is-error', state === 'error');
+    e.meta.textContent = upFormatSize(e.file.size) + (state === 'uploading' ? ' · ' + upText('percent', Math.round(e.progress)) : '');
+    if (state === 'done') { e.meta.insertAdjacentHTML('beforeend', ' · <span class="mat-upload__state">' + icon('check-circle') + esc(upText('done')) + '</span>'); }
+    e.bar.hidden = state !== 'uploading';
+    if (state === 'uploading') {
+      e.bar.setAttribute('aria-valuenow', String(Math.round(e.progress)));
+      e.fill.style.setProperty('--mat-up-progress', e.progress + '%');
+    }
+    e.problem.hidden = state !== 'error';
+    e.problem.innerHTML = state === 'error' ? icon('alert') + '<span>' + esc(e.error) + '</span>' : '';
+    if (state === 'error') { e.remove.setAttribute('aria-describedby', e.problem.id); } else { e.remove.removeAttribute('aria-describedby'); }
+  }
+
+  function upEntry(u, file) {
+    var e = { file: file, url: '', progress: null, done: false, error: '' };
+    var id = nextId('mat-up-file');
+    if (u.wrap.getAttribute('data-preview') !== 'none' && /^image\/(png|jpe?g|gif|webp|avif|bmp|svg\+xml)$/i.test(file.type) && window.URL && URL.createObjectURL) { e.url = URL.createObjectURL(file); }
+    e.el = doc.createElement('li');
+    e.el.className = 'mat-upload__item';
+    e.thumb = doc.createElement('span');
+    e.thumb.className = 'mat-upload__thumb';
+    e.thumb.setAttribute('aria-hidden', 'true');
+    var fallback = function () { e.thumb.textContent = ''; e.thumb.innerHTML = icon(upIconFor(file)); };
+    if (e.url) {
+      var img = doc.createElement('img');
+      img.alt = '';
+      img.src = e.url;
+      img.addEventListener('error', fallback);
+      e.thumb.appendChild(img);
+    } else { fallback(); }
+    var body = doc.createElement('span');
+    body.className = 'mat-upload__body';
+    var name = doc.createElement('span');
+    name.className = 'mat-upload__name';
+    name.textContent = file.name;
+    e.meta = doc.createElement('span');
+    e.meta.className = 'mat-upload__meta';
+    e.bar = doc.createElement('span');
+    e.bar.className = 'mat-upload__bar';
+    e.bar.setAttribute('role', 'progressbar');
+    e.bar.setAttribute('aria-label', file.name);
+    e.bar.setAttribute('aria-valuemin', '0');
+    e.bar.setAttribute('aria-valuemax', '100');
+    e.bar.hidden = true;
+    e.fill = doc.createElement('span');
+    e.fill.className = 'mat-upload__fill';
+    e.bar.appendChild(e.fill);
+    e.problem = doc.createElement('span');
+    e.problem.className = 'mat-upload__problem';
+    e.problem.id = id + '-problem';
+    e.problem.hidden = true;
+    body.appendChild(name);
+    body.appendChild(e.meta);
+    body.appendChild(e.bar);
+    body.appendChild(e.problem);
+    e.remove = doc.createElement('button');
+    e.remove.type = 'button';
+    e.remove.className = 'mat-btn mat-btn--ghost mat-btn--icon mat-upload__remove';
+    e.remove.setAttribute('aria-label', upText('remove', file.name));
+    e.remove.title = upText('remove', file.name);
+    e.remove.innerHTML = icon('x');
+    e.remove.disabled = u.input.disabled;
+    e.el.appendChild(e.thumb);
+    e.el.appendChild(body);
+    e.el.appendChild(e.remove);
+    e.el._matUploadEntry = e;
+    u.list.appendChild(e.el);
+    u.entries.push(e);
+    upPaintEntry(e);
+    return e;
+  }
+  function upDrop(u, e) {
+    if (e.url) { URL.revokeObjectURL(e.url); e.url = ''; }
+    e.el.remove();
+    u.entries.splice(u.entries.indexOf(e), 1);
+  }
+
+  // what the person is told about the files that were refused: a list at the field, a live region, in words with an icon (never only a colour)
+  function upIssues(u, messages) {
+    u.status.textContent = '';
+    if (!messages.length) { return; }
+    var ul = doc.createElement('ul');
+    ul.className = 'mat-upload__issues';
+    messages.forEach(function (m) {
+      var li = doc.createElement('li');
+      li.innerHTML = icon('alert') + '<span></span>';
+      li.lastChild.textContent = m;
+      ul.appendChild(li);
+    });
+    u.status.appendChild(ul);
+  }
+
+  function upFileList(u) { return u.entries.map(function (e) { return e.file; }); }
+  function upChanged(u, source, added, removed) {
+    u.wrap.dispatchEvent(new CustomEvent('mat:upload-change', { bubbles: true, detail: { files: upFileList(u), added: added, removed: removed, source: source } }));
+  }
+  // a change that did not come from the dialog is told to the form like the browser would: input and change on the real input (the control ignores them)
+  function upTell(u) {
+    u.busy = true;
+    try {
+      u.input.dispatchEvent(new Event('input', { bubbles: true }));
+      u.input.dispatchEvent(new Event('change', { bubbles: true }));
+    } finally { u.busy = false; }
+  }
+
+  // Files arrive (source: picker, drop, paste, api). Each is checked in this order: folder, type, size, already added, room. What is refused is named; the rest is added.
+  // Without `multiple` the first file replaces the one that was there. folders: the indexes of the files that are folders (a drop).
+  function upAdd(u, files, source, folders) {
+    var c = upConf(u), refused = [], accepted = [], removed = [], added = [], types = upTypeLabel(c.accept), have = upFileList(u);
+    function refuse(file, reason, message) { refused.push({ file: file, name: file.name, reason: reason, message: message }); }
+    function same(a, b) { return a.name === b.name && a.size === b.size && a.lastModified === b.lastModified; }
+    files.forEach(function (file, i) {
+      if (folders && folders.indexOf(i) >= 0) { refuse(file, 'folder', upText('refusedFolder', file.name)); }
+      else if (!upAccepts(c.accept, file)) { refuse(file, 'type', upText('refusedType', file.name, types)); }
+      else if (c.maxSize && file.size > c.maxSize) { refuse(file, 'size', upText('refusedSize', file.name, upFormatSize(file.size), upFormatSize(c.maxSize))); }
+      else if (have.concat(accepted).some(function (o) { return same(o, file); })) { refuse(file, 'duplicate', upText('refusedDuplicate', file.name)); }
+      else { accepted.push(file); }
+    });
+    if (c.room === 1) {
+      accepted.slice(1).forEach(function (f) { refuse(f, 'count', upText('refusedOne', f.name)); });
+      accepted = accepted.slice(0, 1);
+      if (accepted.length) { removed = u.entries.slice(); }
+    } else {
+      var free = Math.max(0, c.room - u.entries.length);
+      accepted.slice(free).forEach(function (f) { refuse(f, 'count', upText('refusedCount', f.name, c.room)); });
+      accepted = accepted.slice(0, free);
+    }
+    var removedFiles = removed.map(function (e) { return e.file; });
+    removed.forEach(function (e) { upDrop(u, e); });
+    accepted.forEach(function (f) { added.push(upEntry(u, f).file); });
+    upSync(u);
+    upIssues(u, refused.map(function (r) { return r.message; }));
+    if (added.length) { upSay(u, added.length === 1 ? upText('added', added[0].name) : upText('addedMany', added.length)); }
+    if (added.length || removedFiles.length) {
+      upChanged(u, source, added, removedFiles);
+      if (source !== 'picker') { upTell(u); }
+    }
+    if (refused.length) { u.wrap.dispatchEvent(new CustomEvent('mat:upload-refused', { bubbles: true, detail: { refused: refused, source: source } })); }
+    return { added: added, removed: removedFiles, refused: refused };
+  }
+
+  function upEntryOf(u, ref) {
+    if (typeof ref === 'number') { return u.entries[ref] || null; }
+    for (var i = 0; i < u.entries.length; i += 1) {
+      if (u.entries[i].file === ref || u.entries[i].file.name === ref) { return u.entries[i]; }
+    }
+    return null;
+  }
+  function upRemoveEntry(u, e, source) {
+    var at = u.entries.indexOf(e), name = e.file.name;
+    upDrop(u, e);
+    upSync(u);
+    upIssues(u, []);
+    upSay(u, upText('removed', name));
+    upChanged(u, source, [], [e.file]);
+    upTell(u);
+    return at;
+  }
+  function upClear(u, source) {
+    var removed = upFileList(u);
+    u.entries.slice().forEach(function (e) { upDrop(u, e); });
+    upSync(u);
+    upIssues(u, []);
+    upSay(u, '');
+    if (removed.length) { upChanged(u, source, [], removed); }
+    return removed.length;
+  }
+
+  function upDragState(u, on) {
+    u.wrap.classList.toggle('is-drag', on);
+    upPaintZone(u);
+  }
+
+  function upPasted(file) {
+    var ext = (/^image\/([a-z0-9]+)/i.exec(file.type) || [])[1] || 'png', d = new Date();
+    var two = function (n) { return (n < 10 ? '0' : '') + n; };
+    ext = ext === 'jpeg' ? 'jpg' : ext;
+    var stamp = d.getFullYear() + two(d.getMonth() + 1) + two(d.getDate()) + '-' + two(d.getHours()) + two(d.getMinutes()) + two(d.getSeconds());
+    return new File([file], upText('pastedName') + '-' + stamp + '.' + ext, { type: file.type, lastModified: file.lastModified });
+  }
+
+  function upInit(wrap) {
+    var old = wrap._matUpload;
+    if (old) { upState(old); return; }
+    var input = $('.mat-upload__input', wrap);
+    if (!input || input.type !== 'file' || !upSupported()) { return; }
+    var u = { wrap: wrap, input: input, entries: [], busy: false, drag: 0 };
+    wrap._matUpload = u;
+    if (!input.id) { input.id = nextId('mat-up'); }
+
+    u.zone = doc.createElement('div');
+    u.zone.className = 'mat-upload__zone';
+    u.zone.innerHTML = icon('upload');
+    u.browse = doc.createElement('button');
+    u.browse.type = 'button';
+    u.browse.className = 'mat-upload__browse';
+    u.title = doc.createElement('span');
+    u.title.className = 'mat-upload__title';
+    u.title.id = input.id + '-title';
+    u.browse.appendChild(u.title);
+    u.limits = doc.createElement('span');
+    u.limits.className = 'mat-upload__limits';
+    u.limits.id = input.id + '-limits';
+    u.zone.appendChild(u.browse);
+    u.zone.appendChild(u.limits);
+    // the button is named by the label of the field and by what it says, and told the limits and the hint of the field
+    var lab = $('label[for="' + input.id + '"]');
+    if (lab) { if (!lab.id) { lab.id = input.id + '-label'; } u.browse.setAttribute('aria-labelledby', lab.id + ' ' + u.title.id); }
+    else if (input.getAttribute('aria-label')) { u.browse.setAttribute('aria-label', input.getAttribute('aria-label')); }
+    u.browse.setAttribute('aria-describedby', (u.limits.id + ' ' + (input.getAttribute('aria-describedby') || '')).trim());
+
+    u.list = doc.createElement('ul');
+    u.list.className = 'mat-upload__list';
+    u.list.setAttribute('aria-label', upText('files'));
+    u.list.hidden = true;
+    u.status = doc.createElement('div');
+    u.status.className = 'mat-upload__status';
+    u.status.setAttribute('role', 'status');
+    u.status.setAttribute('aria-live', 'polite');
+    u.live = doc.createElement('span');
+    u.live.className = 'mat-sr-only';
+    u.live.setAttribute('role', 'status');
+    u.live.setAttribute('aria-live', 'polite');
+    wrap.appendChild(u.zone);
+    wrap.appendChild(u.list);
+    wrap.appendChild(u.status);
+    wrap.appendChild(u.live);
+
+    // the real input is not offered to the Tab key or a screen reader (the button is); whoever focuses it (a message of the form) lands on the button
+    input.tabIndex = -1;
+    input.setAttribute('aria-hidden', 'true');
+    wrap.classList.add('is-ready');
+    upState(u);
+    if (typeof MutationObserver === 'function') {
+      new MutationObserver(function () { upState(u); }).observe(input, { attributes: true, attributeFilter: ['disabled', 'accept', 'multiple', 'aria-invalid'] });
+      new MutationObserver(function () { upState(u); }).observe(wrap, { attributes: true, attributeFilter: ['data-max-size', 'data-max-files', 'data-paste'] });
+    }
+    // files that the field holds when the page is drawn (the browser restores them after a reload) are the list
+    if (input.files && input.files.length) { upAdd(u, Array.prototype.slice.call(input.files), 'picker'); }
+  }
+  function initUploads(scope) { $$('.mat-upload[data-upload]', scope).forEach(upInit); }
+
+  // ---- the events of the upload
+  doc.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t.closest) { return; }
+    var browse = t.closest('.mat-upload__browse'), remove = t.closest('.mat-upload__remove'), u = upOf(browse || remove);
+    if (!u || u.input.disabled) { return; }
+    if (browse) { u.input.click(); return; }
+    var item = remove.closest('.mat-upload__item'), entry = item && item._matUploadEntry;
+    if (!entry) { return; }
+    // the focus goes to the button of the next file, else of the one before, else back to the zone: it never falls on the page
+    var at = upRemoveEntry(u, entry, 'remove'), next = u.entries[at] || u.entries[at - 1];
+    (next ? next.remove : u.browse).focus();
+  });
+  // a file chosen in the dialog: the person's choice is added to the list, and the field is put back to the whole list before anybody else hears of the change
+  doc.addEventListener('change', function (e) {
+    var t = e.target, u = t && t.classList && t.classList.contains('mat-upload__input') ? upOf(t) : null;
+    if (!u || u.busy) { return; }
+    var picked = Array.prototype.slice.call(t.files || []), done = picked.length ? upAdd(u, picked, 'picker') : null;
+    // an empty field is a dialog that was cancelled (some browsers then clear the field): the list stays, and so does the field
+    if (!picked.length) { upSync(u); }
+    if (!done || (!done.added.length && !done.removed.length)) { e.stopImmediatePropagation(); }
+  }, true);
+  doc.addEventListener('focusin', function (e) {
+    var t = e.target, u = t.classList && t.classList.contains('mat-upload__input') ? upOf(t) : null;
+    if (u && !u.input.disabled) { u.browse.focus(); }
+  });
+
+  function upHasFiles(e) { var types = e.dataTransfer && e.dataTransfer.types; return !!types && Array.prototype.indexOf.call(types, 'Files') >= 0; }
+  doc.addEventListener('dragenter', function (e) {
+    var u = upOf(e.target);
+    if (!u || !upHasFiles(e)) { return; }
+    e.preventDefault();
+    if (u.input.disabled) { return; }
+    u.drag += 1;
+    upDragState(u, true);
+  });
+  doc.addEventListener('dragover', function (e) {
+    var u = upOf(e.target);
+    if (!u || !upHasFiles(e)) { return; }
+    e.preventDefault();
+    e.dataTransfer.dropEffect = u.input.disabled ? 'none' : 'copy';
+  });
+  doc.addEventListener('dragleave', function (e) {
+    var u = upOf(e.target);
+    if (!u || u.drag === 0) { return; }
+    u.drag -= 1;
+    if (u.drag === 0) { upDragState(u, false); }
+  });
+  doc.addEventListener('drop', function (e) {
+    $$('.mat-upload.is-drag').forEach(function (w) { if (w._matUpload) { w._matUpload.drag = 0; upDragState(w._matUpload, false); } });
+    var u = upOf(e.target);
+    if (!u || !upHasFiles(e)) { return; }
+    e.preventDefault();
+    if (u.input.disabled) { return; }
+    var files = Array.prototype.slice.call(e.dataTransfer.files || []), folders = [], items = Array.prototype.filter.call(e.dataTransfer.items || [], function (it) { return it.kind === 'file'; });
+    items.forEach(function (it, i) {
+      var entry = it.webkitGetAsEntry ? it.webkitGetAsEntry() : null;
+      if (entry && entry.isDirectory) { folders.push(i); }
+    });
+    if (files.length) { upAdd(u, files, 'drop', folders); }
+  });
+  doc.addEventListener('dragend', function () { $$('.mat-upload.is-drag').forEach(function (w) { if (w._matUpload) { w._matUpload.drag = 0; upDragState(w._matUpload, false); } }); });
+
+  // an image on the clipboard (a screenshot) is added while the focus is in the control; text and everything else is left to the browser
+  doc.addEventListener('paste', function (e) {
+    var u = upOf(e.target);
+    if (!u || !u.wrap.hasAttribute('data-paste') || u.input.disabled) { return; }
+    var data = e.clipboardData, files = data && data.files ? Array.prototype.slice.call(data.files) : [];
+    if (!files.length) { return; }
+    e.preventDefault();
+    var images = files.filter(function (f) { return /^image\//i.test(f.type); });
+    if (images.length) { upAdd(u, images.map(upPasted), 'paste'); }
+    else { upIssues(u, [upText('refusedPaste')]); }
+  });
+  doc.addEventListener('reset', function (e) {
+    setTimeout(function () { $$('.mat-upload', e.target).forEach(function (w) { if (w._matUpload) { upClear(w._matUpload, 'reset'); } }); }, 0);
+  }, true);
+
+  // ---- for an app: the files of a control, and what it draws for an upload it does by itself
+  function upFiles(ref) { var u = upOf(ref); return u ? upFileList(u) : []; }
+  function upAddFiles(ref, files) {
+    var u = upOf(ref);
+    return u ? upAdd(u, Array.prototype.slice.call(files || []), 'api') : { added: [], removed: [], refused: [] };
+  }
+  function upRemoveFile(ref, which) {
+    var u = upOf(ref), e = u && upEntryOf(u, which);
+    if (e) { upRemoveEntry(u, e, 'api'); }
+    return !!e;
+  }
+  function upClearFiles(ref) { var u = upOf(ref); if (u && upClear(u, 'api')) { upTell(u); } }
+  // percent 0 to 100 draws a bar (100 is "Uploaded"); null or undefined takes the progress, the mark and the error of that file away (a new try)
+  function upSetProgress(ref, which, percent) {
+    var u = upOf(ref), e = u && upEntryOf(u, which);
+    if (!e) { return false; }
+    var p = parseFloat(percent);
+    e.error = '';
+    e.progress = isFinite(p) ? clamp(p, 0, 100) : null;
+    e.done = e.progress !== null && e.progress >= 100;
+    if (e.done) { e.progress = null; upSay(u, e.file.name + ': ' + upText('done')); }
+    upPaintEntry(e);
+    return true;
+  }
+  // a file that the server did not take: its message (the default is "Upload failed") in words at the file; an empty message takes the failure away
+  function upSetError(ref, which, message) {
+    var u = upOf(ref), e = u && upEntryOf(u, which);
+    if (!e) { return false; }
+    e.error = message === undefined || message === null ? upText('failed') : String(message);
+    e.progress = null;
+    e.done = false;
+    upPaintEntry(e);
+    if (e.error) { upSay(u, e.file.name + ': ' + e.error); }
+    return true;
+  }
+
+  // ------------------------------------------------------------------------------------------------ search with suggestions (FORM-23, SHELL-20, matui.pickers.css)
+  // <div class="mat-search" data-autocomplete data-search-url="/api/search"><input class="mat-search__input" type="search" id="" name="q"></div> is a search field that works without the
+  // script: put it in a <form role="search" action="/Search"> and Enter sends it. The script draws a magnifier, a clear button and a popup that follows the WAI-ARIA 1.2 combobox with a
+  // listbox: the input gets role combobox, aria-expanded, aria-controls, aria-autocomplete="list" and aria-activedescendant, the options (links) are role option with an id, the groups role group
+  // named by their heading. ArrowDown and ArrowUp move the active option (they wrap), Home and End go to the first and the last while one is active, Enter follows the active option and
+  // otherwise sends the form, Escape closes the popup and a second Escape clears the text, Tab closes it. What was typed is never replaced while the arrow keys walk. A polite live region says
+  // the number of suggestions, that there are none, or that it is loading. The suggestions come from data-search-url (GET ?q=text&limit=8, the answer is { groups: [ { name, items: [ { title,
+  // text, href, icon, kind, id } ] } ] }) or from local data (data-items, MatUi.search.setItems): an answer that arrives late is dropped (a counter and an AbortController), a failed request shows
+  // a row and typing goes on, a slow one shows a loading row after 200 ms. The part of a title that matches the text is wrapped in mark.mat-search__hit made of DOM text nodes, never markup, and a
+  // link is only followed when it is an http or https address. data-recent="key" keeps the last five choices in localStorage (per app and key) and shows them while the field is focused and empty.
+  // data-key="/,mod+k" focuses the field: a plain key that another element of the page has as data-shortcut stays that element's, mod is Ctrl or Cmd. On a phone the focused field is a
+  // full-screen panel with the field on top and an X at the top right; in the header bar (.mat-topbar__search) it is an icon button there. Events on the wrapper: mat:search-select (cancelable;
+  // detail.item, group, query, source) and mat:search-results (detail.query, count, source). API: MatUi.search.init / setItems / open / close / clear / focus / value.
+  var SRCH_TEXT = {
+    en: {
+      label: 'Search', clear: 'Clear the search', close: 'Close the search', open: 'Search',
+      suggestions: 'Suggestions', recentList: 'Recent searches', recent: 'Recent searches', clearRecent: 'Clear recent', recentCleared: 'Recent searches cleared',
+      count: '{0} suggestions', countOne: '1 suggestion', none: 'No results for “{0}”', noneShort: 'No results', loading: 'Searching …',
+      error: 'Search is not available', errorHint: 'You can still press Enter to search.', all: 'All results for “{0}”', hintKey: 'Press {0} to search'
+    },
+    de: {
+      label: 'Suchen', clear: 'Suche leeren', close: 'Suche schließen', open: 'Suchen',
+      suggestions: 'Vorschläge', recentList: 'Letzte Suchen', recent: 'Letzte Suchen', clearRecent: 'Verlauf löschen', recentCleared: 'Letzte Suchen gelöscht',
+      count: '{0} Vorschläge', countOne: '1 Vorschlag', none: 'Keine Treffer für „{0}“', noneShort: 'Keine Treffer', loading: 'Suche läuft …',
+      error: 'Die Suche ist nicht verfügbar', errorHint: 'Mit der Eingabetaste lässt sich trotzdem suchen.', all: 'Alle Treffer für „{0}“', hintKey: '{0} drücken, um zu suchen'
+    }
+  };
+
+  var SR_RECENT = 'mat-search-recent';
+  var SR_RECENT_MAX = 5;
+  var searchOpen = null;
+  var searchFull = null;
+
+  function srText(key, a) {
+    var table = SRCH_TEXT[(root.lang || 'en').slice(0, 2).toLowerCase()] || SRCH_TEXT.en;
+    var s = root.getAttribute('data-sr-' + key.toLowerCase()) || table[key] || SRCH_TEXT.en[key] || key;
+    // a function as the replacement: what a person typed may hold a "$&"
+    return s.replace('{0}', function () { return a === undefined ? '' : a; });
+  }
+  function srEl(tag, cls) { var el = doc.createElement(tag); el.className = cls; return el; }
+  function srOf(ref) {
+    var el = typeof ref === 'string' ? (doc.getElementById(ref) || $(ref)) : ref;
+    var wrap = el && el.closest ? el.closest('.mat-search') : null;
+    return wrap && wrap._matSearch ? wrap._matSearch : null;
+  }
+  function srOfInput(t) { return t && t.classList && t.classList.contains('mat-search__input') ? srOf(t) : null; }
+
+  // ---- the text: without case and accents (also the ß), so that "Häkchen" and "hakchen" are one word; a map says where each folded character came from
+  function srFold(text, map) {
+    var out = '';
+    for (var i = 0; i < text.length; i += 1) {
+      var f = text.charAt(i).toLowerCase();
+      if (f === 'ß') { f = 'ss'; } else if (f.normalize) { f = f.normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+      out += f;
+      if (map) { for (var k = 0; k < f.length; k += 1) { map.push(i); } }
+    }
+    return out;
+  }
+  function srTerms(q) { return srFold(q).split(/[^a-z0-9À-￿]+/).filter(Boolean); }
+
+  // the pieces of a title that the terms of the query match, as [from, to) of the title, merged where they touch
+  function srRanges(title, terms) {
+    var map = [], folded = srFold(title, map), marks = [], out = [];
+    terms.forEach(function (term) {
+      for (var at = folded.indexOf(term); at >= 0; at = folded.indexOf(term, at + term.length)) { marks.push([map[at], map[at + term.length - 1] + 1]); }
+    });
+    marks.sort(function (a, b) { return a[0] - b[0]; });
+    marks.forEach(function (m) {
+      var last = out[out.length - 1];
+      if (last && m[0] <= last[1]) { last[1] = Math.max(last[1], m[1]); } else { out.push(m); }
+    });
+    return out;
+  }
+  // the title as text nodes and marks: what a title says is never taken for markup
+  function srFill(el, text, terms) {
+    var at = 0;
+    el.textContent = '';
+    srRanges(text, terms).forEach(function (r) {
+      if (r[0] > at) { el.appendChild(doc.createTextNode(text.slice(at, r[0]))); }
+      var mark = srEl('mark', 'mat-search__hit');
+      mark.textContent = text.slice(r[0], r[1]);
+      el.appendChild(mark);
+      at = r[1];
+    });
+    if (at < text.length) { el.appendChild(doc.createTextNode(text.slice(at))); }
+  }
+
+  // ---- the data: groups of items, from the server or from the page
+  function srHref(h) {
+    if (typeof h !== 'string' || h === '') { return ''; }
+    try { return /^https?:$/.test(new URL(h, location.href).protocol) ? h : ''; } catch (err) { return ''; }
+  }
+  function srItem(it) {
+    return {
+      title: it.title, text: typeof it.text === 'string' ? it.text : '', href: srHref(it.href),
+      icon: typeof it.icon === 'string' && /^[a-z0-9-]+$/.test(it.icon) ? it.icon : '',
+      kind: typeof it.kind === 'string' ? it.kind : '', id: it.id === undefined || it.id === null ? '' : String(it.id),
+      keywords: typeof it.keywords === 'string' ? it.keywords : ''
+    };
+  }
+  function srNormalise(data) {
+    var list = data && Array.isArray(data.groups) ? data.groups : Array.isArray(data) ? data : data && Array.isArray(data.items) ? [{ name: '', items: data.items }] : [], groups = [];
+    // an array of items (with a title and no items of their own) is one group without a name
+    if (list.length && list[0] && typeof list[0].title === 'string' && !Array.isArray(list[0].items)) { list = [{ name: '', items: list }]; }
+    list.forEach(function (g) {
+      if (!g || !Array.isArray(g.items)) { return; }
+      var items = g.items.filter(function (it) { return it && typeof it.title === 'string' && it.title !== ''; }).map(srItem);
+      if (items.length) { groups.push({ name: typeof g.name === 'string' ? g.name : '', items: items }); }
+    });
+    return groups;
+  }
+  function srCount(groups) { return groups.reduce(function (n, g) { return n + g.items.length; }, 0); }
+
+  // local data: every term has to be found (a title that starts with it is worth most), the best items of all groups are kept and stay in their group
+  function srFilter(groups, q, limit) {
+    var terms = srTerms(q), hits = [];
+    groups.forEach(function (g, gi) {
+      g.items.forEach(function (item, ii) {
+        var title = item._t || (item._t = srFold(item.title)), words = title.split(/[^a-z0-9À-￿]+/), hay = item._h || (item._h = title + ' ' + srFold(item.text + ' ' + item.keywords)), score = 0;
+        var all = terms.every(function (t) {
+          var s = title === t ? 100 : title.indexOf(t) === 0 ? 60 : words.some(function (w) { return w.indexOf(t) === 0; }) ? 40 : title.indexOf(t) >= 0 ? 20 : hay.indexOf(t) >= 0 ? 8 : 0;
+          score += s;
+          return s > 0;
+        });
+        if (all && terms.length) { hits.push({ g: gi, i: ii, score: score, item: item }); }
+      });
+    });
+    hits.sort(function (a, b) { return b.score - a.score || a.g - b.g || a.i - b.i; });
+    var keep = hits.slice(0, limit), out = [];
+    groups.forEach(function (g, gi) {
+      var mine = keep.filter(function (h) { return h.g === gi; }).sort(function (a, b) { return a.i - b.i; }).map(function (h) { return h.item; });
+      if (mine.length) { out.push({ name: g.name, items: mine }); }
+    });
+    return out;
+  }
+  // local data: from MatUi.search.setItems, else from data-items (read again when the attribute changes)
+  function srLocalOf(s) {
+    if (s.api) { return s.api; }
+    var raw = s.wrap.getAttribute('data-items');
+    if (raw === null) { return null; }
+    if (raw !== s.raw) {
+      s.raw = raw;
+      try { s.local = srNormalise(JSON.parse(raw)); } catch (err) { s.local = []; }
+    }
+    return s.local;
+  }
+
+  function srMin(s) { var n = parseInt(s.wrap.getAttribute('data-min'), 10); return n >= 1 ? n : 1; }
+  function srLimit(s) { var n = parseInt(s.wrap.getAttribute('data-limit'), 10); return n >= 1 ? Math.min(n, 50) : 8; }
+  function srDelay(s) { var n = parseInt(s.wrap.getAttribute('data-delay'), 10); return n >= 0 ? n : 120; }
+  function srQuery(s) { return s.input.value.trim(); }
+  function srResultsUrl(s, q) {
+    var url = s.wrap.getAttribute('data-results-url');
+    return url && srHref(url) ? url + (url.indexOf('?') < 0 ? '?' : '&') + 'q=' + encodeURIComponent(q) : '';
+  }
+  function srSay(s, text) { s.live.textContent = ''; if (text) { s.live.textContent = text; } }
+  function srCountText(n) { return n === 1 ? srText('countOne') : srText('count', n); }
+
+  // ---- recent choices: the last five, per app and key (data-recent="key")
+  function srRecentKey(s) { return (root.getAttribute('data-app') || '') + ':' + (s.wrap.getAttribute('data-recent') || ''); }
+  function srRecentAll() {
+    try { return JSON.parse(localStorage.getItem(SR_RECENT) || '{}') || {}; } catch (err) { return {}; }
+  }
+  function srRecentRead(s) {
+    if (!s.wrap.hasAttribute('data-recent')) { return []; }
+    var list = srRecentAll()[srRecentKey(s)];
+    return Array.isArray(list) ? list.filter(function (r) { return r && (typeof r.q === 'string' || typeof r.title === 'string'); }).slice(0, SR_RECENT_MAX) : [];
+  }
+  function srRecentWrite(s, list) {
+    var all = srRecentAll();
+    if (list.length) { all[srRecentKey(s)] = list; } else { delete all[srRecentKey(s)]; }
+    try { localStorage.setItem(SR_RECENT, JSON.stringify(all)); } catch (err) { return; }
+  }
+  function srRecentAdd(s, entry) {
+    if (!s.wrap.hasAttribute('data-recent')) { return; }
+    var same = function (r) { return entry.q !== undefined ? typeof r.q === 'string' && r.q.toLowerCase() === entry.q.toLowerCase() : r.href === entry.href && r.title === entry.title; };
+    srRecentWrite(s, [entry].concat(srRecentRead(s).filter(function (r) { return !same(r); })).slice(0, SR_RECENT_MAX));
+  }
+
+  // ---- the popup: groups with a heading, options that are links, a row at the end
+  function srClearList(s) {
+    s.list.textContent = '';
+    s.opts = [];
+    srActivate(s, -1);
+  }
+  function srOption(s, model, terms) {
+    var item = model.item, a = srEl(item.href ? 'a' : 'button', model.cls || 'mat-search__option');
+    a.id = s.id + '-o' + (s.opts.length + 1);
+    a.setAttribute('role', 'option');
+    a.setAttribute('aria-selected', 'false');
+    a.tabIndex = -1;
+    if (item.href) { a.href = item.href; } else { a.type = 'button'; }
+    if (item.id) { a.setAttribute('data-id', item.id); }
+    if (item.icon) {
+      var ic = srEl('span', 'mat-search__icon');
+      ic.setAttribute('aria-hidden', 'true');
+      ic.innerHTML = icon(item.icon);
+      a.appendChild(ic);
+    }
+    var text = srEl('span', 'mat-search__text'), title = srEl('span', 'mat-search__title');
+    srFill(title, item.title, terms);
+    text.appendChild(title);
+    if (item.text) {
+      var desc = srEl('span', 'mat-search__desc');
+      desc.textContent = item.text;
+      text.appendChild(desc);
+    }
+    a.appendChild(text);
+    if (item.kind) {
+      var kind = srEl('span', 'mat-search__kind');
+      kind.textContent = item.kind.charAt(0).toUpperCase() + item.kind.slice(1);
+      a.appendChild(kind);
+    }
+    a._matModel = model;
+    s.opts.push(a);
+    return a;
+  }
+  function srBuild(s, groups, terms, last) {
+    srClearList(s);
+    groups.forEach(function (g, n) {
+      var box = s.list;
+      if (g.name) {
+        box = srEl('div', 'mat-search__group');
+        box.setAttribute('role', 'group');
+        var head = srEl('div', 'mat-search__heading');
+        head.id = s.id + '-g' + (n + 1);
+        head.textContent = g.name;
+        box.setAttribute('aria-labelledby', head.id);
+        box.appendChild(head);
+        s.list.appendChild(box);
+      }
+      g.items.forEach(function (item) { box.appendChild(srOption(s, { item: item, group: g.name, source: g.source || 'result' }, terms)); });
+    });
+    if (last) { s.list.appendChild(srOption(s, last, [])); }
+  }
+  function srNote(s, kind, text, hint) {
+    s.note.hidden = !text;
+    s.note.className = 'mat-search__note' + (kind ? ' is-' + kind : '');
+    s.note.textContent = '';
+    if (!text) { return; }
+    var line = srEl('span', 'mat-search__note-text');
+    line.textContent = text;
+    if (kind === 'busy') { s.note.appendChild(srEl('span', 'mat-spinner mat-spinner--sm')); } else if (kind === 'error') { var ic = srEl('span', 'mat-search__icon'); ic.innerHTML = icon('alert'); s.note.appendChild(ic); }
+    s.note.appendChild(line);
+    if (hint) { var more = srEl('span', 'mat-search__desc'); more.textContent = hint; line.appendChild(more); }
+  }
+
+  function srPlace(s) {
+    var p = s.panel;
+    p.style.left = ''; p.style.top = ''; p.style.width = ''; p.style.maxHeight = '';
+    if (s.wrap.classList.contains('is-full')) { return; }
+    var r = s.bar.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
+    var rem = parseFloat(getComputedStyle(root).fontSize) || 16;
+    var width = Math.min(vw - 16, Math.max(r.width, 24 * rem));
+    var below = vh - r.bottom - 12, above = r.top - 12, up = below < 14 * rem && above > below;
+    var room = Math.max(120, Math.min(up ? above : below, 28 * rem));
+    p.style.width = width + 'px';
+    p.style.maxHeight = room + 'px';
+    p.style.left = Math.max(8, Math.min(r.left, vw - width - 8)) + 'px';
+    p.style.top = Math.max(8, up ? r.top - 4 - Math.min(p.offsetHeight, room) : r.bottom + 4) + 'px';
+  }
+  function srShow(s) {
+    if (s.panel.hidden) {
+      if (searchOpen && searchOpen !== s) { srClose(searchOpen); }
+      closeMenu();
+      s.panel.style.visibility = 'hidden';
+      s.panel.hidden = false;
+    }
+    s.input.setAttribute('aria-expanded', 'true');
+    s.wrap.classList.add('is-open');
+    searchOpen = s;
+    srPlace(s);
+    s.panel.style.visibility = '';
+  }
+  function srClose(s) {
+    srStop(s);
+    s.panel.hidden = true;
+    s.input.setAttribute('aria-expanded', 'false');
+    s.wrap.classList.remove('is-open');
+    srActivate(s, -1);
+    if (searchOpen === s) { searchOpen = null; }
+  }
+  function srActivate(s, i) {
+    var was = s.opts[s.active];
+    if (was) { was.classList.remove('is-active'); was.setAttribute('aria-selected', 'false'); }
+    s.active = i;
+    var now = s.opts[i];
+    if (now) {
+      now.classList.add('is-active');
+      now.setAttribute('aria-selected', 'true');
+      s.input.setAttribute('aria-activedescendant', now.id);
+      keepInView(s.panel, now);
+    } else {
+      s.active = -1;
+      s.input.removeAttribute('aria-activedescendant');
+    }
+  }
+  function srMove(s, step) {
+    var n = s.opts.length;
+    if (n) { srActivate(s, s.active < 0 ? (step > 0 ? 0 : n - 1) : (s.active + step + n) % n); }
+  }
+  function srInside(s) { return s.wrap.contains(doc.activeElement); }
+
+  // ---- asking, and what is shown
+  function srStop(s) {
+    clearTimeout(s.timer);
+    clearTimeout(s.busy);
+    // an answer that is still on its way is not wanted any more
+    s.seq += 1;
+    if (s.ctl) { s.ctl.abort(); s.ctl = null; }
+    s.panel.removeAttribute('aria-busy');
+  }
+  function srResults(s, groups, q, source) {
+    var total = srCount(groups), url = srResultsUrl(s, q);
+    s.q = q;
+    s.mode = 'results';
+    s.panel.removeAttribute('aria-busy');
+    srBuild(s, groups, srTerms(q), url && total ? { item: { title: srText('all', q), text: '', href: url, icon: 'search', kind: '', id: '' }, group: '', source: 'all', cls: 'mat-search__option mat-search__option--all' } : null);
+    s.list.setAttribute('aria-label', srText('suggestions'));
+    srNote(s, total ? '' : 'none', total ? '' : srText('none', q), '');
+    if (srInside(s) && srQuery(s) === q) { srShow(s); }
+    srSay(s, total ? srCountText(total) : srText('noneShort'));
+    s.wrap.dispatchEvent(new CustomEvent('mat:search-results', { bubbles: true, detail: { query: q, count: total, source: source } }));
+  }
+  function srLoading(s) {
+    s.panel.setAttribute('aria-busy', 'true');
+    srNote(s, 'busy', srText('loading'), '');
+    if (srInside(s)) { srShow(s); }
+    srSay(s, srText('loading'));
+  }
+  function srFailed(s, q) {
+    var url = srResultsUrl(s, q);
+    s.q = q;
+    s.mode = 'error';
+    s.panel.removeAttribute('aria-busy');
+    srBuild(s, [], [], url ? { item: { title: srText('all', q), text: '', href: url, icon: 'search', kind: '', id: '' }, group: '', source: 'all', cls: 'mat-search__option mat-search__option--all' } : null);
+    srNote(s, 'error', srText('error'), url || s.input.form ? srText('errorHint') : '');
+    if (srInside(s)) { srShow(s); }
+    srSay(s, srText('error'));
+    s.wrap.dispatchEvent(new CustomEvent('mat:search-results', { bubbles: true, detail: { query: q, count: 0, source: 'error' } }));
+  }
+  function srRun(s, q) {
+    var local = srLocalOf(s), url = s.wrap.getAttribute('data-search-url');
+    if (local) { s.seq += 1; srResults(s, srFilter(local, q, srLimit(s)), q, 'local'); return; }
+    if (!url) { srClose(s); return; }
+    srStop(s);
+    var mine = (s.seq += 1);
+    s.busy = setTimeout(function () { if (mine === s.seq) { srLoading(s); } }, 200);
+    s.ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 'q=' + encodeURIComponent(q) + '&limit=' + srLimit(s), { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: s.ctl ? s.ctl.signal : undefined })
+      .then(function (r) { if (!r.ok) { throw new Error('status ' + r.status); } return r.json(); })
+      .then(function (data) { if (mine === s.seq) { clearTimeout(s.busy); srResults(s, srNormalise(data), q, 'server'); } })
+      .catch(function (err) { if (mine === s.seq && !(err && err.name === 'AbortError')) { clearTimeout(s.busy); srFailed(s, q); } });
+  }
+  // the choices that were made before, while the field is empty: queries and items, and the row that forgets them
+  function srRecent(s) {
+    var list = srRecentRead(s);
+    if (!list.length) { return false; }
+    var groups = [{ name: srText('recent'), source: 'recent', items: list.map(function (r) {
+      return r.q !== undefined ? srItem({ title: r.q, href: srResultsUrl(s, r.q), icon: 'clock' }) : srItem(r);
+    }) }];
+    s.q = '';
+    s.mode = 'recent';
+    s.seq += 1;
+    srBuild(s, groups, [], { item: { title: srText('clearRecent'), text: '', href: '', icon: 'trash', kind: '', id: '' }, group: '', source: 'clear', cls: 'mat-search__option mat-search__option--clear' });
+    s.opts.forEach(function (o, n) { if (n < list.length && list[n].q !== undefined) { o._matModel.query = list[n].q; } });
+    s.list.setAttribute('aria-label', srText('recentList'));
+    srNote(s, '', '', '');
+    srShow(s);
+    srSay(s, srCountText(list.length));
+    return true;
+  }
+  // the text changed: ask, after the delay for a server (local data answers at once), or show what was chosen before when there is no text
+  function srChanged(s) {
+    var q = srQuery(s);
+    srState(s);
+    srStop(s);
+    if (q.length < srMin(s)) {
+      s.seq += 1;
+      s.q = '';
+      if (s.input.value === '' && srInside(s) && srRecent(s)) { return; }
+      srClose(s);
+      return;
+    }
+    s.timer = setTimeout(function () { srRun(s, q); }, srLocalOf(s) ? 0 : srDelay(s));
+  }
+  // the panel with what is there: the last results of this text, else the recent choices or a new question; true when options are shown now
+  function srReopen(s) {
+    var q = srQuery(s);
+    if (!s.panel.hidden) { return s.opts.length > 0; }
+    if (q === '' ) { return srRecent(s); }
+    if (s.mode === 'results' && s.q === q && s.opts.length) { srShow(s); return true; }
+    if (q.length >= srMin(s)) { srRun(s, q); }
+    return false;
+  }
+
+  // ---- the full-screen panel of a phone, and the icon button that opens it in the header bar
+  function srEnterFull(s) {
+    if (s.wrap.classList.contains('is-full')) { return; }
+    s.wrap.classList.add('is-full');
+    searchFull = s;
+    syncLock();
+    if (!s.panel.hidden) { srPlace(s); }
+  }
+  function srLeaveFull(s, restore) {
+    if (!s.wrap.classList.contains('is-full')) { return; }
+    srClose(s);
+    s.wrap.classList.remove('is-full');
+    if (searchFull === s) { searchFull = null; }
+    syncLock();
+    if (!restore) { return; }
+    if (s.open && s.open.getClientRects().length) { s.open.focus({ preventScroll: true }); return; }
+    // the field is there again: a keyboard user gets the focus back (without opening the sheet again), a finger does not get the keyboard
+    s.noFull = true;
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) { s.input.blur(); } else { s.input.focus({ preventScroll: true }); }
+    s.noFull = false;
+  }
+  function srFocus(s) {
+    if (s.hdr && isPhone()) { srEnterFull(s); }
+    s.input.focus();
+    if (s.input.select) { s.input.select(); }
+  }
+
+  // ---- the keys that focus a field (data-key="/,mod+k") and the hint that says which one works here
+  function srKeyList(s) {
+    return (s.wrap.getAttribute('data-key') || '').split(',').map(function (part) {
+      var p = part.trim().toLowerCase(), mod = /^(mod|ctrl|cmd)\+/.test(p);
+      return { mod: mod, key: mod ? p.replace(/^[a-z]+\+/, '') : p };
+    }).filter(function (k) { return k.key.length > 0; });
+  }
+  function srKeyTaken(s, key) {
+    return $$('[data-shortcut]').some(function (el) { return el.getAttribute('data-shortcut') === key && !s.wrap.contains(el); });
+  }
+  function srKeysSync(s) {
+    var mac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');
+    var keys = srKeyList(s).filter(function (k) { return k.mod || !srKeyTaken(s, k.key); });
+    s.hint.hidden = !keys.length;
+    s.hint.textContent = keys.length ? (keys[0].mod ? (mac ? '⌘' : 'Ctrl ') + keys[0].key.toUpperCase() : keys[0].key) : '';
+    var shortcuts = keys.map(function (k) { return k.mod ? 'Control+' + k.key.toUpperCase() + ' Meta+' + k.key.toUpperCase() : k.key; });
+    if (shortcuts.length) { s.input.setAttribute('aria-keyshortcuts', shortcuts.join(' ')); } else { s.input.removeAttribute('aria-keyshortcuts'); }
+  }
+  function srShortcut(e) {
+    if (e.defaultPrevented || e.repeat || !e.key) { return; }
+    var t = e.target, tag = (t && t.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || (t && t.isContentEditable)) { return; }
+    var key = e.key.toLowerCase();
+    var found = $$('.mat-search[data-key]').filter(function (w) {
+      var s = w._matSearch;
+      return s && !s.input.disabled && w.getClientRects().length > 0 && srKeyList(s).some(function (k) {
+        return k.key === key && (k.mod ? (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey : !e.ctrlKey && !e.metaKey && !e.altKey && !srKeyTaken(s, k.key));
+      });
+    })[0];
+    if (found) { e.preventDefault(); srFocus(found._matSearch); }
+  }
+
+  // ---- state of the control: the clear button, what the real input says about itself
+  function srState(s) {
+    var off = s.input.disabled || s.input.readOnly;
+    s.wrap.classList.toggle('is-disabled', s.input.disabled);
+    s.wrap.classList.toggle('is-filled', s.input.value !== '');
+    s.clear.hidden = s.input.value === '' || off;
+    if (s.open) { s.open.disabled = s.input.disabled; }
+  }
+
+  function srInit(wrap) {
+    var old = wrap._matSearch;
+    if (old) { srState(old); srKeysSync(old); return; }
+    var input = $('.mat-search__input', wrap);
+    if (!input) { return; }
+    var s = { wrap: wrap, input: input, id: nextId('mat-sr'), opts: [], active: -1, seq: 0, ctl: null, timer: 0, busy: 0, q: '', mode: '', noFull: false, raw: null, local: null, api: null, hdr: !!wrap.closest('.mat-topbar__search') };
+    wrap._matSearch = s;
+    if (!input.id) { input.id = s.id + '-in'; }
+
+    s.bar = srEl('div', 'mat-search__bar');
+    s.field = srEl('div', 'mat-search__field');
+    s.lens = srEl('span', 'mat-search__lens');
+    s.lens.setAttribute('aria-hidden', 'true');
+    s.lens.innerHTML = icon('search');
+    s.clear = srEl('button', 'mat-search__clear');
+    s.clear.type = 'button';
+    s.clear.setAttribute('aria-label', srText('clear'));
+    s.clear.title = srText('clear');
+    s.clear.innerHTML = icon('x');
+    s.clear.hidden = true;
+    s.hint = srEl('kbd', 'mat-search__key');
+    s.hint.setAttribute('aria-hidden', 'true');
+    s.hint.hidden = true;
+    s.close = srEl('button', 'mat-btn mat-btn--ghost mat-btn--icon mat-search__close');
+    s.close.type = 'button';
+    s.close.setAttribute('aria-label', srText('close'));
+    s.close.title = srText('close');
+    s.close.innerHTML = icon('x');
+    wrap.insertBefore(s.bar, input);
+    s.bar.appendChild(s.field);
+    s.field.appendChild(s.lens);
+    s.field.appendChild(input);
+    s.field.appendChild(s.clear);
+    s.field.appendChild(s.hint);
+    s.bar.appendChild(s.close);
+    // in the header bar a phone gets an icon button instead of the field
+    if (s.hdr) {
+      s.open = srEl('button', 'mat-btn mat-btn--ghost mat-btn--icon mat-search__open');
+      s.open.type = 'button';
+      s.open.setAttribute('aria-label', srText('open'));
+      s.open.setAttribute('aria-haspopup', 'dialog');
+      s.open.title = srText('open');
+      s.open.innerHTML = icon('search');
+      wrap.insertBefore(s.open, s.bar);
+    }
+
+    s.panel = srEl('div', 'mat-search__panel');
+    s.panel.id = s.id + '-panel';
+    s.panel.hidden = true;
+    s.note = srEl('div', 'mat-search__note');
+    s.note.hidden = true;
+    s.list = srEl('div', 'mat-search__list');
+    s.list.id = s.id + '-list';
+    s.list.setAttribute('role', 'listbox');
+    s.list.setAttribute('aria-label', srText('suggestions'));
+    s.panel.appendChild(s.note);
+    s.panel.appendChild(s.list);
+    s.live = srEl('span', 'mat-sr-only');
+    s.live.setAttribute('role', 'status');
+    s.live.setAttribute('aria-live', 'polite');
+    wrap.appendChild(s.panel);
+    wrap.appendChild(s.live);
+
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-haspopup', 'listbox');
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-controls', s.list.id);
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocapitalize', 'off');
+    input.setAttribute('spellcheck', 'false');
+    if (input.type !== 'search') { input.type = 'search'; }
+    if (!input.getAttribute('enterkeyhint')) { input.setAttribute('enterkeyhint', 'search'); }
+    if (!input.hasAttribute('placeholder')) { input.setAttribute('placeholder', srText('label')); }
+    if (!input.getAttribute('aria-label') && !input.getAttribute('aria-labelledby') && !$('label[for="' + input.id.replace(/"/g, '\\"') + '"]')) { input.setAttribute('aria-label', srText('label')); }
+
+    wrap.classList.add('is-ready');
+    srState(s);
+    srKeysSync(s);
+    if (typeof MutationObserver === 'function') { new MutationObserver(function () { srState(s); }).observe(input, { attributes: true, attributeFilter: ['disabled', 'readonly'] }); }
+  }
+  function initSearches(scope) { $$('.mat-search[data-autocomplete]', scope).forEach(srInit); }
+
+  // ---- what happens when an option is chosen: the app may take over (mat:search-select), else the link is followed by the browser
+  function srChoose(s, opt, e) {
+    opt.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, altKey: e.altKey }));
+  }
+  function srPick(s, opt, e) {
+    var model = opt._matModel;
+    if (!model) { return; }
+    if (model.source === 'clear') {
+      e.preventDefault();
+      srRecentWrite(s, []);
+      srClose(s);
+      srSay(s, srText('recentCleared'));
+      s.input.focus();
+      return;
+    }
+    var picked = new CustomEvent('mat:search-select', { bubbles: true, cancelable: true, detail: { item: model.source === 'all' || model.query !== undefined ? null : model.item, group: model.group, query: model.query !== undefined ? model.query : srQuery(s), source: model.source } });
+    s.wrap.dispatchEvent(picked);
+    if (picked.defaultPrevented) { e.preventDefault(); srClose(s); return; }
+    if (model.source === 'all') { srRecentAdd(s, { q: srQuery(s) }); }
+    else if (model.query !== undefined) { srRecentAdd(s, { q: model.query }); }
+    else { srRecentAdd(s, { title: model.item.title, text: model.item.text, href: model.item.href, icon: model.item.icon, kind: model.item.kind }); }
+    if (!opt.href) {
+      // a recent query without a page of results is asked again; an item without an address is only chosen
+      e.preventDefault();
+      if (model.query !== undefined) { s.input.value = model.query; srChanged(s); s.input.focus(); } else { srClose(s); }
+      return;
+    }
+    // a choice with a modifier key opens a new tab and the panel stays; otherwise the browser follows the link
+    if (!(e.ctrlKey || e.metaKey || e.shiftKey)) { srClose(s); }
+  }
+
+  // ---- the events of the search
+  doc.addEventListener('input', function (e) { var s = srOfInput(e.target); if (s) { srChanged(s); } });
+  doc.addEventListener('focusin', function (e) {
+    var s = srOfInput(e.target);
+    if (!s || s.input.disabled) { return; }
+    if (isPhone() && !s.noFull) { srEnterFull(s); }
+    if (srQuery(s) === '') { srRecent(s); } else if (s.panel.hidden) { srReopen(s); }
+  });
+  doc.addEventListener('focusout', function (e) {
+    var wrap = e.target.closest ? e.target.closest('.mat-search') : null, s = wrap && wrap._matSearch;
+    // leaving the control closes the popup; the full-screen panel stays until its X is pressed
+    if (!s || (e.relatedTarget && wrap.contains(e.relatedTarget)) || wrap.classList.contains('is-full')) { return; }
+    srClose(s);
+  });
+  // a press on the popup does not take the focus from the field, so that the click that follows still finds what it pressed
+  doc.addEventListener('mousedown', function (e) { if (e.target.closest && e.target.closest('.mat-search__panel')) { e.preventDefault(); } });
+  doc.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t.closest) { return; }
+    var opt = t.closest('.mat-search__option'), s = opt && srOf(opt);
+    if (s) { srPick(s, opt, e); return; }
+    var clear = t.closest('.mat-search__clear'), c = clear && srOf(clear);
+    if (c) { c.input.value = ''; c.input.dispatchEvent(new Event('input', { bubbles: true })); c.input.focus(); return; }
+    var open = t.closest('.mat-search__open'), o = open && srOf(open);
+    if (o) { srFocus(o); return; }
+    var close = t.closest('.mat-search__close'), x = close && srOf(close);
+    if (x) { srLeaveFull(x, true); return; }
+    if (searchOpen && !t.closest('.mat-search')) { srClose(searchOpen); }
+  });
+  doc.addEventListener('keydown', function (e) {
+    if (e.isComposing || e.keyCode === 229) { return; }
+    var s = srOfInput(e.target), k = e.key;
+    if (!s) {
+      // inside the full-screen panel the Tab key stays: from the X to the field and back
+      var holder = e.target.closest && e.target.closest('.mat-search.is-full'), inner = holder && holder._matSearch;
+      if (inner && k === 'Tab' && !e.shiftKey && e.target === inner.close) { e.preventDefault(); inner.input.focus(); }
+      else if (inner && k === 'Escape' && inner.wrap.contains(e.target)) { e.preventDefault(); e.stopPropagation(); srLeaveFull(inner, true); }
+      else if (!inner) { srShortcut(e); }
+      return;
+    }
+    var open = !s.panel.hidden, full = s.wrap.classList.contains('is-full');
+    if (k === 'ArrowDown' || k === 'ArrowUp') {
+      if (e.altKey || e.ctrlKey || e.metaKey) { return; }
+      e.preventDefault();
+      if (open || srReopen(s)) { srMove(s, k === 'ArrowDown' ? 1 : -1); }
+    } else if ((k === 'Home' || k === 'End') && open && s.active >= 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      srActivate(s, k === 'Home' ? 0 : s.opts.length - 1);
+    } else if (k === 'Enter') {
+      if (open && s.active >= 0) { e.preventDefault(); srChoose(s, s.opts[s.active], e); }
+      else if (!s.input.form && srQuery(s) && srResultsUrl(s, srQuery(s))) { e.preventDefault(); srRecentAdd(s, { q: srQuery(s) }); window.location.href = srResultsUrl(s, srQuery(s)); }
+    } else if (k === 'Escape') {
+      if (full) { e.preventDefault(); e.stopPropagation(); srLeaveFull(s, true); }
+      else if (open) { e.preventDefault(); e.stopPropagation(); srClose(s); }
+      else if (s.input.value !== '') { e.preventDefault(); e.stopPropagation(); s.input.value = ''; s.input.dispatchEvent(new Event('input', { bubbles: true })); srClose(s); }
+    } else if (k === 'Tab') {
+      if (full && e.shiftKey) { e.preventDefault(); s.close.focus(); } else if (open && !full) { srClose(s); }
+    }
+  }, true);
+  // a form that holds a search remembers what was searched when it is sent
+  doc.addEventListener('submit', function (e) {
+    $$('.mat-search[data-recent]', e.target).forEach(function (w) { var s = w._matSearch; if (s && srQuery(s)) { srRecentAdd(s, { q: srQuery(s) }); } });
+  }, true);
+  doc.addEventListener('reset', function (e) {
+    setTimeout(function () { $$('.mat-search', e.target).forEach(function (w) { if (w._matSearch) { srState(w._matSearch); srClose(w._matSearch); } }); }, 0);
+  }, true);
+  // a dialog around the search is closed by Escape only after the popup
+  doc.addEventListener('cancel', function (e) { if (searchOpen && e.target.classList && e.target.classList.contains('mat-dialog')) { e.preventDefault(); srClose(searchOpen); } }, true);
+  window.addEventListener('resize', function () {
+    if (searchOpen && !searchOpen.wrap.classList.contains('is-full')) { srPlace(searchOpen); }
+    if (searchFull && !isPhone()) { srLeaveFull(searchFull, false); }
+  });
+  doc.addEventListener('scroll', function (e) { if (searchOpen && !searchOpen.wrap.classList.contains('is-full') && !searchOpen.panel.contains(e.target)) { srPlace(searchOpen); } }, true);
+  // coming back to the page (the back button restores it as it was): nothing stays open
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) { return; }
+    $$('.mat-search').forEach(function (w) { var s = w._matSearch; if (s) { srLeaveFull(s, false); srClose(s); srState(s); } });
+  });
+
+  // ---- for an app: the data, and the control from code
+  function srSetItems(ref, groups) {
+    var s = srOf(ref);
+    if (!s) { return false; }
+    s.api = groups === null || groups === undefined ? null : srNormalise(groups);
+    if (srInside(s) && srQuery(s).length >= srMin(s)) { srChanged(s); }
+    return true;
+  }
+  function srApiOpen(ref) { var s = srOf(ref); if (s) { srFocus(s); srReopen(s); } }
+  function srApiClose(ref) { var s = srOf(ref); if (s) { srLeaveFull(s, false); srClose(s); } }
+  function srApiClear(ref) {
+    var s = srOf(ref);
+    if (!s) { return; }
+    s.input.value = '';
+    srChanged(s);
+    srClose(s);
+  }
+  function srApiValue(ref, text) {
+    var s = srOf(ref);
+    if (!s) { return ''; }
+    if (text !== undefined) { s.input.value = String(text); srState(s); }
+    return s.input.value;
+  }
+  var search = { init: initSearches, setItems: srSetItems, open: srApiOpen, close: srApiClose, clear: srApiClear, focus: function (ref) { var s = srOf(ref); if (s) { srFocus(s); } }, value: srApiValue };
+
   // ------------------------------------------------------------------------------------------------------- init
   // a meter is filled by data: <div class="mat-meter__fill" data-value="63"> (no inline style in the markup)
   function fillMeters(scope) {
@@ -6038,6 +8027,11 @@
     initCarousels();
     initSchedules();
     initItemLists();
+    initRatings();
+    initTables();
+    initTrees();
+    initUploads();
+    initSearches();
     // the saved state of the submenus is applied without animating them
     root.classList.add('mat-nav-init');
     restoreBranches();
@@ -6064,7 +8058,7 @@
   if (doc.readyState === 'loading') { doc.addEventListener('DOMContentLoaded', init); } else { init(); }
 
   window.MatUi = {
-    version: '0.1.0',
+    version: '0.7.0',
     dialog: { open: openDialog, close: closeDialog },
     confirm: confirmDialog,
     alert: alertDialog,
@@ -6083,6 +8077,10 @@
     schedule: schedule,
     groups: { set: function (group, open) { setGroup(group, open !== false, true); }, setAll: function (scope, open) { setAllGroups(scope, open !== false); }, restore: restoreGroups },
     itemlist: { init: initItemLists, close: function () { ilCloseAll(); }, open: function (item, side) { if (item && item._matSlide) { ilOpen(item, side === 'start' ? 'start' : 'end'); } } },
-    refresh: function (scope) { refreshDependents(scope); fillMeters(scope); initForms(scope); applyColours(scope); initPickers(scope); initOtps(scope); initCalendars(scope); initCarousels(scope); initSchedules(scope); initItemLists(scope); restoreGroups(scope); }
+    rating: { init: initRatings, get: ratGet, set: ratSet },
+    tree: tree,
+    upload: { init: initUploads, files: upFiles, add: upAddFiles, remove: upRemoveFile, clear: upClearFiles, setProgress: upSetProgress, setError: upSetError },
+    search: search,
+    refresh: function (scope) { refreshDependents(scope); fillMeters(scope); initForms(scope); applyColours(scope); initPickers(scope); initOtps(scope); initCalendars(scope); initCarousels(scope); initSchedules(scope); initItemLists(scope); initRatings(scope); initTables(scope); initTrees(scope); initUploads(scope); initSearches(scope); restoreGroups(scope); }
   };
 })();

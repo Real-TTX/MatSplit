@@ -1,0 +1,631 @@
+/* ==========================================================================
+   MatUi · forms
+   Fields, inputs, choices, switches, ranges, input groups, layouts and validation. Labels above, hints below, errors at the field and as a summary.
+   Everything is drawn from the tokens; nothing here is a literal colour.
+   ========================================================================== */
+
+/* ---- Forms -----------------------------------------------------------------------------------------------------
+   Labels above, hints below, errors at the field AND as a summary at the top. The space for the error is reserved,
+   so the layout does not jump when it appears. */
+.mat-form { display: flex; flex-direction: column; gap: var(--mat-space-4); }
+.mat-form__grid { display: grid; gap: var(--mat-space-4) var(--mat-space-5); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.mat-form__grid > .mat-field--full, .mat-form__grid > .mat-btn-row, .mat-form__grid > .mat-alert, .mat-form__grid > h2, .mat-form__grid > h3 { grid-column: 1 / -1; }
+@media (max-width: 700px) { .mat-form__grid { grid-template-columns: minmax(0, 1fr); } }
+
+.mat-field { display: flex; flex-direction: column; gap: var(--mat-space-1); min-width: 0; }
+.mat-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.mat-label { font-size: var(--mat-fs-sm); font-weight: 600; color: var(--mat-text); }
+.mat-label .mat-req { color: var(--mat-danger-text); margin-left: 2px; }
+.mat-hint { font-size: var(--mat-fs-xs); color: var(--mat-text-muted); }
+.mat-error { font-size: var(--mat-fs-xs); color: var(--mat-danger-text); min-height: 1.2em; }
+.mat-field.is-invalid .mat-input, .mat-field.is-invalid .mat-select, .mat-field.is-invalid .mat-textarea { border-color: var(--mat-danger); }
+
+/* @prop input | --mat-input-radius | length | var(--mat-radius) | Corner radius of a text field, a select and a text area, and of the ends of an input group, a button in it included. */
+/* @prop input | --mat-input-height | length | var(--mat-control-h) | Least height of a field of the default size. A floor: on a touch screen keep it at 44 px or more (MOBILE-04). */
+/* @prop input | --mat-input-pad-x | length | var(--mat-space-3) | Space between the edge of a field and its text. */
+/* @prop input | --mat-input-border-width | length | 1px | Width of the border of a field. */
+.mat-input, .mat-select, .mat-textarea {
+  width: 100%;
+  min-height: var(--mat-input-height, var(--mat-control-h));
+  padding: 0 var(--mat-input-pad-x, var(--mat-space-3));
+  background: var(--mat-surface);
+  color: var(--mat-text);
+  border: var(--mat-input-border-width, 1px) solid var(--mat-border-strong);
+  border-radius: var(--mat-input-radius, var(--mat-radius));
+  transition: border-color var(--mat-dur-fast) var(--mat-ease), box-shadow var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-textarea { padding: var(--mat-space-3) var(--mat-input-pad-x, var(--mat-space-3)); min-height: 96px; resize: vertical; line-height: var(--mat-lh); }
+.mat-input::placeholder, .mat-textarea::placeholder { color: var(--mat-text-faint); }
+.mat-input:hover, .mat-select:hover, .mat-textarea:hover { border-color: color-mix(in srgb, var(--mat-accent) 40%, var(--mat-border-strong)); }
+.mat-input:focus, .mat-select:focus, .mat-textarea:focus { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); outline: none; }
+.mat-input:disabled, .mat-select:disabled, .mat-textarea:disabled { background: var(--mat-surface-3); color: var(--mat-text-muted); cursor: not-allowed; }
+.mat-input[readonly] { background: var(--mat-surface-2); }
+.mat-select { appearance: none; padding-right: 36px; background-image: linear-gradient(45deg, transparent 50%, var(--mat-text-muted) 50%), linear-gradient(135deg, var(--mat-text-muted) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+input[type="color"].mat-input { padding: 4px; }
+input[type="file"].mat-input { padding: 6px; }
+
+/* Prefix / suffix text or icon inside the field edge. */
+.mat-input-group { display: flex; align-items: stretch; }
+.mat-input-group > .mat-input { border-radius: 0; flex: 1 1 auto; min-width: 0; }
+.mat-input-group > :first-child { border-top-left-radius: var(--mat-input-radius, var(--mat-radius)); border-bottom-left-radius: var(--mat-input-radius, var(--mat-radius)); }
+.mat-input-group > :last-child { border-top-right-radius: var(--mat-input-radius, var(--mat-radius)); border-bottom-right-radius: var(--mat-input-radius, var(--mat-radius)); }
+.mat-input-group > * + * { margin-left: -1px; }
+.mat-input-addon { display: inline-flex; align-items: center; padding: 0 var(--mat-space-3); background: var(--mat-surface-3); border: 1px solid var(--mat-border-strong); color: var(--mat-text-muted); font-size: var(--mat-fs-sm); white-space: nowrap; }
+
+/* ---- Number stepper (FORM-20): a number field with a button for less and one for more ----
+   Without the script it is the native number field. The script adds the buttons and marks the wrapper .is-ready, which is what hides the spinners of the browser and
+   squares the corners of the field. The size is the one of the input inside it (mat-input--sm, mat-input--lg). mat-stepper--stacked: two small arrows at the right
+   of the field (a mouse); on a touch screen they would be too small to hit (MOBILE-04), so it is drawn like the default there. */
+.mat-stepper { --mat-stepper-h: var(--mat-control-h); --mat-stepper-end: var(--mat-stepper-h); position: relative; display: flex; align-items: stretch; width: 100%; }
+.mat-stepper:has(> .mat-input--sm) { --mat-stepper-h: var(--mat-control-h-sm); font-size: var(--mat-fs-sm); }
+.mat-stepper:has(> .mat-input--lg) { --mat-stepper-h: var(--mat-control-h-lg); font-size: var(--mat-fs-lg); }
+.mat-stepper.is-ready > .mat-input { flex: 1 1 auto; min-width: 0; border-radius: 0; text-align: center; font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }
+.mat-stepper.is-ready > .mat-input::-webkit-inner-spin-button, .mat-stepper.is-ready > .mat-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.mat-stepper.is-ready > .mat-input:focus { position: relative; z-index: 1; }
+.mat-stepper__btn {
+  position: relative; flex: none; display: grid; place-items: center;
+  width: var(--mat-stepper-h); min-height: var(--mat-stepper-h); margin: 0; padding: 0;
+  border: 1px solid var(--mat-border-strong); background: var(--mat-surface); color: var(--mat-text-muted);
+  font: inherit; cursor: pointer; user-select: none; touch-action: manipulation;
+  transition: background var(--mat-dur-fast) var(--mat-ease), color var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-stepper__btn:hover { background: var(--mat-surface-3); color: var(--mat-text); }
+.mat-stepper__btn:active { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); }
+.mat-stepper__btn:focus-visible { z-index: 1; border-color: var(--mat-accent); }
+.mat-stepper__btn--dec { margin-right: -1px; border-radius: var(--mat-radius) 0 0 var(--mat-radius); }
+.mat-stepper__btn--inc { margin-left: -1px; border-radius: 0 var(--mat-radius) var(--mat-radius) 0; }
+.mat-stepper__arrow { display: none; }
+/* a button that cannot go further is dimmed, not disabled: the focus stays on it */
+.mat-stepper__btn[aria-disabled="true"], .mat-stepper__btn:disabled { color: var(--mat-text-faint); cursor: not-allowed; }
+.mat-stepper__btn[aria-disabled="true"]:hover, .mat-stepper__btn[aria-disabled="true"]:active { background: var(--mat-surface); color: var(--mat-text-faint); }
+.mat-stepper:has(> .mat-input[readonly]) .mat-stepper__btn[aria-disabled="true"] { background: var(--mat-surface-2); }
+.mat-stepper:has(> .mat-input:disabled) .mat-stepper__btn, .mat-stepper__btn:disabled { background: var(--mat-surface-3); color: var(--mat-text-faint); cursor: not-allowed; }
+.mat-field.is-invalid .mat-stepper__btn { border-color: var(--mat-danger); }
+.mat-field.is-valid .mat-stepper__btn { border-color: var(--mat-success); }
+/* the unit sits at the right end of the field, in front of the button; the field keeps room for it on both sides so that the number stays in the middle */
+.mat-stepper__unit { position: absolute; top: 0; bottom: 0; right: calc(var(--mat-stepper-end) + var(--mat-space-3)); display: flex; align-items: center; color: var(--mat-text-muted); white-space: nowrap; pointer-events: none; }
+.mat-stepper[data-unit].is-ready > .mat-input { padding-inline: calc(var(--mat-stepper-unit, 0ch) + var(--mat-space-4)); }
+@media (pointer: fine) {
+  .mat-stepper--stacked { --mat-stepper-end: calc(var(--mat-stepper-h) * .8); display: block; }
+  .mat-stepper--stacked.is-ready > .mat-input { text-align: left; padding-inline: var(--mat-space-3) calc(var(--mat-stepper-end) + var(--mat-space-2)); }
+  .mat-stepper--stacked[data-unit].is-ready > .mat-input { padding-inline: var(--mat-space-3) calc(var(--mat-stepper-end) + var(--mat-stepper-unit, 0ch) + var(--mat-space-4)); }
+  .mat-stepper.mat-stepper--stacked .mat-stepper__btn {
+    position: absolute; z-index: 2; right: 1px; width: calc(var(--mat-stepper-end) - 1px); height: calc(50% - 1px); min-height: 0; margin: 0;
+    border: 0 solid var(--mat-border); border-left-width: 1px; border-radius: 0; background: transparent;
+  }
+  .mat-stepper.mat-stepper--stacked .mat-stepper__btn:hover { background: var(--mat-surface-3); }
+  .mat-stepper.mat-stepper--stacked .mat-stepper__btn:active { background: var(--mat-accent-soft-strong); }
+  .mat-stepper.mat-stepper--stacked .mat-stepper__btn[aria-disabled="true"], .mat-stepper.mat-stepper--stacked .mat-stepper__btn:disabled { background: transparent; }
+  .mat-stepper.mat-stepper--stacked .mat-stepper__btn--inc { top: 1px; border-top-right-radius: calc(var(--mat-radius) - 1px); }
+  .mat-stepper.mat-stepper--stacked .mat-stepper__btn--dec { bottom: 1px; border-top-width: 1px; border-bottom-right-radius: calc(var(--mat-radius) - 1px); }
+  .mat-stepper--stacked .mat-stepper__sign { display: none; }
+  .mat-stepper--stacked .mat-stepper__arrow { display: inline-flex; font-size: .85em; }
+}
+
+/* Checkbox and radio use the browser control in the accent colour; the switch is its own. */
+/* @prop check | --mat-check-size | length | 18px | Width and height of a checkbox and of a radio button (also in a choice, in a sort option and in a table row). */
+/* @prop check | --mat-check-gap | length | var(--mat-space-3) | Space between a checkbox or a radio button and its label. */
+.mat-check { display: flex; align-items: flex-start; gap: var(--mat-check-gap, var(--mat-space-3)); min-height: var(--mat-control-h-sm); cursor: pointer; }
+.mat-check input { width: var(--mat-check-size, 18px); height: var(--mat-check-size, 18px); margin: 2px 0 0; accent-color: var(--mat-accent); flex: none; cursor: pointer; }
+.mat-check__text { display: flex; flex-direction: column; gap: 2px; }
+/* On a touch screen the label is the target and it is 44 px high (MOBILE-04), whatever --mat-check-size draws: the mark stays on the first line of the text, the label gets the
+   space above and below it (half of what the line lacks of 44 px). A check without text (in a card head) takes the space with a negative margin, so nothing around it moves. */
+@media (pointer: coarse) {
+  .mat-check { min-height: 44px; padding-block: max(0px, calc((44px - 1lh) / 2)); }
+  .mat-card__head .mat-check { min-height: 0; padding: 13px; margin: -13px; }
+}
+
+.mat-switch { display: flex; align-items: center; gap: var(--mat-space-3); min-height: var(--mat-control-h-sm); cursor: pointer; }
+.mat-switch input { position: absolute; opacity: 0; pointer-events: none; }
+/* On a touch screen the label is the target: 44 px high, and 44 px wide where it is only the track (a switch without text). The track stays centred and keeps its size. */
+@media (pointer: coarse) { .mat-switch { min-height: 44px; } .mat-switch--bare { min-width: 44px; justify-content: center; } }
+/* The knob sits centred in the track: its distance from the edge is half of what the track has more than the knob, so the way it travels is the width less the height. */
+/* @prop switch | --mat-switch-width | length | 42px | Length of the track of a switch. */
+/* @prop switch | --mat-switch-height | length | 24px | Height of the track of a switch. */
+/* @prop switch | --mat-switch-thumb | length | 18px | Diameter of the knob of a switch (smaller than the height of the track). */
+.mat-switch__track {
+  flex: none; position: relative;
+  width: var(--mat-switch-width, 42px); height: var(--mat-switch-height, 24px);
+  border-radius: var(--mat-radius-pill);
+  background: var(--mat-border-strong);
+  transition: background var(--mat-dur) var(--mat-ease);
+}
+.mat-switch__track::after {
+  content: ""; position: absolute;
+  top: calc((var(--mat-switch-height, 24px) - var(--mat-switch-thumb, 18px)) / 2); left: calc((var(--mat-switch-height, 24px) - var(--mat-switch-thumb, 18px)) / 2);
+  width: var(--mat-switch-thumb, 18px); height: var(--mat-switch-thumb, 18px); border-radius: 50%;
+  background: var(--mat-thumb); box-shadow: var(--mat-shadow-1);
+  transition: transform var(--mat-dur) var(--mat-ease);
+}
+.mat-switch input:checked + .mat-switch__track { background: var(--mat-accent); }
+.mat-switch input:checked + .mat-switch__track::after { transform: translateX(calc(var(--mat-switch-width, 42px) - var(--mat-switch-height, 24px))); }
+.mat-switch input:focus-visible + .mat-switch__track { box-shadow: var(--mat-focus-ring); }
+.mat-switch input:disabled + .mat-switch__track { opacity: .5; }
+
+/* Dependent fields appear only when they are needed (matui.js: [data-show-if] / [data-show-value]). */
+[data-show-if][hidden] { display: none !important; }
+
+/* Segmented control: a few exclusive choices in one line (list / gallery, day / week). */
+.mat-seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--mat-surface-3); border-radius: var(--mat-radius); }
+.mat-seg__btn {
+  display: inline-flex; align-items: center; gap: var(--mat-space-2);
+  min-height: calc(var(--mat-control-h) - 8px); padding: 0 var(--mat-space-3);
+  border: 0; border-radius: calc(var(--mat-radius) - 3px);
+  background: transparent; color: var(--mat-text-muted);
+  font-weight: 600; cursor: pointer; text-decoration: none;
+}
+.mat-seg__btn:hover { color: var(--mat-text); text-decoration: none; }
+/* On a touch screen a button is 44 px wide at least, and 44 px high: the ::before reaches over the padding of the track (MOBILE-04); the track keeps its size. */
+@media (pointer: coarse) {
+  .mat-seg__btn { position: relative; min-width: 44px; justify-content: center; }
+  .mat-seg__btn::before { content: ""; position: absolute; inset: min(0px, calc((var(--mat-control-h) - 8px - 44px) / 2)) 0; }
+}
+.mat-seg__btn[aria-pressed="true"], .mat-seg__btn.is-active { background: var(--mat-surface); color: var(--mat-accent-text); box-shadow: var(--mat-shadow-1); }
+
+/* ---- Sizes (a small field for dense places such as a toolbar or a table row, a large one for the main field of a page) ---- */
+.mat-input--sm, .mat-select--sm { min-height: var(--mat-control-h-sm); font-size: var(--mat-fs-sm); padding-inline: var(--mat-space-2); }
+.mat-input--lg, .mat-select--lg { min-height: var(--mat-control-h-lg); font-size: var(--mat-fs-lg); padding-inline: var(--mat-space-4); }
+.mat-select--sm { padding-right: 30px; background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; }
+.mat-select--lg { padding-right: 40px; }
+
+/* ---- A value that cannot be changed: read-only (a grey well) or plain text (looks like text) ---- */
+.mat-input--plain, .mat-input--plain[readonly], .mat-input--plain:hover, .mat-input--plain:focus { border-color: transparent; background: transparent; padding-inline: 0; box-shadow: none; cursor: default; }
+
+/* ---- Validation (FORM-03, FORM-05): the message at the field, the border in the colour of the meaning ---- */
+.mat-field.is-valid .mat-input, .mat-field.is-valid .mat-select, .mat-field.is-valid .mat-textarea { border-color: var(--mat-success); }
+.mat-field.is-invalid .mat-input:focus, .mat-field.is-invalid .mat-select:focus, .mat-field.is-invalid .mat-textarea:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-danger) 35%, transparent); }
+.mat-valid { font-size: var(--mat-fs-xs); color: var(--mat-success-text); min-height: 1.2em; }
+.mat-legend { padding: 0; margin-bottom: var(--mat-space-2); font-size: var(--mat-fs-sm); font-weight: 600; color: var(--mat-text); }
+.mat-opt { margin-left: var(--mat-space-1); font-weight: 400; color: var(--mat-text-muted); }
+/* The summary at the top of a form: an alert with a link to every field that has an error. */
+.mat-alert__list { margin: var(--mat-space-1) 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 2px; }
+.mat-alert__list a { color: inherit; text-decoration: underline; }
+[data-validation-summary][hidden] { display: none; }
+
+/* ---- Code input (FORM-19): one box per character of a code (an authenticator or SMS code, a PIN, a recovery code) ----
+   .mat-otp[data-otp] wraps the real input (.mat-otp__input), which is what is validated, posted and reset. Without the script it is a plain text field in the look of
+   a code; matui.js hides it (.is-ready) and draws the boxes in .mat-otp__boxes (one .mat-otp__box each, .mat-otp__sep between groups) and a line for what was refused.
+   The boxes are as high as a control (a touch screen gets the taller one from the tokens), keep 16 px type or more (a phone does not zoom into them) and shrink in width
+   so that a code of any length fits the screen; they never make the page scroll sideways. */
+.mat-otp { --mat-otp-w: 2.75rem; --mat-otp-h: var(--mat-control-h-lg); --mat-otp-fs: var(--mat-fs-xl); position: relative; display: block; min-width: 0; max-width: 100%; }
+.mat-otp--sm { --mat-otp-w: 2.25rem; --mat-otp-h: var(--mat-control-h); --mat-otp-fs: 1rem; }
+.mat-otp--lg { --mat-otp-w: 3.5rem; --mat-otp-h: 4rem; --mat-otp-fs: var(--mat-fs-2xl); }
+.mat-otp__input {
+  display: block; width: 100%; max-width: 16rem; min-height: var(--mat-otp-h); padding: 0 var(--mat-space-3);
+  background: var(--mat-surface); color: var(--mat-text);
+  border: 1px solid var(--mat-border-strong); border-radius: var(--mat-input-radius, var(--mat-radius));
+  font-family: var(--mat-mono); font-size: var(--mat-otp-fs); font-weight: 600; letter-spacing: .3em; text-align: center;
+  transition: border-color var(--mat-dur-fast) var(--mat-ease), box-shadow var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-otp__input:hover { border-color: color-mix(in srgb, var(--mat-accent) 40%, var(--mat-border-strong)); }
+.mat-otp__input:focus { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); outline: none; }
+.mat-otp__input:disabled { background: var(--mat-surface-3); color: var(--mat-text-muted); cursor: not-allowed; }
+.mat-otp__input[readonly] { background: var(--mat-surface-2); }
+.mat-otp--center .mat-otp__input { margin-inline: auto; }
+/* with the script the real input lies over the boxes, invisible, so that a message of the browser points at the right place; whoever focuses it lands on a box */
+.mat-otp.is-ready > .mat-otp__input { position: absolute; inset: 0; width: 100%; max-width: none; height: 100%; min-height: 0; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+
+.mat-otp__boxes { display: flex; align-items: center; gap: var(--mat-space-2); max-width: 100%; }
+.mat-otp--center .mat-otp__boxes { justify-content: center; }
+.mat-otp__box {
+  flex: 0 1 var(--mat-otp-w); width: var(--mat-otp-w); min-width: 0; height: var(--mat-otp-h); margin: 0; padding: 0;
+  background: var(--mat-surface); color: var(--mat-text);
+  border: 1px solid var(--mat-border-strong); border-radius: var(--mat-input-radius, var(--mat-radius));
+  font-family: var(--mat-mono); font-size: var(--mat-otp-fs); font-weight: 600; line-height: 1; text-align: center;
+  caret-color: var(--mat-accent);
+  transition: border-color var(--mat-dur-fast) var(--mat-ease), box-shadow var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-otp__box:hover { border-color: color-mix(in srgb, var(--mat-accent) 40%, var(--mat-border-strong)); }
+.mat-otp__box:focus { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); outline: none; }
+.mat-otp__box:disabled { background: var(--mat-surface-3); color: var(--mat-text-muted); cursor: not-allowed; }
+.mat-otp__box[readonly] { background: var(--mat-surface-2); }
+/* a dot box is a password field: the reveal button and the key of the browser would sit on top of the dot */
+.mat-otp__box::-ms-reveal, .mat-otp__box::-ms-clear { display: none; }
+.mat-otp__box::-webkit-credentials-auto-fill-button, .mat-otp__box::-webkit-contacts-auto-fill-button { visibility: hidden; pointer-events: none; position: absolute; right: 0; }
+/* between the groups: a gap, or a dash when the groups are written 4-4 */
+.mat-otp__sep { flex: none; align-self: stretch; display: flex; align-items: center; justify-content: center; width: var(--mat-space-3); }
+.mat-otp__sep--dash { width: 1.25rem; }
+.mat-otp__sep--dash::before { content: ""; width: .5rem; height: 2px; border-radius: 1px; background: var(--mat-text-muted); }
+.mat-otp__status { margin: var(--mat-space-1) 0 0; font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+@media (max-width: 640px) {
+  .mat-otp__boxes { gap: var(--mat-space-1); }
+  .mat-otp__sep { width: var(--mat-space-2); }
+  .mat-otp__sep--dash { width: 1rem; }
+  .mat-otp__sep--dash::before { width: .375rem; }
+  .mat-otp--lg { --mat-otp-h: 3.5rem; }
+}
+/* the message at the field and the border in the colour of the meaning (FORM-03) */
+.mat-field.is-invalid .mat-otp__input, .mat-field.is-invalid .mat-otp__box, .mat-otp.is-invalid .mat-otp__box { border-color: var(--mat-danger); }
+.mat-field.is-invalid .mat-otp__input:focus, .mat-field.is-invalid .mat-otp__box:focus, .mat-otp.is-invalid .mat-otp__box:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-danger) 35%, transparent); }
+.mat-field.is-valid .mat-otp__input, .mat-field.is-valid .mat-otp__box { border-color: var(--mat-success); }
+
+/* ---- Floating labels: the label sits in the field and moves up when the field has focus or a value ----
+   The input comes first, the label after it, and the input has placeholder=" " (a space) so that :placeholder-shown knows whether it is empty. */
+.mat-field--float { position: relative; }
+.mat-field--float > .mat-input, .mat-field--float > .mat-select, .mat-field--float > .mat-textarea { min-height: 56px; padding-top: 22px; padding-bottom: 6px; }
+.mat-field--float > .mat-textarea { min-height: 104px; padding-top: 26px; }
+.mat-field--float > .mat-input::placeholder, .mat-field--float > .mat-textarea::placeholder { color: transparent; }
+.mat-field--float > .mat-label {
+  position: absolute; top: 0; left: 0; z-index: 1;
+  max-width: 100%; padding: 17px var(--mat-space-3) 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 400; color: var(--mat-text-muted);
+  pointer-events: none;
+  transform-origin: left top;
+  transition: transform var(--mat-dur) var(--mat-ease), color var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-field--float > .mat-input:focus ~ .mat-label,
+.mat-field--float > .mat-input:not(:placeholder-shown) ~ .mat-label,
+.mat-field--float > .mat-textarea:focus ~ .mat-label,
+.mat-field--float > .mat-textarea:not(:placeholder-shown) ~ .mat-label,
+.mat-field--float > .mat-select ~ .mat-label { transform: translateY(-11px) scale(.78); }
+.mat-field--float > .mat-input:focus ~ .mat-label, .mat-field--float > .mat-textarea:focus ~ .mat-label, .mat-field--float > .mat-select:focus ~ .mat-label { color: var(--mat-accent-text); }
+.mat-field--float.is-invalid > .mat-label { color: var(--mat-danger-text); }
+
+/* ---- Select: several choices, or a list that is shown open ---- */
+.mat-select[multiple], .mat-select[size]:not([size="1"]) { background-image: none; padding: var(--mat-space-1); height: auto; min-height: 7.5rem; }
+.mat-select[multiple] option, .mat-select[size]:not([size="1"]) option { padding: var(--mat-space-2) var(--mat-space-3); border-radius: var(--mat-radius-xs); }
+.mat-select[multiple] option:checked, .mat-select[size]:not([size="1"]) option:checked { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); }
+
+/* ---- Checks and radios: a group, in a column or in a row; toggle buttons; cards to choose from ---- */
+.mat-checks { display: flex; flex-direction: column; gap: var(--mat-space-1); }
+.mat-checks--inline { flex-direction: row; flex-wrap: wrap; gap: var(--mat-space-2) var(--mat-space-5); }
+.mat-check:has(input:disabled) { color: var(--mat-text-muted); cursor: not-allowed; }
+.mat-check input:disabled { cursor: not-allowed; }
+.mat-btn-check { position: absolute; opacity: 0; pointer-events: none; }
+.mat-btn-check:checked + .mat-btn { background: var(--mat-accent-soft-strong); border-color: var(--mat-accent); color: var(--mat-accent-text); }
+.mat-btn-check:focus-visible + .mat-btn { box-shadow: var(--mat-focus-ring); }
+.mat-btn-check:disabled + .mat-btn { opacity: .5; cursor: not-allowed; }
+.mat-choices { display: grid; gap: var(--mat-space-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+.mat-choice {
+  display: flex; align-items: flex-start; gap: var(--mat-space-3);
+  padding: var(--mat-space-4);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-radius);
+  cursor: pointer;
+  transition: border-color var(--mat-dur-fast) var(--mat-ease), background var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-choice input { flex: none; width: var(--mat-check-size, 18px); height: var(--mat-check-size, 18px); margin: 2px 0 0; accent-color: var(--mat-accent); cursor: pointer; }
+.mat-choice:hover { border-color: color-mix(in srgb, var(--mat-accent) 40%, var(--mat-border-strong)); }
+.mat-choice:has(input:checked) { border-color: var(--mat-accent); background: var(--mat-accent-soft); }
+.mat-choice:has(input:focus-visible) { box-shadow: var(--mat-focus-ring); }
+.mat-choice:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.mat-choice__text { display: flex; flex-direction: column; gap: 2px; }
+.mat-choice__text small { color: var(--mat-text-muted); }
+
+/* ---- Range: the filled part of the track is drawn from --mat-range, which matui.js sets for every .mat-range ---- */
+.mat-range { --mat-range: 50%; -webkit-appearance: none; appearance: none; width: 100%; height: 24px; background: transparent; cursor: pointer; }
+.mat-range::-webkit-slider-runnable-track { height: 6px; border-radius: var(--mat-radius-pill); background: linear-gradient(to right, var(--mat-accent) var(--mat-range), var(--mat-surface-3) var(--mat-range)); }
+.mat-range::-moz-range-track { height: 6px; border-radius: var(--mat-radius-pill); background: var(--mat-surface-3); }
+.mat-range::-moz-range-progress { height: 6px; border-radius: var(--mat-radius-pill); background: var(--mat-accent); }
+.mat-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: var(--mat-thumb); border: 2px solid var(--mat-accent); box-shadow: var(--mat-shadow-1); }
+.mat-range::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--mat-thumb); border: 2px solid var(--mat-accent); box-shadow: var(--mat-shadow-1); }
+.mat-range:focus-visible { outline: none; }
+.mat-range:focus-visible::-webkit-slider-thumb { box-shadow: var(--mat-focus-ring); }
+.mat-range:focus-visible::-moz-range-thumb { box-shadow: var(--mat-focus-ring); }
+.mat-range:disabled { opacity: .5; cursor: not-allowed; }
+.mat-range-row { display: flex; align-items: center; gap: var(--mat-space-3); }
+.mat-range-out { min-width: 3ch; text-align: right; font-family: var(--mat-mono); font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+
+/* ---- Input group: buttons, selects and text around a field; sizes ---- */
+.mat-input-group > .mat-btn, .mat-input-group > .mat-select { border-radius: 0; }
+.mat-input-group > .mat-select { flex: 0 0 auto; width: auto; }
+.mat-input-group > .mat-btn:first-child, .mat-input-group > .mat-select:first-child { border-top-left-radius: var(--mat-radius); border-bottom-left-radius: var(--mat-radius); }
+.mat-input-group > .mat-btn:last-child, .mat-input-group > .mat-select:last-child { border-top-right-radius: var(--mat-radius); border-bottom-right-radius: var(--mat-radius); }
+.mat-input-group--sm .mat-input, .mat-input-group--sm .mat-select, .mat-input-group--sm .mat-btn, .mat-input-group--sm .mat-input-addon { min-height: var(--mat-control-h-sm); font-size: var(--mat-fs-sm); }
+.mat-input-group--lg .mat-input, .mat-input-group--lg .mat-select, .mat-input-group--lg .mat-btn, .mat-input-group--lg .mat-input-addon { min-height: var(--mat-control-h-lg); font-size: var(--mat-fs-lg); }
+
+/* ---- The type of a field on a touch screen (MOBILE-06) ----
+   iOS Safari zooms into a field whose type is under 16 px when it takes the focus, and the page stays zoomed. So on a touch screen every field has 16 px type or more; with a mouse nothing changes.
+   A field takes the size of what it stands in (15 px in the body), so max(1rem, 1em) never makes one smaller than its context gave it. The small size is raised to 16 px as well (its 36 px height
+   stays), the large one keeps 17 px. This block stands after the sizes of the field, of the input group and of the stepper, whose rules have the same weight. The fields that the script draws have
+   their rules next to them: the search field and the tags in matui.pickers.css, the field of a row in matui.lists.css. */
+@media (pointer: coarse) {
+  .mat-input, .mat-select, .mat-textarea { font-size: max(1rem, 1em); }
+  .mat-input--sm, .mat-select--sm, .mat-input-group--sm .mat-input, .mat-input-group--sm .mat-select { font-size: 1rem; }
+  .mat-input--lg, .mat-select--lg, .mat-input-group--lg .mat-input, .mat-input-group--lg .mat-select { font-size: max(1rem, var(--mat-fs-lg)); }
+  /* the buttons and the unit of a number stepper are in the size of its field */
+  .mat-stepper:has(> .mat-input--sm) { font-size: 1rem; }
+  .mat-stepper:has(> .mat-input--lg) { font-size: max(1rem, var(--mat-fs-lg)); }
+}
+
+/* ---- An icon in the field (search), a button in the field (show the password), a counter ---- */
+.mat-input-icon { position: relative; display: flex; align-items: center; }
+.mat-input-icon > .mat-icon { position: absolute; left: var(--mat-space-3); font-size: 1.1rem; color: var(--mat-text-muted); pointer-events: none; }
+.mat-input-icon > .mat-input { padding-left: calc(var(--mat-space-3) + 1.6rem); }
+.mat-input-icon--end > .mat-input { padding-right: 48px; }
+.mat-input-icon__btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); }
+.mat-toggle-off { display: none; }
+[aria-pressed="true"] > .mat-toggle-on { display: none; }
+[aria-pressed="true"] > .mat-toggle-off { display: inline-block; }
+.mat-field__meta { display: flex; justify-content: space-between; gap: var(--mat-space-3); }
+.mat-counter { margin-left: auto; font-family: var(--mat-mono); font-size: var(--mat-fs-xs); color: var(--mat-text-muted); }
+
+/* ---- Files: the button of the browser, and a drop zone ---- */
+.mat-input[type="file"]::file-selector-button { margin-right: var(--mat-space-3); padding: 4px var(--mat-space-3); border: 1px solid var(--mat-border-strong); border-radius: var(--mat-radius-xs); background: var(--mat-surface-2); color: var(--mat-text); font: inherit; cursor: pointer; }
+.mat-dropzone {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: var(--mat-space-2);
+  padding: var(--mat-space-8) var(--mat-space-4);
+  border: 2px dashed var(--mat-border-strong);
+  border-radius: var(--mat-radius-lg);
+  background: var(--mat-surface-2);
+  color: var(--mat-text-muted);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--mat-dur-fast) var(--mat-ease), background var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-dropzone:hover, .mat-dropzone.is-drag, .mat-dropzone:focus-within { border-color: var(--mat-accent); background: var(--mat-accent-soft); color: var(--mat-text); }
+.mat-dropzone > .mat-icon { font-size: 1.8rem; color: var(--mat-accent-text); }
+.mat-dropzone input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.mat-dropzone__files { font-size: var(--mat-fs-sm); color: var(--mat-text); overflow-wrap: anywhere; }
+
+/* ---- File upload (FORM-21): a drop zone and the list of the files that were chosen ----
+   .mat-upload[data-upload] wraps the real file input (.mat-upload__input), which is what is validated and posted. Without the script it is the file field of the browser;
+   matui.js hides it (.is-ready) and draws the zone (.mat-upload__zone: the icon, the button .mat-upload__browse and the limits), the list (.mat-upload__list of
+   .mat-upload__item with a thumbnail, the name, the size or the progress, and a remove button) and the line of refused files (.mat-upload__status).
+   The button is the one Tab stop of the zone; its ::after covers the whole zone, so a click anywhere in the zone is a click on the button. A file that is dragged over the
+   control gives the whole zone a tint and a line all around it (COLOR-08). Nothing is wider than the control, and the targets are as large as any control on a touch screen. */
+.mat-upload { position: relative; display: block; min-width: 0; max-width: 100%; }
+.mat-upload__input {
+  display: block; width: 100%; min-height: var(--mat-control-h); padding: var(--mat-space-2) var(--mat-space-3);
+  background: var(--mat-surface); color: var(--mat-text);
+  border: 1px solid var(--mat-border-strong); border-radius: var(--mat-radius);
+  font: inherit; font-size: var(--mat-fs-sm);
+}
+.mat-upload__input::file-selector-button { margin-right: var(--mat-space-3); padding: 4px var(--mat-space-3); border: 1px solid var(--mat-border-strong); border-radius: var(--mat-radius-xs); background: var(--mat-surface-2); color: var(--mat-text); font: inherit; cursor: pointer; }
+.mat-upload__input:focus { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); outline: none; }
+.mat-upload__input:disabled { background: var(--mat-surface-3); color: var(--mat-text-muted); cursor: not-allowed; }
+/* with the script the real input lies over the control, invisible, so that a message of the browser points at the right place; whoever focuses it lands on the button */
+.mat-upload.is-ready > .mat-upload__input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+
+.mat-upload__zone {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: var(--mat-space-1);
+  padding: var(--mat-space-6) var(--mat-space-4);
+  background: var(--mat-surface-2); color: var(--mat-text-muted);
+  border: 2px dashed var(--mat-border-strong); border-radius: var(--mat-radius-lg);
+  text-align: center;
+  transition: border-color var(--mat-dur-fast) var(--mat-ease), background var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-upload__zone > .mat-icon { font-size: 1.75rem; color: var(--mat-accent-text); }
+.mat-upload__browse { position: static; min-height: var(--mat-control-h); margin: 0; padding: 0 var(--mat-space-2); background: transparent; border: 0; color: var(--mat-text); font-size: var(--mat-fs-md); font-weight: 600; cursor: pointer; }
+.mat-upload__browse::after { content: ""; position: absolute; inset: 0; border-radius: var(--mat-radius-lg); }
+.mat-upload__browse:focus-visible { outline: none; }
+.mat-upload__title { overflow-wrap: anywhere; }
+.mat-upload__limits { max-width: 100%; font-size: var(--mat-fs-xs); color: var(--mat-text-muted); overflow-wrap: anywhere; }
+.mat-upload__limits[hidden] { display: none; }
+.mat-upload__zone:hover { border-color: var(--mat-accent); background: var(--mat-surface-3); }
+.mat-upload__zone:has(.mat-upload__browse:focus-visible) { border-color: var(--mat-accent); box-shadow: var(--mat-focus-ring); }
+/* a file over the control: a tint behind the zone and the line all around it, now a solid one */
+.mat-upload.is-drag .mat-upload__zone { border-style: solid; border-color: var(--mat-accent); background: var(--mat-accent-soft); color: var(--mat-text); }
+.mat-upload.is-disabled .mat-upload__zone { background: var(--mat-surface-3); border-color: var(--mat-border); }
+.mat-upload.is-disabled .mat-upload__zone > .mat-icon { color: var(--mat-text-faint); }
+.mat-upload__browse:disabled { color: var(--mat-text-muted); cursor: not-allowed; }
+/* the message and the border in the colour of the meaning (FORM-03) */
+.mat-field.is-invalid .mat-upload__input, .mat-field.is-invalid .mat-upload__zone, .mat-upload.is-invalid .mat-upload__zone { border-color: var(--mat-danger); }
+.mat-field.is-invalid .mat-upload__zone:has(.mat-upload__browse:focus-visible), .mat-upload.is-invalid .mat-upload__zone:has(.mat-upload__browse:focus-visible) { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-danger) 35%, transparent); }
+
+/* compact: one row, for a form with little room */
+.mat-upload--compact .mat-upload__zone { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: var(--mat-space-1) var(--mat-space-3); padding: var(--mat-space-2) var(--mat-space-4); text-align: left; }
+.mat-upload--compact .mat-upload__zone > .mat-icon { font-size: 1.25rem; }
+.mat-upload--compact .mat-upload__browse { padding-inline: 0; font-size: var(--mat-fs-sm); text-align: left; }
+.mat-upload--compact .mat-upload__limits { margin-left: auto; }
+
+/* the chosen files */
+.mat-upload__list { display: flex; flex-direction: column; gap: var(--mat-space-2); margin: var(--mat-space-3) 0 0; padding: 0; list-style: none; }
+.mat-upload__list[hidden] { display: none; }
+.mat-upload__item {
+  display: flex; align-items: center; gap: var(--mat-space-3); min-width: 0; min-height: 3.5rem;
+  padding: var(--mat-space-2) var(--mat-space-2) var(--mat-space-2) var(--mat-space-3);
+  background: var(--mat-surface); border: 1px solid var(--mat-border); border-radius: var(--mat-radius);
+}
+.mat-upload__item.is-error { background: var(--mat-danger-bg); border-color: var(--mat-danger); }
+.mat-upload__thumb { flex: none; display: grid; place-items: center; width: 40px; height: 40px; overflow: hidden; background: var(--mat-surface-3); color: var(--mat-text-muted); border-radius: var(--mat-radius-sm); font-size: 1.25rem; }
+.mat-upload__thumb > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mat-upload__body { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mat-upload__name { font-size: var(--mat-fs-sm); font-weight: 600; color: var(--mat-text); overflow-wrap: anywhere; }
+.mat-upload__meta { font-size: var(--mat-fs-xs); color: var(--mat-text-muted); font-variant-numeric: tabular-nums; }
+.mat-upload__state { display: inline-flex; align-items: center; gap: var(--mat-space-1); color: var(--mat-success-text); font-weight: 600; }
+.mat-upload__bar { display: block; height: 4px; margin-top: var(--mat-space-1); overflow: hidden; background: var(--mat-surface-3); border-radius: var(--mat-radius-pill); }
+.mat-upload__bar[hidden] { display: none; }
+.mat-upload__fill { display: block; width: var(--mat-up-progress, 0%); height: 100%; background: var(--mat-accent); border-radius: inherit; transition: width var(--mat-dur-fast) var(--mat-ease); }
+.mat-upload__problem { display: flex; align-items: flex-start; gap: var(--mat-space-1); font-size: var(--mat-fs-xs); color: var(--mat-danger-text); }
+.mat-upload__problem[hidden] { display: none; }
+.mat-upload__problem > .mat-icon, .mat-upload__issues .mat-icon { flex: none; margin-top: .15em; }
+.mat-upload__remove { flex: none; }
+
+/* what was refused, in words: the live region is always there and takes no room while it is empty */
+.mat-upload__status:not(:empty) { margin-top: var(--mat-space-2); }
+.mat-upload__issues { display: flex; flex-direction: column; gap: var(--mat-space-1); margin: 0; padding: 0; list-style: none; }
+.mat-upload__issues li { display: flex; align-items: flex-start; gap: var(--mat-space-1); font-size: var(--mat-fs-sm); color: var(--mat-danger-text); overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .mat-upload__zone { padding: var(--mat-space-5) var(--mat-space-3); }
+  .mat-upload--compact .mat-upload__limits { flex-basis: 100%; margin-left: 0; }
+}
+/* a touch screen: the one button of the zone is as large as a prominent control (the buttons of the list are 44 px from the tokens) */
+@media (pointer: coarse) { .mat-upload__browse { min-height: var(--mat-control-h-lg); } }
+/* forced colours (a high-contrast mode) drop backgrounds: the list keeps its lines, the drag and the progress use the system colours */
+@media (forced-colors: active) {
+  .mat-upload__fill { background: Highlight; }
+  .mat-upload__bar, .mat-upload__item { border: 1px solid CanvasText; }
+  .mat-upload.is-drag .mat-upload__zone { border-color: Highlight; }
+}
+
+/* ---- Layouts: columns (the grid above), a label beside the field, one line, sections with their heading on the left ---- */
+.mat-form__grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mat-form__grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .mat-form__grid--3, .mat-form__grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .mat-form__grid--3, .mat-form__grid--4 { grid-template-columns: minmax(0, 1fr); } }
+.mat-form--horizontal .mat-field:not(.mat-fieldset) { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr); column-gap: var(--mat-space-5); align-items: start; }
+.mat-form--horizontal .mat-field:not(.mat-fieldset) > :not(.mat-label) { grid-column: 2; }
+.mat-form--horizontal .mat-field:not(.mat-fieldset) > .mat-label { grid-column: 1; grid-row: 1; padding-top: calc((var(--mat-control-h) - 1.3em) / 2); }
+@media (max-width: 700px) {
+  .mat-form--horizontal .mat-field:not(.mat-fieldset) { display: flex; }
+  .mat-form--horizontal .mat-field:not(.mat-fieldset) > .mat-label { padding-top: 0; }
+}
+.mat-form--inline { flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: var(--mat-space-3) var(--mat-space-4); }
+.mat-form--inline > .mat-field { flex: 1 1 9rem; }
+.mat-form--inline > .mat-field--auto { flex: 0 0 auto; }
+.mat-form__section { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); gap: var(--mat-space-6); padding: var(--mat-space-6) 0; border-top: 1px solid var(--mat-border); }
+.mat-form__section:first-child { border-top: 0; padding-top: 0; }
+.mat-form__section-head { display: flex; flex-direction: column; gap: var(--mat-space-1); }
+.mat-form__section-head p { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+@media (max-width: 900px) { .mat-form__section { grid-template-columns: minmax(0, 1fr); gap: var(--mat-space-4); } }
+
+/* ---- A setting: what it is and what it does on the left, the switch on the right ---- */
+.mat-setting { display: flex; align-items: center; justify-content: space-between; gap: var(--mat-space-4); padding: var(--mat-space-3) 0; border-bottom: 1px solid var(--mat-border); }
+.mat-setting:last-child { border-bottom: 0; }
+.mat-setting__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; cursor: pointer; }
+.mat-setting__text small { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+.mat-switch--bare { gap: 0; flex: none; }
+
+/* ==========================================================================
+   Slider and range slider (FORM-17)
+   A native range input in a wrapper (.mat-slider), or two of them (.mat-slider--range, from and to). Without the script they are the native controls, the two
+   of a range slider one under the other. With it (.is-ready) the inputs stay in place but invisible, and the script draws one track, a thumb per input with
+   a target of 44 px, a bubble with the value, the marks and the labels, and moves the thumbs itself. The script sets --mat-slider-from, --mat-slider-to
+   (the filled part, in percent) and, per thumb, --mat-slider-at. Sizes: --sm (a compact control: 36 px), the default (44 px) and --lg.
+   ========================================================================== */
+.mat-slider {
+  --mat-slider-knob: 20px; --mat-slider-track: 6px; --mat-slider-hit: 44px;
+  --mat-slider-from: 0%; --mat-slider-to: 0%;
+  position: relative; display: block; isolation: isolate;
+  width: 100%; min-width: 0;
+}
+.mat-slider--sm { --mat-slider-knob: 16px; --mat-slider-track: 4px; --mat-slider-hit: 36px; }
+.mat-slider--lg { --mat-slider-knob: 26px; --mat-slider-track: 8px; --mat-slider-hit: 52px; }
+
+/* ---- Without the script: the native control, in the look of the toolkit (the filled part needs the script, except in Firefox) ---- */
+.mat-slider__input { display: block; width: 100%; height: var(--mat-slider-hit); margin: 0; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.mat-slider__input::-webkit-slider-runnable-track { height: var(--mat-slider-track); border-radius: var(--mat-radius-pill); background: var(--mat-surface-3); box-shadow: inset 0 0 0 1px var(--mat-border); }
+.mat-slider__input::-moz-range-track { height: var(--mat-slider-track); border-radius: var(--mat-radius-pill); background: var(--mat-surface-3); box-shadow: inset 0 0 0 1px var(--mat-border); }
+.mat-slider__input::-moz-range-progress { height: var(--mat-slider-track); border-radius: var(--mat-radius-pill); background: var(--mat-accent); }
+.mat-slider__input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; box-sizing: border-box; width: var(--mat-slider-knob); height: var(--mat-slider-knob); margin-top: calc((var(--mat-slider-track) - var(--mat-slider-knob)) / 2); border-radius: 50%; background: var(--mat-thumb); border: 2px solid var(--mat-accent); box-shadow: var(--mat-shadow-1); }
+.mat-slider__input::-moz-range-thumb { box-sizing: border-box; width: var(--mat-slider-knob); height: var(--mat-slider-knob); border-radius: 50%; background: var(--mat-thumb); border: 2px solid var(--mat-accent); box-shadow: var(--mat-shadow-1); }
+.mat-slider__input:focus-visible { outline: none; }
+.mat-slider__input:focus-visible::-webkit-slider-thumb { box-shadow: var(--mat-focus-ring); }
+.mat-slider__input:focus-visible::-moz-range-thumb { box-shadow: var(--mat-focus-ring); }
+.mat-slider__input:disabled { cursor: not-allowed; }
+.mat-slider--range:not(.is-ready) { display: flex; flex-direction: column; gap: var(--mat-space-1); }
+
+/* ---- With the script: the inputs are invisible (not hidden: they keep the focus, the keyboard and the screen reader) and lie over the slider ---- */
+.mat-slider.is-ready .mat-slider__input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+.mat-slider.is-ready[data-bubble="always"] { padding-top: 20px; }
+
+/* The rail is as wide as the way the centre of a thumb goes; a press on it is handled by the script (touch-action: the page can still be scrolled up and down). */
+.mat-slider__rail { position: relative; height: var(--mat-slider-hit); margin-inline: calc(var(--mat-slider-knob) / 2); cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.mat-slider__track { position: absolute; inset-inline: 0; top: 50%; height: var(--mat-slider-track); transform: translateY(-50%); border-radius: var(--mat-radius-pill); background: var(--mat-surface-3); box-shadow: inset 0 0 0 1px var(--mat-border); }
+.mat-slider__fill { position: absolute; top: 0; bottom: 0; left: var(--mat-slider-from); right: calc(100% - var(--mat-slider-to)); border-radius: var(--mat-radius-pill); background: var(--mat-accent); }
+
+/* The thumb is the target (as wide as it is high: 44 px); the knob that is seen is smaller. */
+.mat-slider__thumb { position: absolute; top: 50%; left: var(--mat-slider-at, 0%); z-index: 1; width: var(--mat-slider-hit); height: var(--mat-slider-hit); transform: translate(-50%, -50%); }
+.mat-slider__thumb.is-top { z-index: 2; }
+.mat-slider__thumb::before {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  box-sizing: border-box; width: var(--mat-slider-knob); height: var(--mat-slider-knob); margin: calc(var(--mat-slider-knob) / -2) 0 0 calc(var(--mat-slider-knob) / -2);
+  border-radius: 50%; background: var(--mat-thumb); border: 2px solid var(--mat-accent); box-shadow: var(--mat-shadow-1);
+}
+.mat-slider__thumb.is-key::before, .mat-slider__thumb.is-drag::before { box-shadow: var(--mat-focus-ring); }
+
+/* The bubble shows the value above the thumb while it is dragged or has the focus, or always (data-bubble="always"); two near thumbs share one (is-merged). */
+.mat-slider__bubble {
+  position: absolute; left: 50%; bottom: calc(50% + var(--mat-slider-knob) / 2 + 6px);
+  transform: translateX(calc(-50% + var(--mat-slider-shift, 0px)));
+  min-width: 2.25em; padding: 3px var(--mat-space-2); border-radius: var(--mat-radius-xs);
+  background: var(--mat-text); color: var(--mat-bg);
+  font-size: var(--mat-fs-xs); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; text-align: center; white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--mat-dur-fast) var(--mat-ease);
+}
+.mat-slider__thumb.is-focus > .mat-slider__bubble, .mat-slider__thumb.is-drag > .mat-slider__bubble, .mat-slider[data-bubble="always"] .mat-slider__bubble { opacity: 1; }
+.mat-slider.is-merged .mat-slider__thumb--from > .mat-slider__bubble { opacity: 0; }
+
+/* Marks under the track (the ones inside the filled part in the accent colour) and the labels: under every few marks, or the minimum and the maximum at the ends. */
+.mat-slider__ticks { position: absolute; inset: 0; pointer-events: none; }
+.mat-slider__tick { position: absolute; top: calc(50% + var(--mat-slider-track) / 2 + 4px); left: var(--mat-slider-at); width: 2px; height: 6px; margin-left: -1px; border-radius: 1px; background: var(--mat-border-strong); }
+.mat-slider__tick.is-on { background: var(--mat-accent); }
+.mat-slider__scale { position: relative; height: 1.25rem; margin: -6px calc(var(--mat-slider-knob) / 2) 0; font-size: var(--mat-fs-xs); color: var(--mat-text-muted); font-variant-numeric: tabular-nums; pointer-events: none; }
+.mat-slider__end, .mat-slider__tick-label { position: absolute; top: 0; white-space: nowrap; }
+.mat-slider__end--min { left: calc(var(--mat-slider-knob) / -2); }
+.mat-slider__end--max { right: calc(var(--mat-slider-knob) / -2); }
+.mat-slider__tick-label { left: var(--mat-slider-at); transform: translateX(-50%); }
+
+/* Disabled: every input of the slider is (a fieldset can disable them as well). */
+.mat-slider:not(:has(.mat-slider__input:enabled)) { opacity: .5; }
+.mat-slider:not(:has(.mat-slider__input:enabled)) .mat-slider__rail { cursor: not-allowed; }
+
+/* Forced colours (a high-contrast mode): backgrounds are dropped there, so the filled part and the bubble get what they need from the system colours. */
+@media (forced-colors: active) {
+  .mat-slider__fill { background: Highlight; }
+  .mat-slider__track, .mat-slider__bubble { border: 1px solid CanvasText; }
+}
+
+/* ---- Rating (FORM-22): stars, hearts or dots to choose a value, or to show an average ----
+   Interactive: <fieldset class="mat-field mat-fieldset mat-rating" data-rating> with a native radio and its label per value, so a form posts it and, without the
+   script, it is a row of radio buttons with their labels. The script marks it is-ready, which makes the radios and labels invisible (not hidden: they keep the focus,
+   the keyboard and the screen reader) and draws the shapes over them. Read-only: .mat-rating--readonly with data-value, which the script draws.
+   The shapes are two layers of the same row: the outline of every shape, and over it the filled shapes, clipped to --mat-rating-fill (a share of the whole row, which
+   the script writes: 70% is three and a half of five). Every cell has the same width, so the share is exact; half of a cell is the middle of its shape.
+   --mat-rating-max is the number of shapes. Sizes mat-rating--sm and --lg; the shape is mat-rating--heart or --dot (the star is the default). */
+.mat-rating { --mat-rating-icon: 22px; --mat-rating-h: var(--mat-control-h); --mat-rating-w: var(--mat-rating-h); --mat-rating-fill: 0%; --mat-rating-max: 5; position: relative; min-width: 0; }
+.mat-rating--sm { --mat-rating-icon: 16px; --mat-rating-h: var(--mat-control-h-sm); }
+.mat-rating--lg { --mat-rating-icon: 30px; --mat-rating-h: var(--mat-control-h-lg); }
+/* what is only shown is as high as its shape (a small gap around it), not as high as a control */
+.mat-rating--readonly { --mat-rating-h: calc(var(--mat-rating-icon) + 4px); --mat-rating-w: var(--mat-rating-h); }
+.mat-rating--readonly.mat-rating--sm { --mat-rating-icon: 14px; }
+
+/* Without the script: the radio buttons of the browser in a row, each with its label */
+fieldset.mat-rating:not(.is-ready) { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--mat-space-1) var(--mat-space-4); }
+fieldset.mat-rating:not(.is-ready) > .mat-hint, fieldset.mat-rating:not(.is-ready) > .mat-error { flex: 0 0 100%; }
+.mat-rating__input { margin: 0 var(--mat-space-1) 0 0; accent-color: var(--mat-accent); }
+.mat-rating__label { font-size: var(--mat-fs-sm); color: var(--mat-text); }
+
+/* With the script: the radios and their labels are invisible and stay where they are */
+.mat-rating.is-ready > .mat-rating__input, .mat-rating.is-ready > .mat-rating__label {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; opacity: 0;
+}
+
+.mat-rating__body, .mat-rating--readonly { display: inline-flex; align-items: center; gap: var(--mat-space-2); max-width: 100%; vertical-align: middle; }
+.mat-rating__stars { position: relative; display: inline-block; max-width: 100%; line-height: 0; touch-action: manipulation; border-radius: var(--mat-radius); }
+.mat-rating.is-ready:not(.mat-rating--readonly) .mat-rating__stars { cursor: pointer; }
+/* the first shape lines up with the label above it, not with the edge of its target */
+.mat-rating__stars { margin-inline-start: calc((var(--mat-rating-w) - var(--mat-rating-icon)) / -2); }
+.mat-rating__layer { display: grid; grid-template-columns: repeat(var(--mat-rating-max), minmax(0, var(--mat-rating-w))); }
+.mat-rating__layer--empty { color: var(--mat-text-muted); }
+.mat-rating__layer--fill { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--mat-rating-fill)) 0 0); pointer-events: none; color: var(--mat-accent); }
+.mat-rating__cell { display: flex; align-items: center; justify-content: center; height: var(--mat-rating-h); min-width: 0; }
+.mat-rating__icon { width: var(--mat-rating-icon); height: var(--mat-rating-icon); stroke-width: 1.75; vertical-align: top; }
+.mat-rating__layer--fill .mat-rating__icon { fill: currentColor; }
+/* On a touch screen a shape is a target as wide as it is high (MOBILE-04). A row that has no room for that many (ten dots on a phone) is set in two rows: the script
+   sets is-wrapped and --mat-rating-cols (half of the shapes, rounded up), and the filled part is the first row up to its share and the second row up to its share. */
+@media (pointer: coarse) {
+  .mat-rating.is-wrapped {
+    --mat-rating-top: min(100%, calc(var(--mat-rating-fill) * var(--mat-rating-max) / var(--mat-rating-cols)));
+    --mat-rating-bottom: max(0%, calc(var(--mat-rating-fill) * var(--mat-rating-max) / var(--mat-rating-cols) - 100%));
+  }
+  .mat-rating.is-wrapped .mat-rating__layer { grid-template-columns: repeat(var(--mat-rating-cols), minmax(0, var(--mat-rating-w))); }
+  .mat-rating.is-wrapped .mat-rating__layer--fill { clip-path: polygon(0 0, var(--mat-rating-top) 0, var(--mat-rating-top) 50%, var(--mat-rating-bottom) 50%, var(--mat-rating-bottom) 100%, 0 100%); }
+}
+/* a heart and a dot fill their square more than a star does: drawn a little smaller they look as large */
+.mat-rating--heart .mat-rating__icon { width: calc(var(--mat-rating-icon) * .9); height: calc(var(--mat-rating-icon) * .9); }
+.mat-rating--dot .mat-rating__icon { width: calc(var(--mat-rating-icon) * .8); height: calc(var(--mat-rating-icon) * .8); }
+
+.mat-rating__value { min-width: 3ch; white-space: nowrap; font-size: var(--mat-fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--mat-text); }
+.mat-rating__count { font-size: var(--mat-fs-sm); color: var(--mat-text-muted); font-variant-numeric: tabular-nums; }
+.mat-rating--lg .mat-rating__value, .mat-rating--lg .mat-rating__count { font-size: var(--mat-fs-md); }
+.mat-rating--readonly .mat-rating__value { min-width: 0; }
+
+/* The keyboard focus is on a radio, which is invisible: the ring is drawn around the shapes */
+.mat-rating:has(.mat-rating__input:focus-visible) .mat-rating__stars { box-shadow: var(--mat-focus-ring); }
+/* An error at the field: the empty shapes take the colour of the error (the message says what is wrong) */
+.mat-field.is-invalid .mat-rating__layer--empty { color: var(--mat-danger); }
+/* Disabled (a fieldset can disable the radios): dimmed, and the pointer does nothing */
+.mat-rating:disabled .mat-rating__stars { opacity: .5; cursor: not-allowed; }
+.mat-rating:disabled .mat-rating__value, .mat-rating:disabled .mat-rating__count { color: var(--mat-text-muted); }
+
+@media (forced-colors: active) {
+  .mat-rating__layer--fill { color: Highlight; }
+  .mat-rating__layer--empty { color: CanvasText; }
+}

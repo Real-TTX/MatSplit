@@ -3,8 +3,8 @@
 
    The shell and the controls (theme button, drawer, dialogs, confirm, tabs, validation, dependent
    fields, clipboard, toasts) are MatUi (matui/matui.js). What is left here is what only MatSplit does:
-   the colour of the system bars, the installed app on iOS and Android, the Web Share button, the
-   camera for the receipt and the comma in money fields.
+   the colour of the system bars, the installed app on iOS and Android, the Web Share button and the
+   comma in money fields (the camera for the receipt is receipt-capture.js).
    ========================================================================== */
 (function () {
     'use strict';
@@ -166,88 +166,6 @@
         });
     }
 
-    /* ------------------------------- camera ------------------------------ */
-
-    function openCamera(input) {
-        var overlay = document.createElement('div');
-        overlay.className = 'ms-camera';
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-label', 'Beleg aufnehmen');
-        overlay.innerHTML = '<div class="ms-camera__box">' +
-            '<video class="ms-camera__video" autoplay playsinline muted></video>' +
-            '<div class="ms-camera__actions">' +
-            '<button type="button" class="mat-btn mat-btn--primary" data-ms-camera-shoot>Aufnehmen</button>' +
-            '<button type="button" class="mat-btn mat-btn--secondary" data-ms-camera-cancel>Abbrechen</button>' +
-            '</div></div>';
-        document.body.appendChild(overlay);
-
-        var video = overlay.querySelector('video');
-        var stream = null;
-
-        var stop = function () {
-            if (stream) {
-                stream.getTracks().forEach(function (track) {
-                    track.stop();
-                });
-            }
-            if (overlay.parentNode) {
-                overlay.parentNode.removeChild(overlay);
-            }
-        };
-
-        overlay.querySelector('[data-ms-camera-cancel]').addEventListener('click', stop);
-
-        overlay.querySelector('[data-ms-camera-shoot]').addEventListener('click', function () {
-            var canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth || 1280;
-            canvas.height = video.videoHeight || 960;
-            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob(function (blob) {
-                if (blob && window.DataTransfer && window.File) {
-                    var file = new File([blob], 'beleg-' + Date.now() + '.jpg', { type: 'image/jpeg' });
-                    var transfer = new DataTransfer();
-                    transfer.items.add(file);
-                    input.files = transfer.files;
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-                stop();
-            }, 'image/jpeg', 0.9);
-        });
-
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-            .then(function (result) {
-                stream = result;
-                video.srcObject = stream;
-            })
-            .catch(function () {
-                stop();
-                input.click();
-            });
-    }
-
-    function initCamera() {
-        qsa('[data-ms-camera]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var input = document.getElementById(button.getAttribute('data-ms-camera'));
-                if (!input) {
-                    return;
-                }
-
-                var supported = navigator.mediaDevices && navigator.mediaDevices.getUserMedia
-                    && window.DataTransfer && window.File;
-
-                if (!supported) {
-                    input.click();
-                    return;
-                }
-
-                openCamera(input);
-            });
-        });
-    }
-
     /* ------------------------------- money ------------------------------- */
 
     /*
@@ -282,7 +200,6 @@
         initThemeColor();
         initKeyboard();
         initShare();
-        initCamera();
         initMoney();
     }
 

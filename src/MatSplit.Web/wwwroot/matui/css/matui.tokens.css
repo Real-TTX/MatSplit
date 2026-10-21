@@ -1,0 +1,426 @@
+/* ==========================================================================
+   MatUi · tokens
+   The single source of the look of every Mat app. Components use only these custom properties, never a raw colour.
+
+   - Format: a declaration, then its description as a comment on the same line (the MatDesign site reads the descriptions
+     from here). A comment cannot contain the comment terminator, so the format is described in words.
+   - Light is the base. The dark set is written TWICE on purpose: once for an explicit `data-theme="dark"` and once for
+     "system" under `prefers-color-scheme: dark`. A unit test keeps both sets identical.
+   - An app sets ONE colour: `--mat-app-accent` (see matui.apps.css, on <html data-app="...">). Everything else (hover,
+     tint, text colour, ring) is derived from it, in both modes. The derived accent tokens are declared for
+     `:root` AND `[data-app]`, so a preview inside a page (<div data-app="matcad">) gets its own accent.
+   - Colour schemes (`data-scheme` on <html>, opt-in) are at the END of this file: they change surfaces only, never an accent token.
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- Surfaces ---- */
+  --mat-bg: #f5f4f1;                       /* Page background behind everything. */
+  --mat-bg-2: #ecebe7;                     /* Quiet second background (wells). */
+  --mat-surface: #ffffff;                  /* Cards, panels, tables, dialogs. */
+  --mat-surface-2: #faf9f7;                /* Hover, zebra rows, raised inner areas. */
+  --mat-surface-3: #efeeea;                /* Input fill, pressed state, tracks. */
+  --mat-glass: #f5f4f1;                    /* Top bar and sticky areas: solid, so that content never shows through. */
+  --mat-nav-bg: #eeede9;                   /* Menu background. */
+  --mat-overlay: rgba(20, 19, 17, .5);     /* Dim layer behind dialogs and the mobile menu. */
+
+  /* ---- Lines ---- */
+  --mat-border: rgba(31, 30, 27, .13);     /* Hairlines, card borders, table rules. */
+  --mat-border-strong: rgba(31, 30, 27, .30); /* Input borders, dividers that must be seen. */
+
+  /* ---- Text ---- */
+  --mat-text: #1f1e1b;                     /* Primary text. */
+  --mat-text-muted: #5d5b55;               /* Secondary text, labels, hints (AA on every surface). */
+  --mat-text-faint: #85827a;               /* Placeholders and disabled text only. Never for information. */
+  --mat-accent-text-keep: 100%;            /* Share of the accent that its text colour keeps, the rest is --mat-text: a colour scheme lowers it where its surfaces need darker links. */
+
+  /* ---- Status ---- */
+  --mat-danger: #d92d4a;                   /* Errors and destructive actions. */
+  --mat-danger-bg: rgba(217, 45, 74, .10); /* Tint behind danger text. */
+  --mat-danger-text: #b3203b;              /* Danger as text on a surface or tint. */
+  --mat-on-danger: #ffffff;                /* Text on a solid danger button. */
+  --mat-thumb: #ffffff;                    /* Knob of a switch. */
+  --mat-success: #0f9d58;                  /* Success, online, healthy. */
+  --mat-success-bg: rgba(15, 157, 88, .12); /* Tint behind success text. */
+  --mat-success-text: #0b7a44;             /* Success as text. */
+  --mat-warning: #c47500;                  /* Attention, degraded. */
+  --mat-warning-bg: rgba(245, 158, 11, .16); /* Tint behind warning text. */
+  --mat-warning-text: #8a5200;             /* Warning as text. */
+  --mat-info: #2563eb;                     /* Neutral information. */
+  --mat-info-bg: rgba(37, 99, 235, .10);   /* Tint behind info text. */
+  --mat-info-text: #1d4fc4;                /* Info as text. */
+
+  /* ---- Elevation ---- */
+  --mat-shadow-1: 0 1px 1px rgba(31, 30, 27, .04); /* Cards at rest: hardly more than their line. */
+  --mat-shadow-2: 0 2px 6px rgba(31, 30, 27, .10), 0 8px 20px rgba(31, 30, 27, .08); /* Popovers, context menus. */
+  --mat-shadow-3: 0 12px 40px rgba(31, 30, 27, .24); /* Dialogs. */
+  --mat-scroll-thumb: rgba(31, 30, 27, .34); /* Scrollbar thumb while scrolling (hidden otherwise). */
+
+  /* ---- Shape ---- */
+  --mat-radius-xs: 3px;                    /* Tags, code, small chips. */
+  --mat-radius-sm: 4px;                    /* Small buttons, marks inside a control. */
+  --mat-radius: 6px;                       /* Buttons, inputs, menu items, inner panels. */
+  --mat-radius-lg: 8px;                    /* Cards and dialogs. */
+  --mat-radius-xl: 12px;                   /* Large surfaces: the picker panel, a sign-in card. */
+  --mat-radius-pill: 999px;                /* Badges, status pills, switches. */
+
+  /* ---- Spacing (4 px scale) ---- */
+  --mat-space-1: 4px;                      /* Hairline gaps. */
+  --mat-space-2: 8px;                      /* Between an icon and its label. */
+  --mat-space-3: 12px;                     /* Inside compact controls. */
+  --mat-space-4: 16px;                     /* Standard gap between blocks. */
+  --mat-space-5: 20px;                     /* Card padding on phones. */
+  --mat-space-6: 24px;                     /* Card padding, between sections. */
+  --mat-space-8: 32px;                     /* Page padding on desktop. */
+  --mat-space-10: 40px;                    /* Large section gaps. */
+  --mat-space-12: 48px;                    /* Hero spacing. */
+  --mat-gap: var(--mat-space-4);           /* Default gap of stacks and grids. */
+
+  /* ---- Layout ---- */
+  --mat-nav-w: 264px;                      /* Width of the menu on the left. */
+  --mat-topbar-h: 56px;                    /* Height of the bar with the breadcrumb. */
+  --mat-content-max: 1240px;               /* Maximum width of page content. */
+  --mat-content-pad: clamp(16px, 3vw, 32px); /* Side padding of the page. */
+  --mat-control-h: 40px;                   /* Height of buttons and inputs. */
+  --mat-control-h-sm: 32px;                /* Compact controls (row actions, chips). */
+  --mat-control-h-lg: 48px;                /* Prominent controls. */
+
+  /* ---- Type ---- */
+  --mat-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* UI and body. System stack: no web font. */
+  --mat-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Cascadia Code", Menlo, Consolas, monospace; /* IDs, versions, ports, code. */
+  --mat-fs-xs: .75rem;                     /* Captions, badges (12 px). */
+  --mat-fs-sm: .8125rem;                   /* Table text, hints (13 px). */
+  --mat-fs-md: .9375rem;                   /* Body text (15 px). */
+  --mat-fs-lg: 1.0625rem;                  /* Lead text, card titles (17 px). */
+  --mat-fs-xl: 1.25rem;                    /* Section titles (20 px). */
+  --mat-fs-2xl: 1.625rem;                  /* Page titles (26 px). */
+  --mat-fs-3xl: 2.125rem;                  /* Hero titles (34 px). */
+  --mat-lh: 1.5;                           /* Body line height. */
+  --mat-lh-tight: 1.25;                    /* Headings. */
+
+  /* ---- Motion ---- */
+  --mat-dur-fast: 120ms;                   /* Hover, press. */
+  --mat-dur: 180ms;                        /* Menus, tabs, toggles. */
+  --mat-dur-slow: 280ms;                   /* Dialogs, the mobile menu. */
+  --mat-ease: cubic-bezier(.2, .8, .2, 1); /* The one easing curve. */
+
+  /* ---- Layers ---- */
+  --mat-z-nav: 100;                        /* Menu. */
+  --mat-z-topbar: 200;                     /* Top bar. */
+  --mat-z-menu: 300;                       /* Context menus and popovers. */
+  --mat-z-dialog: 400;                     /* Dialogs. */
+  --mat-z-toast: 500;                      /* Toasts above everything. */
+
+  /* ---- Colour picker ---- */
+  --mat-picker-light: #ffffff;             /* White end of the saturation ramp: a colour model, the same in light and dark. */
+  --mat-picker-dark: #000000;              /* Black end of the brightness ramp. */
+  --mat-picker-hues: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); /* The hue ramp of the slider. */
+
+  /* ---- Device ---- */
+  --mat-safe-top: env(safe-area-inset-top, 0px);       /* Notch. */
+  --mat-safe-bottom: env(safe-area-inset-bottom, 0px); /* Home indicator. */
+  --mat-safe-left: env(safe-area-inset-left, 0px);     /* Landscape notch, left. */
+  --mat-safe-right: env(safe-area-inset-right, 0px);   /* Landscape notch, right. */
+}
+
+/* ---- Accent, light. Derived from --mat-app-accent; declared per scope so a nested [data-app] recomputes it. ---- */
+:root,
+[data-app] {
+  --mat-accent: var(--mat-app-accent, #5b5fe6); /* Filled surfaces: primary button, active item, switch. */
+  --mat-accent-hover: color-mix(in oklab, var(--mat-accent) 86%, black); /* Primary button on hover. */
+  --mat-accent-active: color-mix(in oklab, var(--mat-accent) 74%, black); /* Primary button pressed. */
+  --mat-accent-soft: color-mix(in srgb, var(--mat-accent) 11%, transparent); /* Tint: hover of ghost items, selected row. */
+  --mat-accent-soft-strong: color-mix(in srgb, var(--mat-accent) 19%, transparent); /* Stronger tint: active menu item. */
+  --mat-accent-text: color-mix(in oklab, var(--mat-app-accent-text, color-mix(in oklab, var(--mat-accent) 78%, black)) var(--mat-accent-text-keep, 100%), var(--mat-text)); /* Accent as text or link on a surface (AA). */
+  --mat-on-accent: var(--mat-app-on-accent, #ffffff); /* Text on --mat-accent. */
+  --mat-focus-ring: 0 0 0 3px color-mix(in srgb, var(--mat-accent) 42%, transparent); /* Keyboard focus ring. */
+  --mat-selection: color-mix(in srgb, var(--mat-accent) 28%, transparent); /* Text selection. */
+}
+
+/* Fingers need bigger targets (WCAG 2.5.5, 44 px). */
+@media (pointer: coarse) {
+  :root {
+    --mat-control-h: 44px;
+    --mat-control-h-sm: 36px;
+    --mat-control-h-lg: 52px;
+  }
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+
+/* ---- Dark, explicit ---- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --mat-bg: #151514;
+  --mat-bg-2: #1a1a18;
+  --mat-surface: #1e1e1c;
+  --mat-surface-2: #252523;
+  --mat-surface-3: #2d2d2a;
+  --mat-glass: #151514;
+  --mat-nav-bg: #111110;
+  --mat-overlay: rgba(0, 0, 0, .62);
+  --mat-border: rgba(255, 255, 255, .10);
+  --mat-border-strong: rgba(255, 255, 255, .22);
+  --mat-text: #ecebe6;
+  --mat-text-muted: #a8a69e;
+  --mat-text-faint: #7a786f;
+  --mat-danger: #ff6f86;
+  --mat-danger-bg: rgba(255, 111, 134, .14);
+  --mat-danger-text: #ff9db0;
+  --mat-on-danger: #1b0710;
+  --mat-thumb: #ffffff;
+  --mat-success: #3ddc97;
+  --mat-success-bg: rgba(61, 220, 151, .14);
+  --mat-success-text: #72efbb;
+  --mat-warning: #fbbf24;
+  --mat-warning-bg: rgba(251, 191, 36, .14);
+  --mat-warning-text: #fcd34d;
+  --mat-info: #7aa2ff;
+  --mat-info-bg: rgba(122, 162, 255, .14);
+  --mat-info-text: #a8c1ff;
+  --mat-shadow-1: 0 1px 1px rgba(0, 0, 0, .3);
+  --mat-shadow-2: 0 2px 6px rgba(0, 0, 0, .4), 0 8px 20px rgba(0, 0, 0, .35);
+  --mat-shadow-3: 0 12px 40px rgba(0, 0, 0, .62);
+  --mat-scroll-thumb: rgba(255, 255, 255, .34);
+}
+
+/* ---- Accent, dark explicit (lighter accent, dark text on it) ---- */
+:root[data-theme="dark"],
+:root[data-theme="dark"] [data-app] {
+  --mat-accent: color-mix(in oklab, var(--mat-app-accent, #5b5fe6) 74%, white);
+  --mat-accent-hover: color-mix(in oklab, var(--mat-accent) 88%, white);
+  --mat-accent-active: color-mix(in oklab, var(--mat-accent) 76%, white);
+  --mat-accent-soft: color-mix(in srgb, var(--mat-accent) 16%, transparent);
+  --mat-accent-soft-strong: color-mix(in srgb, var(--mat-accent) 26%, transparent);
+  --mat-accent-text: color-mix(in oklab, color-mix(in oklab, var(--mat-accent) 78%, white) var(--mat-accent-text-keep, 100%), var(--mat-text));
+  --mat-on-accent: #0b1020;
+  --mat-focus-ring: 0 0 0 3px color-mix(in srgb, var(--mat-accent) 50%, transparent);
+  --mat-selection: color-mix(in srgb, var(--mat-accent) 36%, transparent);
+}
+
+/* ---- Dark, from the system (same values as above) ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --mat-bg: #151514;
+    --mat-bg-2: #1a1a18;
+    --mat-surface: #1e1e1c;
+    --mat-surface-2: #252523;
+    --mat-surface-3: #2d2d2a;
+    --mat-glass: #151514;
+    --mat-nav-bg: #111110;
+    --mat-overlay: rgba(0, 0, 0, .62);
+    --mat-border: rgba(255, 255, 255, .10);
+    --mat-border-strong: rgba(255, 255, 255, .22);
+    --mat-text: #ecebe6;
+    --mat-text-muted: #a8a69e;
+    --mat-text-faint: #7a786f;
+    --mat-danger: #ff6f86;
+    --mat-danger-bg: rgba(255, 111, 134, .14);
+    --mat-danger-text: #ff9db0;
+  --mat-on-danger: #1b0710;
+  --mat-thumb: #ffffff;
+    --mat-success: #3ddc97;
+    --mat-success-bg: rgba(61, 220, 151, .14);
+    --mat-success-text: #72efbb;
+    --mat-warning: #fbbf24;
+    --mat-warning-bg: rgba(251, 191, 36, .14);
+    --mat-warning-text: #fcd34d;
+    --mat-info: #7aa2ff;
+    --mat-info-bg: rgba(122, 162, 255, .14);
+    --mat-info-text: #a8c1ff;
+    --mat-shadow-1: 0 1px 1px rgba(0, 0, 0, .3);
+    --mat-shadow-2: 0 2px 6px rgba(0, 0, 0, .4), 0 8px 20px rgba(0, 0, 0, .35);
+    --mat-shadow-3: 0 12px 40px rgba(0, 0, 0, .62);
+    --mat-scroll-thumb: rgba(255, 255, 255, .34);
+  }
+
+  :root:not([data-theme="light"]):not([data-theme="dark"]),
+  :root:not([data-theme="light"]):not([data-theme="dark"]) [data-app] {
+    --mat-accent: color-mix(in oklab, var(--mat-app-accent, #5b5fe6) 74%, white);
+    --mat-accent-hover: color-mix(in oklab, var(--mat-accent) 88%, white);
+    --mat-accent-active: color-mix(in oklab, var(--mat-accent) 76%, white);
+    --mat-accent-soft: color-mix(in srgb, var(--mat-accent) 16%, transparent);
+    --mat-accent-soft-strong: color-mix(in srgb, var(--mat-accent) 26%, transparent);
+    --mat-accent-text: color-mix(in oklab, color-mix(in oklab, var(--mat-accent) 78%, white) var(--mat-accent-text-keep, 100%), var(--mat-text));
+    --mat-on-accent: #0b1020;
+    --mat-focus-ring: 0 0 0 3px color-mix(in srgb, var(--mat-accent) 50%, transparent);
+    --mat-selection: color-mix(in srgb, var(--mat-accent) 36%, transparent);
+  }
+}
+
+/* ==========================================================================
+   Colour schemes (COLOR-09). Opt-in: <html data-scheme="paper|contrast|oled">. Absent, "standard" or any other value is the look above.
+   - A scheme changes SURFACES only: the backgrounds, the lines, the text colours, the status texts where AA needs it, the shadows, the dim layer and the
+     scrollbar. It never sets an accent token, so every combination of scheme, mode, accent and app works without a rule of its own. Where its surfaces need
+     darker links it lowers --mat-accent-text-keep, the share of the accent that the colour of a link keeps (the rest is --mat-text).
+   - Written like the dark set: the light values are the scheme on its own (also while the system is light), the dark values are written TWICE (explicit and
+     system) and a unit test keeps the two identical. A scheme sets the same tokens in light and in dark, so its light values never show through in dark.
+   - oled has no light values on purpose: in light mode it is the standard look.
+   - The selectors start with :root[data-scheme=...] so that they are not read as the dark values of the base tokens (:root[data-theme="dark"]).
+   ========================================================================== */
+
+/* ---- Scheme paper: warm, slightly yellowed surfaces ---- */
+:root[data-scheme="paper"] {
+  --mat-bg: #f3eee3;
+  --mat-bg-2: #ebe5d6;
+  --mat-surface: #fcf9f2;
+  --mat-surface-2: #f7f3ea;
+  --mat-surface-3: #f1ebdf;
+  --mat-glass: #f3eee3;
+  --mat-nav-bg: #ece6d8;
+  --mat-border: rgba(90, 60, 10, .19);
+  --mat-border-strong: rgba(90, 60, 10, .36);
+  --mat-text: #2b2620;
+  --mat-text-muted: #675d4f;
+  --mat-text-faint: #8c8170;
+  --mat-success-text: #0a7340;
+  --mat-accent-text-keep: 75%;
+}
+
+:root[data-scheme="paper"][data-theme="dark"] {
+  --mat-bg: #1b1814;
+  --mat-bg-2: #1f1c17;
+  --mat-surface: #23201a;
+  --mat-surface-2: #28251f;
+  --mat-surface-3: #2c2821;
+  --mat-glass: #1b1814;
+  --mat-nav-bg: #161310;
+  --mat-border: rgba(255, 240, 214, .10);
+  --mat-border-strong: rgba(255, 240, 214, .22);
+  --mat-text: #ece4d6;
+  --mat-text-muted: #ab9f8b;
+  --mat-text-faint: #7f7565;
+  --mat-success-text: #72efbb;
+  --mat-accent-text-keep: 85%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-scheme="paper"]:not([data-theme="light"]):not([data-theme="dark"]) {
+    --mat-bg: #1b1814;
+    --mat-bg-2: #1f1c17;
+    --mat-surface: #23201a;
+    --mat-surface-2: #28251f;
+    --mat-surface-3: #2c2821;
+    --mat-glass: #1b1814;
+    --mat-nav-bg: #161310;
+    --mat-border: rgba(255, 240, 214, .10);
+    --mat-border-strong: rgba(255, 240, 214, .22);
+    --mat-text: #ece4d6;
+    --mat-text-muted: #ab9f8b;
+    --mat-text-faint: #7f7565;
+    --mat-success-text: #72efbb;
+    --mat-accent-text-keep: 85%;
+  }
+}
+
+/* ---- Scheme contrast: pure white and pure black, strong lines instead of shadows, near-black and near-white muted text ---- */
+:root[data-scheme="contrast"] {
+  --mat-bg: #ffffff;
+  --mat-bg-2: #f2f2f2;
+  --mat-surface: #ffffff;
+  --mat-surface-2: #f5f5f5;
+  --mat-surface-3: #ebebeb;
+  --mat-glass: #ffffff;
+  --mat-nav-bg: #ffffff;
+  --mat-overlay: rgba(0, 0, 0, .7);
+  --mat-border: #5c5c5c;
+  --mat-border-strong: #1f1f1f;
+  --mat-text: #000000;
+  --mat-text-muted: #333333;
+  --mat-text-faint: #595959;
+  --mat-danger-text: #8f0f26;
+  --mat-success-text: #07592f;
+  --mat-warning-text: #6e4000;
+  --mat-info-text: #0f3f9a;
+  --mat-shadow-1: none;
+  --mat-shadow-2: 0 0 0 1px #1f1f1f;
+  --mat-shadow-3: 0 0 0 1px #1f1f1f;
+  --mat-scroll-thumb: rgba(0, 0, 0, .6);
+  --mat-accent-text-keep: 90%;
+}
+
+:root[data-scheme="contrast"][data-theme="dark"] {
+  --mat-bg: #000000;
+  --mat-bg-2: #0d0d0d;
+  --mat-surface: #000000;
+  --mat-surface-2: #0f0f0f;
+  --mat-surface-3: #1c1c1c;
+  --mat-glass: #000000;
+  --mat-nav-bg: #000000;
+  --mat-overlay: rgba(0, 0, 0, .8);
+  --mat-border: #9a9a9a;
+  --mat-border-strong: #e6e6e6;
+  --mat-text: #ffffff;
+  --mat-text-muted: #d6d6d6;
+  --mat-text-faint: #b0b0b0;
+  --mat-danger-text: #ffc2cc;
+  --mat-success-text: #9ff7cf;
+  --mat-warning-text: #ffe08a;
+  --mat-info-text: #c9daff;
+  --mat-shadow-1: none;
+  --mat-shadow-2: 0 0 0 1px #e6e6e6;
+  --mat-shadow-3: 0 0 0 1px #e6e6e6;
+  --mat-scroll-thumb: rgba(255, 255, 255, .6);
+  --mat-accent-text-keep: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-scheme="contrast"]:not([data-theme="light"]):not([data-theme="dark"]) {
+    --mat-bg: #000000;
+    --mat-bg-2: #0d0d0d;
+    --mat-surface: #000000;
+    --mat-surface-2: #0f0f0f;
+    --mat-surface-3: #1c1c1c;
+    --mat-glass: #000000;
+    --mat-nav-bg: #000000;
+    --mat-overlay: rgba(0, 0, 0, .8);
+    --mat-border: #9a9a9a;
+    --mat-border-strong: #e6e6e6;
+    --mat-text: #ffffff;
+    --mat-text-muted: #d6d6d6;
+    --mat-text-faint: #b0b0b0;
+    --mat-danger-text: #ffc2cc;
+    --mat-success-text: #9ff7cf;
+    --mat-warning-text: #ffe08a;
+    --mat-info-text: #c9daff;
+    --mat-shadow-1: none;
+    --mat-shadow-2: 0 0 0 1px #e6e6e6;
+    --mat-shadow-3: 0 0 0 1px #e6e6e6;
+    --mat-scroll-thumb: rgba(255, 255, 255, .6);
+    --mat-accent-text-keep: 100%;
+  }
+}
+
+/* ---- Scheme oled: dark mode only. A black page and menu, near-black surfaces (in light mode the standard look) ---- */
+:root[data-scheme="oled"][data-theme="dark"] {
+  --mat-bg: #000000;
+  --mat-bg-2: #050505;
+  --mat-surface: #0a0a0a;
+  --mat-surface-2: #101010;
+  --mat-surface-3: #161616;
+  --mat-glass: #000000;
+  --mat-nav-bg: #000000;
+  --mat-border: rgba(255, 255, 255, .12);
+  --mat-border-strong: rgba(255, 255, 255, .26);
+  --mat-text: #e8e8e8;
+  --mat-text-muted: #9c9c9c;
+  --mat-text-faint: #6b6b6b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-scheme="oled"]:not([data-theme="light"]):not([data-theme="dark"]) {
+    --mat-bg: #000000;
+    --mat-bg-2: #050505;
+    --mat-surface: #0a0a0a;
+    --mat-surface-2: #101010;
+    --mat-surface-3: #161616;
+    --mat-glass: #000000;
+    --mat-nav-bg: #000000;
+    --mat-border: rgba(255, 255, 255, .12);
+    --mat-border-strong: rgba(255, 255, 255, .26);
+    --mat-text: #e8e8e8;
+    --mat-text-muted: #9c9c9c;
+    --mat-text-faint: #6b6b6b;
+  }
+}
