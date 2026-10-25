@@ -12,7 +12,7 @@ One container, no cloud, no third-party services.
 
 </div>
 
-![The group overview with the left menu and the "Meine Gruppen" start screen](docs/images/groups.png)
+![The "Meine Gruppen" start screen with the left menu and one card per group showing its balance, members and spending](docs/images/groups.png)
 
 ---
 
@@ -84,7 +84,7 @@ even everyone out, each with a PayPal shortcut and a "book as paid" button.
 
 ### Members with filters
 
-![The members tab filtered by all, admins, users and guests](docs/images/members.png)
+![The members tab with each balance and the filters for all, admins, users and guests](docs/images/members.png)
 
 Filter the members by everyone, group admins, registered users or link guests. Group admins
 add and edit memberships from here; the invite link lives on its own share screen.
@@ -100,14 +100,14 @@ participant shows their computed share right away – the exact cent split happe
 
 | Share a group | Administration |
 |---|---|
-| ![The share screen with the invite link and messenger shortcuts](docs/images/share.png) | ![The admin overview with tiles for users, groups and configuration](docs/images/admin.png) |
+| ![The share screen with the invite link, messenger shortcuts and the read-only link](docs/images/share.png) | ![The admin overview with tiles for users, groups, expenses, payments, sessions and configuration](docs/images/admin.png) |
 
-An invite link with copy, WhatsApp and Telegram shortcuts; and an admin area with users,
-groups, settings and per-installation statistics.
+An invite link with copy, WhatsApp and Telegram shortcuts (plus the read-only link below it);
+and an admin area with users, groups, settings and per-installation statistics.
 
 ### A public read-only link
 
-![The public read-only view of a group with balance, settlements and transactions](docs/images/readonly-view.png)
+![The public read-only view of a group with its totals, the open settlement amount and the transaction list](docs/images/readonly-view.png)
 
 Turn on a **read-only link** to show the current state of a group to anyone – balance,
 settlements, transactions and members – without a login and without the ability to change
